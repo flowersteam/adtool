@@ -1,5 +1,5 @@
 import torch
-from adtool_default.systems.ExponentialMixture import ExponentialMixture
+from adtool.systems.ExponentialMixture import ExponentialMixture
 
 
 def test_init():

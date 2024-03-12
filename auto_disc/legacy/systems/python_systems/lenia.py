@@ -380,8 +380,8 @@ class LeniaStepFFT(torch.nn.Module):
         else:
             output_img = soft_clip(input + (1.0 / self.T) * field, 0, 1, self.T)
 
-        if torch.any(torch.isnan(potential)):
-            print("break")
+        # if torch.any(torch.isnan(potential)):
+        #     print("break")
 
         return output_img
 

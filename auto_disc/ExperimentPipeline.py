@@ -199,7 +199,6 @@ class ExperimentPipeline(Leaf):
                     run_idx_start_from_one % self.save_frequency == 0
                     or run_idx_start_from_one == n_exploration_runs
                 ):
-                    print("############ saving", self.resource_uri)
                     self.save(resource_uri=self.resource_uri)
 
 

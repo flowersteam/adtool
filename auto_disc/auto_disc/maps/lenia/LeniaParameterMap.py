@@ -6,9 +6,9 @@ from io import StringIO
 from typing import Dict, Optional, Tuple
 
 import torch
-from adtool_default.maps.NEATParameterMap import NEATParameterMap
-from adtool_default.maps.UniformParameterMap import UniformParameterMap
-from adtool_default.systems.Lenia import LeniaDynamicalParameters
+from adtool.maps.NEATParameterMap import NEATParameterMap
+from adtool.maps.UniformParameterMap import UniformParameterMap
+from adtool.systems.Lenia import LeniaDynamicalParameters
 from auto_disc.auto_disc.wrappers.CPPNWrapper import CPPNWrapper
 from auto_disc.auto_disc.wrappers.mutators import add_gaussian_noise
 from auto_disc.utils.leaf.Leaf import Leaf

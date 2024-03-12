@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import neat.genome
 import torch
-from adtool_default.maps.NEATParameterMap import NEATParameterMap
+from adtool.maps.NEATParameterMap import NEATParameterMap
 from auto_disc.auto_disc.wrappers.CPPNWrapper import CPPNWrapper
 
 

@@ -4,8 +4,8 @@ import shutil
 
 import pytest
 import torch
-from adtool_default.maps.MeanBehaviorMap import MeanBehaviorMap
-from adtool_default.maps.UniformParameterMap import UniformParameterMap
+from adtool.maps.MeanBehaviorMap import MeanBehaviorMap
+from adtool.maps.UniformParameterMap import UniformParameterMap
 from auto_disc.auto_disc.explorers.IMGEPExplorer import IMGEPExplorer, IMGEPFactory
 
 

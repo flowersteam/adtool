@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 import torch
-from adtool_default.maps.LeniaStatistics import LeniaStatistics
+from adtool.maps.LeniaStatistics import LeniaStatistics
 
 
 def test_LeniaStatistics___init__():

@@ -4,7 +4,7 @@ import pathlib
 import shutil
 import subprocess
 
-import auto_disc.run as run
+import run as run
 from auto_disc.ExperimentPipeline import ExperimentPipeline
 
 
@@ -26,7 +26,7 @@ def setup_function(function):
             },
         },
         "system": {
-            "name": "adtool_default.systems.ExponentialMixture.ExponentialMixture",
+            "name": "adtool.systems.ExponentialMixture.ExponentialMixture",
             "config": {"sequence_max": 1, "sequence_density": 20},
         },
         "explorer": {
@@ -54,7 +54,7 @@ def setup_function(function):
             },
         },
         "system": {
-            "name": "adtool_default.systems.LeniaCPPN.LeniaCPPN",
+            "name": "adtool.systems.LeniaCPPN.LeniaCPPN",
             "config": {
                 "SX": 64,
                 "SY": 64,

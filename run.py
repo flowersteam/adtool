@@ -165,13 +165,15 @@ def _set_seed(seed: int) -> None:
     torch.backends.cudnn.deterministic = True
 
 
+
 if __name__ == "__main__":
+ 
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_file", type=str, required=True)
-    parser.add_argument("--experiment_id", type=int, required=True)
-    parser.add_argument("--seed", type=int, required=True)
-    parser.add_argument("--nb_iterations", type=int, required=True)
-
+    parser.add_argument("--experiment_id", type=int, required=False, default= 0)
+    parser.add_argument("--seed", type=int, required=False, default=42)
+    parser.add_argument("--nb_iterations", type=int, required=False, default=30)
+                        
     args = parser.parse_args()
 
     with open(args.config_file) as json_file:

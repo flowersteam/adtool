@@ -15,9 +15,9 @@ def test_locate_cls():
 
     cls_path = "auto_disc.auto_disc.explorers.IMGEPFactory"
     assert cls == locate_cls(cls_path)
-    from adtool_default.maps.LeniaStatistics import LeniaStatistics as cls
+    from adtool.maps.LeniaStatistics import LeniaStatistics as cls
 
-    cls_path = "adtool_default.maps.LeniaStatistics.LeniaStatistics"
+    cls_path = "adtool.maps.LeniaStatistics.LeniaStatistics"
     assert cls == locate_cls(cls_path)
 
 
@@ -29,15 +29,15 @@ def test_get_cls_from_path():
 
     assert cls == compare_cls
 
-    path = "adtool_default.maps.LeniaStatistics.LeniaStatistics"
+    path = "adtool.maps.LeniaStatistics.LeniaStatistics"
     cls = get_cls_from_path(path)
-    from adtool_default.maps.LeniaStatistics import LeniaStatistics as compare_cls
+    from adtool.maps.LeniaStatistics import LeniaStatistics as compare_cls
 
     assert cls == compare_cls
 
-    path = "adtool_default.maps.MeanBehaviorMap.MeanBehaviorMap"
+    path = "adtool.maps.MeanBehaviorMap.MeanBehaviorMap"
     cls = get_cls_from_path(path)
-    from adtool_default.maps.MeanBehaviorMap import MeanBehaviorMap as compare_cls
+    from adtool.maps.MeanBehaviorMap import MeanBehaviorMap as compare_cls
 
     assert cls == compare_cls
 
@@ -49,24 +49,24 @@ def test_get_path_from_cls():
     path = "auto_disc.legacy.explorers.imgep_explorer.IMGEPExplorer"
     assert compare_path == path
 
-    from adtool_default.maps.LeniaStatistics import LeniaStatistics as compare_cls
+    from adtool.maps.LeniaStatistics import LeniaStatistics as compare_cls
 
     compare_path = get_path_from_cls(compare_cls)
     # here we see that `get_path_from_cls` gives an explicit FQDN
     # instead of using imports from `__init__.py` files
-    path = "adtool_default.maps.LeniaStatistics.LeniaStatistics"
+    path = "adtool.maps.LeniaStatistics.LeniaStatistics"
     assert compare_path == path
 
-    from adtool_default.maps.MeanBehaviorMap import MeanBehaviorMap as compare_cls
+    from adtool.maps.MeanBehaviorMap import MeanBehaviorMap as compare_cls
 
     compare_path = get_path_from_cls(compare_cls)
-    path = "adtool_default.maps.MeanBehaviorMap.MeanBehaviorMap"
+    path = "adtool.maps.MeanBehaviorMap.MeanBehaviorMap"
     assert compare_path == path
 
 
 def test_get_cls_from_name():
-    from adtool_default.maps.LeniaStatistics import LeniaStatistics
-    from adtool_default.systems.ExponentialMixture import ExponentialMixture
+    from adtool.maps.LeniaStatistics import LeniaStatistics
+    from adtool.systems.ExponentialMixture import ExponentialMixture
     from auto_disc.auto_disc.explorers import IMGEPFactory
     from auto_disc.auto_disc.utils.callbacks.on_save_callbacks.save_leaf_callback import (
         SaveLeaf,
@@ -127,12 +127,12 @@ def test_get_default_modules():
     )
     assert get_default_modules("explorers") == {}
     assert get_default_modules("maps") == {
-        "MeanBehaviorMap": "adtool_default.maps.MeanBehaviorMap.MeanBehaviorMap",
-        "UniformParameterMap": "adtool_default.maps.UniformParameterMap.UniformParameterMap",
-        "LeniaStatistics": "adtool_default.maps.LeniaStatistics.LeniaStatistics",
-        "UniformParameterMap": "adtool_default.maps.UniformParameterMap.UniformParameterMap",
-        "LeniaParameterMap": "adtool_default.maps.LeniaParameterMap.LeniaParameterMap",
-        "NEATParameterMap": "adtool_default.maps.NEATParameterMap.NEATParameterMap",
+        "MeanBehaviorMap": "adtool.maps.MeanBehaviorMap.MeanBehaviorMap",
+        "UniformParameterMap": "adtool.maps.UniformParameterMap.UniformParameterMap",
+        "LeniaStatistics": "adtool.maps.LeniaStatistics.LeniaStatistics",
+        "UniformParameterMap": "adtool.maps.UniformParameterMap.UniformParameterMap",
+        "LeniaParameterMap": "adtool.maps.LeniaParameterMap.LeniaParameterMap",
+        "NEATParameterMap": "adtool.maps.NEATParameterMap.NEATParameterMap",
     }
     assert get_default_modules("callbacks") == {}
 

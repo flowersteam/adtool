@@ -4,10 +4,10 @@ from functools import partial
 from typing import Any, Dict, List
 
 import torch
-from adtool_default.maps.LeniaParameterMap import LeniaParameterMap
-from adtool_default.maps.LeniaStatistics import LeniaStatistics
-from adtool_default.maps.MeanBehaviorMap import MeanBehaviorMap
-from adtool_default.maps.UniformParameterMap import UniformParameterMap
+from adtool.maps.LeniaParameterMap import LeniaParameterMap
+from adtool.maps.LeniaStatistics import LeniaStatistics
+from adtool.maps.MeanBehaviorMap import MeanBehaviorMap
+from adtool.maps.UniformParameterMap import UniformParameterMap
 from auto_disc.auto_disc.wrappers.IdentityWrapper import IdentityWrapper
 from auto_disc.auto_disc.wrappers.mutators import add_gaussian_noise, call_mutate_method
 from auto_disc.auto_disc.wrappers.SaveWrapper import SaveWrapper

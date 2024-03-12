@@ -103,6 +103,7 @@ def get_cls_from_name(cls_name: str, ad_type_name: str) -> type:
         callback_lookup_dict = get_modules(callback_type_arr[0])
         type_lookup_info = callback_lookup_dict[callback_type_arr[1]]
 
+    print("type_lookup_info", type_lookup_info)
     cls_path = type_lookup_info[cls_name]
     return locate_cls(cls_path)
 
@@ -145,7 +146,7 @@ def get_custom_modules(submodule: str) -> dict[str, str]:
 
 
 def get_default_modules(submodule: str) -> dict[str, str]:
-    return get_submodules(submodule, namespace="adtool_default")
+    return get_submodules(submodule, namespace="adtool")
 
 
 def get_legacy_modules(submodule: str) -> dict[str, str]:
@@ -166,7 +167,7 @@ def get_modules(submodule_type: str) -> dict:
 
     #### Returns
     A dictionary returning with items such as
-        {"SystemName" : "adtool_default.systems.SystemName.SystemName"}
+        {"SystemName" : "adtool.systems.SystemName.SystemName"}
 
     """
     if submodule_type == "input_wrappers" or submodule_type == "output_representations":

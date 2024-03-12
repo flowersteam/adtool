@@ -2,7 +2,7 @@ import os
 from copy import deepcopy
 
 import neat.genome
-from adtool_default.maps.NEATParameterMap import NEATParameterMap
+from adtool.maps.NEATParameterMap import NEATParameterMap
 
 
 def setup_function(function):

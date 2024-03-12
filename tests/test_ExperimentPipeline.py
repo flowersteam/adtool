@@ -3,9 +3,9 @@ import pathlib
 import shutil
 
 import torch
-from adtool_default.maps.MeanBehaviorMap import MeanBehaviorMap
-from adtool_default.maps.UniformParameterMap import UniformParameterMap
-from adtool_default.systems.ExponentialMixture import ExponentialMixture
+from adtool.maps.MeanBehaviorMap import MeanBehaviorMap
+from adtool.maps.UniformParameterMap import UniformParameterMap
+from adtool.systems.ExponentialMixture import ExponentialMixture
 from auto_disc.auto_disc.explorers.IMGEPExplorer import IMGEPExplorer, IMGEPFactory
 from auto_disc.auto_disc.wrappers.IdentityWrapper import IdentityWrapper
 from auto_disc.ExperimentPipeline import ExperimentPipeline

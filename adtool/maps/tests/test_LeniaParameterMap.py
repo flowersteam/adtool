@@ -4,7 +4,7 @@ from dataclasses import asdict
 
 import pytest
 import torch
-from adtool_default.systems.Lenia import LeniaDynamicalParameters
+from adtool.systems.Lenia import LeniaDynamicalParameters
 from auto_disc.auto_disc.maps import NEATParameterMap
 from auto_disc.auto_disc.maps.lenia.LeniaParameterMap import (
     LeniaHyperParameters,
