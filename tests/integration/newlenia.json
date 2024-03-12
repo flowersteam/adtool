@@ -1,0 +1,43 @@
+{
+    "experiment": {
+        "name": "newlenia",
+        "config": {
+            "host": "local",
+            "nb_seeds": 1,
+            "nb_iterations": 10,
+            "save_location": "http://expe-db-api:80",
+            "save_frequency": 1,
+            "discovery_saving_keys": []
+        }
+    },
+    "system": {
+        "name": "NewLenia",
+        "config": {
+            "SX": 128,
+            "SY": 128,
+            "version": "pytorch_fft",
+            "final_step": 50,
+            "scale_init_state": 1
+        }
+    },
+    "explorer": {
+        "name": "IMGEPExplorer",
+        "config": {
+            "param_dim": 10,
+            "equil_time": 2,
+            "behavior_map": "mean",
+            "parameter_map": "uniform",
+            "param_init_low": 0.8,
+            "param_bound_low": "-inf",
+            "param_init_high": 0,
+            "param_bound_high": "inf",
+            "system_output_dim": 1,
+            "mutation_noise_std": 0.1,
+            "behavior_map_config": {}
+        }
+    },
+    "input_wrappers": [],
+    "output_representations": [],
+    "callbacks": [],
+    "logger_handlers": []
+}

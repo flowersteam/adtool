@@ -1,0 +1,43 @@
+{
+  "experiment": {
+    "name": "newarch_demo",
+    "config": {
+      "host": "local",
+      "save_location": "",
+      "nb_seeds": 1,
+      "nb_iterations": 20,
+      "save_frequency": 1
+    }
+  },
+  "system": {
+    "name": "auto_disc.systems.ExponentialMixture",
+    "config": {
+      "sequence_max": 1,
+      "sequence_density": 20
+    }
+  },
+  "explorer": {
+    "name": "auto_disc.explorers.IMGEPFactory",
+    "config": {
+      "equil_time": 2,
+      "param_dim": 1,
+      "param_init_low": 0.0,
+      "param_init_high": 1.0
+    }
+  },
+  "callbacks": {
+    "on_discovery": [
+      {
+        "name": "utils.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+        "config": {}
+      }
+    ],
+    "on_save_finished": [
+      {
+        "name": "utils.callbacks.on_save_finished_callbacks.generate_report_callback.GenerateReport",
+        "config": {}
+      }
+    ]
+  },
+  "logger_handlers": []
+}
