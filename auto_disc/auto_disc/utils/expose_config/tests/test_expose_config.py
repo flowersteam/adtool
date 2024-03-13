@@ -399,7 +399,6 @@ class TestMultipleClasses:
             def __init__(self, version: str):
                 self.version = version
 
-        system_before=System.CONFIG_DEFINITION.copy()
 
         @dataclass(frozen=True)
         class OtherParams(Defaults):
@@ -410,14 +409,17 @@ class TestMultipleClasses:
             def __init__(self, other_version: str):
                 self.other_version = other_version
 
-        system_after=System.CONFIG_DEFINITION.copy()
 
-        for k in system_after:
-            assert k in system_before
 
-        print("OTHER",OtherSystem.CONFIG_DEFINITION,file=sys.stderr)
 
-     #   assert OtherSystem.CONFIG_DEFINITION != System.CONFIG_DEFINITION
+        print("System", id(System.CONFIG_DEFINITION),
+              
+              System.CONFIG_DEFINITION
+              
+              ,file=sys.stderr)
+       # print("SYSTEM",System.CONFIG_DEFINITION,file=sys.stderr)
+
+        assert OtherSystem.CONFIG_DEFINITION != System.CONFIG_DEFINITION
                 
 
     #    assert OtherSystem.CONFIG_DEFINITION["other_version"] is not None

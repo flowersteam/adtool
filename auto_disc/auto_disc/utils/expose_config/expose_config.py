@@ -1,6 +1,6 @@
 from collections import namedtuple
 from typing import Any, Dict, List, NamedTuple, Optional
-
+import sys
 
 class ExposeConfig:
     def __init__(self, *args, **kwargs) -> None:
@@ -30,6 +30,8 @@ class ExposeConfig:
             }
         }
 
+        print("GENERATED CONFIG", id(config_defn), config_defn, file=sys.stderr) 
+
         return config_defn
 
     def __call__(self, cls: type) -> Any:
@@ -37,13 +39,13 @@ class ExposeConfig:
         if not hasattr(cls, "CONFIG_DEFINITION"):
             # insert
             cls.CONFIG_DEFINITION = self._config_defn
+            print("INSERTED CONFIG", id(cls.CONFIG_DEFINITION), cls.CONFIG_DEFINITION, file=sys.stderr)
         else:
-            # warn of key collision
             key_name = list(self._config_defn.keys())[0]
             if key_name in cls.CONFIG_DEFINITION:
                 raise ValueError(f"Config option {key_name} already exists.")
             # update
-            cls.CONFIG_DEFINITION.update(self._config_defn)
+            cls.CONFIG_DEFINITION= {**cls.CONFIG_DEFINITION, **self._config_defn}
         return cls
 
 

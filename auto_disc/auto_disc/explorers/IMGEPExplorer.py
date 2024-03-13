@@ -8,6 +8,7 @@ from adtool.maps.LeniaParameterMap import LeniaParameterMap
 from adtool.maps.LeniaStatistics import LeniaStatistics
 from adtool.maps.MeanBehaviorMap import MeanBehaviorMap
 from adtool.maps.UniformParameterMap import UniformParameterMap
+from auto_disc.auto_disc.systems import System
 from auto_disc.auto_disc.wrappers.IdentityWrapper import IdentityWrapper
 from auto_disc.auto_disc.wrappers.mutators import add_gaussian_noise, call_mutate_method
 from auto_disc.auto_disc.wrappers.SaveWrapper import SaveWrapper
@@ -41,15 +42,16 @@ from auto_disc.auto_disc.maps.Map import Map
 
 
 
-# @dataclass
+# @dataclass(frozen=True)
 # class IMGEPConfig(Defaults):
-#     equil_time: int = field(default_factory=lambda: defaults(1, min=1))
-#     behavior_map: str = field(default="Mean", metadata={"domain": ["Mean", "LeniaStatistics"]})
-#     behavior_map_config: Dict = field(default_factory=lambda: defaults({}))
-#     parameter_map: str = field(default="Uniform", metadata={"domain": ["Uniform", "LeniaParameterMap"]})
-#     parameter_map_config: Dict = field(default_factory=lambda: defaults({}))
-#     mutator: str = field(default="specific", metadata={"domain": ["gaussian", "specific"]})
-#     mutator_config: Dict = field(default_factory=lambda: defaults({}))
+#     equil_time: int = defaults(1, min=1, max=1000)
+#     behavior_map: str = defaults("Mean", domain=["Mean", "LeniaStatistics"])
+#     behavior_map_config: Dict = defaults({})
+#     parameter_map: str = defaults("Uniform", domain=["Uniform", "LeniaParameterMap"])
+#     parameter_map_config: Dict = defaults({})
+#     mutator: str = defaults("specific", domain=["gaussian", "specific"])
+#     mutator_config: Dict = defaults({})
+
 # @IMGEPConfig.expose_config()
 class IMGEPFactory:
     """Factory class providing interface with config parameters and therefore the
@@ -137,6 +139,7 @@ class IMGEPExplorer(Leaf):
         equil_time: int = 0,
     ) -> None:
         super().__init__()
+
         self.locator = BlobLocator()
         self.premap_key = premap_key
         self.postmap_key = postmap_key

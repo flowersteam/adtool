@@ -39,6 +39,7 @@ class Defaults:
         decoration_chain: List[ExposeConfig] = []
         cls._wrap_config_defns(config_dict, decoration_chain)
 
+
         # return a big function composition of the decorator function
         return _compose(*decoration_chain)
 
@@ -104,7 +105,7 @@ class Defaults:
                             unwrap_v = v.default_factory()
                         
                         
-                        print("unwrap_vvv", type(unwrap_v), unwrap_v, file=sys.stderr)
+                 #       print("unwrap_vvv", type(unwrap_v), unwrap_v, file=sys.stderr)
                         #visible even during pytest
 
 
@@ -122,7 +123,6 @@ class Defaults:
                         config_dict[k]["parent"] = parent
 
         recurse(cls, "")
-        print("config_dict", config_dict, file=sys.stderr  )
         return config_dict
 
 

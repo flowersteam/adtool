@@ -103,7 +103,7 @@ def get_cls_from_name(cls_name: str, ad_type_name: str) -> type:
         callback_lookup_dict = get_modules(callback_type_arr[0])
         type_lookup_info = callback_lookup_dict[callback_type_arr[1]]
 
-    print("type_lookup_info", type_lookup_info)
+    
     cls_path = type_lookup_info[cls_name]
     return locate_cls(cls_path)
 
