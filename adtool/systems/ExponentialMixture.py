@@ -14,7 +14,7 @@ import sys
 
 matplotlib.use("Agg")
 
-@dataclass(frozen=True)
+@dataclass
 class SystemParams(Defaults):
     sequence_max: float = defaults(100.0, min=0.0, max=1000.0)
     sequence_density: int = defaults(100, min=1, max=1000)

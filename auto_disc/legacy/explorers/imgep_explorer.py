@@ -16,22 +16,33 @@ from auto_disc.legacy.utils.spaces import BoxSpace, DictSpace
 from torch import Tensor, nn
 
 
-@StringConfigParameter(
-    name="source_policy_selection_type", possible_values=["optimal"], default="optimal"
-)
-@StringConfigParameter(
-    name="goal_selection_type",
-    possible_values=["random", "specific", "function", None],
-    default="random",
-)
-@IntegerConfigParameter(name="num_of_random_initialization", default=10, min=1)
-@BooleanConfigParameter(name="use_exandable_goal_space", default=True)
+# @StringConfigParameter(
+#     name="source_policy_selection_type", possible_values=["optimal"], default="optimal"
+# )
+# @StringConfigParameter(
+#     name="goal_selection_type",
+#     possible_values=["random", "specific", "function", None],
+#     default="random",
+# )
+# @IntegerConfigParameter(name="num_of_random_initialization", default=10, min=1)
+# @BooleanConfigParameter(name="use_exandable_goal_space", default=True)
+
+from auto_disc.auto_disc.utils.expose_config.defaults import Defaults, defaults
+from dataclasses import dataclass, field
+
+@dataclass
+class IMGEPExplorerConfig(Defaults):
+    source_policy_selection_type: str = defaults("optimal", domain=["optimal"])
+    goal_selection_type: str = defaults("random", domain=["random", "specific", "function", None])
+    num_of_random_initialization: int = defaults(10, min=1)
+    use_exandable_goal_space: bool = defaults(True)
+
+@IMGEPExplorerConfig.expose_config()
 class IMGEPExplorer(BaseExplorer):
     """
     Basic explorer that samples goals in a goalspace and uses a policy library to generate parameters to reach the goal.
     """
 
-    CONFIG_DEFINITION = {}
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

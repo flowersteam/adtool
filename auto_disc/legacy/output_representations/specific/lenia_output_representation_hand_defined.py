@@ -291,11 +291,21 @@ def calc_image_moments(image: torch.Tensor) -> typing.Dict[str, torch.Tensor]:
     return result
 
 
-@StringConfigParameter(name="distance_function", possible_values=["L2"], default="L2")
-@IntegerConfigParameter(name="SX", default=256, min=1)
-@IntegerConfigParameter(name="SY", default=256, min=1)
+# @StringConfigParameter(name="distance_function", possible_values=["L2"], default="L2")
+# @IntegerConfigParameter(name="SX", default=256, min=1)
+# @IntegerConfigParameter(name="SY", default=256, min=1)
+
+from auto_disc.auto_disc.utils.expose_config.defaults import Defaults, defaults
+from dataclasses import dataclass, field
+
+@dataclass
+class LeniaHandDefinedRepresentationConfig(Defaults):
+    distance_function: str = defaults("L2", domain=["L2"])
+    SX: int = defaults(256, min=1)
+    SY: int = defaults(256, min=1)
+
+@LeniaHandDefinedRepresentationConfig.expose_config()
 class LeniaHandDefinedRepresentation(BaseOutputRepresentation):
-    CONFIG_DEFINITION = {}
 
     output_space = DictSpace(embedding=BoxSpace(low=0, high=0, shape=(17,)))
 

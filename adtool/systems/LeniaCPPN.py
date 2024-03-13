@@ -12,19 +12,35 @@ from auto_disc.legacy.utils.config_parameters import (
 )
 from auto_disc.utils.leaf.locators.locators import BlobLocator
 
+import sys
+# @StringConfigParameter(
+#     name="version",
+#     possible_values=["pytorch_fft", "pytorch_conv2d"],
+#     default="pytorch_fft",
+# )
+# @IntegerConfigParameter(name="SX", default=256, min=1)
+# @IntegerConfigParameter(name="SY", default=256, min=1)
+# @IntegerConfigParameter(name="final_step", default=200, min=1, max=1000)
+# @IntegerConfigParameter(name="scale_init_state", default=1, min=1)
+# @IntegerConfigParameter(name="cppn_n_passes", default=2, min=1)
 
-@StringConfigParameter(
-    name="version",
-    possible_values=["pytorch_fft", "pytorch_conv2d"],
-    default="pytorch_fft",
-)
-@IntegerConfigParameter(name="SX", default=256, min=1)
-@IntegerConfigParameter(name="SY", default=256, min=1)
-@IntegerConfigParameter(name="final_step", default=200, min=1, max=1000)
-@IntegerConfigParameter(name="scale_init_state", default=1, min=1)
-@IntegerConfigParameter(name="cppn_n_passes", default=2, min=1)
+
+from auto_disc.auto_disc.utils.expose_config.defaults import Defaults, defaults
+
+@dataclass
+class LeniaCPPNConfig(Defaults):
+    version: str=defaults("pytorch_fft", domain=["pytorch_fft", "pytorch_conv2d"])
+    SX: int=defaults(256, min=1)
+    SY: int=defaults(256, min=1)
+    final_step: int=defaults(200, min=1, max=1000)
+    scale_init_state: int=defaults(1, min=1)
+    cppn_n_passes: int=defaults(2, min=1)
+
+    
+
+ 
+@LeniaCPPNConfig.expose_config()
 class LeniaCPPN(System):
-    CONFIG_DEFINITION = {}
 
     def __init__(self):
         super().__init__()
@@ -37,6 +53,8 @@ class LeniaCPPN(System):
             final_step=self.config.final_step,
             scale_init_state=self.config.scale_init_state,
         )
+
+        print("self.config.cppn_n_passes",self.config.cppn_n_passes, file=sys.stderr)
 
         self.cppn = CPPNWrapper(
             postmap_shape=(self.lenia.config.SY, self.lenia.config.SX),

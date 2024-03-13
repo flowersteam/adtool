@@ -21,9 +21,21 @@ def defaults(
     """
     return _DefaultSetting(default, domain, min, max)
 
-@dataclass(frozen=True)
+
 class Defaults:
     """This class is only here for namespacing purposes."""
+
+    def __post_init__(self):
+        """
+        This function is called after the __init__ function of the
+        dataclass, and is used to set the default values of the
+        config parameters.
+        """
+        print("POST INIT self",self, file=sys.stderr)
+        for field in fields(self):
+            if isinstance(getattr(self, field.name), _DefaultSetting):
+                setattr(self, field.name, field.default.default)
+
 
     @classmethod
     def expose_config(cls) -> Callable:
@@ -38,18 +50,14 @@ class Defaults:
         # create ExposeConfig objects to chain decorate
         decoration_chain: List[ExposeConfig] = []
         cls._wrap_config_defns(config_dict, decoration_chain)
-        print(decoration_chain, file=sys.stderr)
-
-
-
-
-
-
 
 
 
         # return a big function composition of the decorator function
         return _compose(cls,*decoration_chain)
+    
+
+
 
     @classmethod
     def _wrap_config_defns(cls, config_dict, decoration_chain) -> List[ExposeConfig]:
@@ -208,7 +216,6 @@ class _DefaultSetting:
 
 
 
-
 def _compose(struct,*functions):
     """Compose functions à la pipes in FP."""
 
@@ -221,14 +228,8 @@ def _compose(struct,*functions):
         previous_init = arg.__init__
             
         def __init__(self, *args, **kws) -> None:
-            print("ICI", self, file=sys.stderr)
             self.config = struct(*args, **kws)
-            # inspect to know wich class it is
-            import inspect
-            print(inspect.getmro(self.__class__), file=sys.stderr)
-            #get the signature of previous_init
-            print(inspect.signature(previous_init), file=sys.stderr)
-            print(args, kws, file=sys.stderr)
+
             previous_init(self)
 
         arg.__init__ = __init__

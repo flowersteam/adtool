@@ -13,11 +13,23 @@ from auto_disc.legacy.utils.spaces import BoxSpace, DictSpace, DiscreteSpace
 from auto_disc.legacy.utils.spaces.utils import ConfigParameterBinding, distance
 
 
-@StringConfigParameter(name="distance_function", possible_values=["L2"], default="L2")
-@IntegerConfigParameter(name="SX", default=256, min=1)
-@IntegerConfigParameter(name="SY", default=256, min=1)
+# @StringConfigParameter(name="distance_function", possible_values=["L2"], default="L2")
+# @IntegerConfigParameter(name="SX", default=256, min=1)
+# @IntegerConfigParameter(name="SY", default=256, min=1)
+
+from auto_disc.auto_disc.utils.expose_config.defaults import Defaults, defaults
+from dataclasses import dataclass, field
+
+@dataclass
+class LeniaImageRepresentationConfig(Defaults):
+    distance_function: str = defaults("L2", domain=["L2"])
+    SX: int = defaults(256, min=1)
+    SY: int = defaults(256, min=1)
+
+
+@LeniaImageRepresentationConfig.expose_config()
 class LeniaImageRepresentation(BaseOutputRepresentation):
-    CONFIG_DEFINITION = {}
+
 
     output_space = DictSpace(
         embedding=BoxSpace(

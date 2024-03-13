@@ -57,7 +57,6 @@ def prune_state(state_vars: Dict[str, Any]):
 
 
 class Leaf:
-    CONFIG_DEFINITION = {}
 
     def __init__(self) -> None:
         self._default_leaf_init()

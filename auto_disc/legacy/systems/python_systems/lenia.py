@@ -31,17 +31,29 @@ System definition
 ============================================================================================= """
 
 
-@StringConfigParameter(
-    name="version",
-    possible_values=["pytorch_fft", "pytorch_conv2d"],
-    default="pytorch_fft",
-)
-@IntegerConfigParameter(name="SX", default=256, min=1)
-@IntegerConfigParameter(name="SY", default=256, min=1)
-@IntegerConfigParameter(name="final_step", default=200, min=1, max=1000)
-@IntegerConfigParameter(name="scale_init_state", default=1, min=1)
+# @StringConfigParameter(
+#     name="version",
+#     possible_values=["pytorch_fft", "pytorch_conv2d"],
+#     default="pytorch_fft",
+# )
+# @IntegerConfigParameter(name="SX", default=256, min=1)
+# @IntegerConfigParameter(name="SY", default=256, min=1)
+# @IntegerConfigParameter(name="final_step", default=200, min=1, max=1000)
+# @IntegerConfigParameter(name="scale_init_state", default=1, min=1)
+
+from auto_disc.auto_disc.utils.expose_config.defaults import Defaults, defaults
+from dataclasses import dataclass, field
+
+@dataclass
+class LeniaConfig(Defaults):
+    version: str=defaults("pytorch_fft", domain=["pytorch_fft", "pytorch_conv2d"])
+    SX: int=defaults(256, min=1)
+    SY: int=defaults(256, min=1)
+    final_step: int=defaults(200, min=1, max=1000)
+    scale_init_state: int=defaults(1, min=1)
+
+@LeniaConfig.expose_config()
 class Lenia(BasePythonSystem):
-    CONFIG_DEFINITION = {}
 
     input_space = DictSpace(
         init_state=BoxSpace(

@@ -110,7 +110,6 @@ def create(
     explorer_factory_class = get_cls_from_name(
         parameters["explorer"]["name"], "explorers"
     )
-    print("explorer_factory_class",explorer_factory_class)
     explorer_factory = explorer_factory_class(**parameters["explorer"]["config"])
     explorer = explorer_factory()
 

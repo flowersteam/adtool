@@ -144,7 +144,7 @@ class LeniaParameters:
 from auto_disc.auto_disc.utils.expose_config.defaults import Defaults, defaults
 
 
-@dataclass(frozen=True)
+@dataclass
 class LeniaConfig(Defaults):
     version: str = defaults("pytorch_fft", ["pytorch_fft", "pytorch_conv2d"])
     SX: int = defaults(256, min=1)
@@ -170,7 +170,6 @@ class Lenia:
     def __init__(self, **kwargs):
         super().__init__()
         self.locator = BlobLocator()
-        print("ON LENIA INIT")
         self.orbit = torch.empty(
             (self.config.final_step, 1, 1, self.config.SX, self.config.SY),
             requires_grad=False,

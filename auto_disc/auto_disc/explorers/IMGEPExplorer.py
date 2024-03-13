@@ -42,7 +42,7 @@ from auto_disc.auto_disc.maps.Map import Map
 
 
 
-@dataclass(frozen=True)
+@dataclass
 class IMGEPConfig(Defaults):
     equil_time: int = defaults(1, min=1, max=1000)
     behavior_map: str = defaults("Mean", domain=["Mean", "LeniaStatistics"])
@@ -119,9 +119,6 @@ class IMGEPFactory:
         return mutator
 
 
-#get IMGEPFactory __init__ signature
-import inspect
-print(inspect.signature(IMGEPFactory.__init__))
 
 class IMGEPExplorer(Leaf):
     """Basic IMGEP that diffuses in goalspace.

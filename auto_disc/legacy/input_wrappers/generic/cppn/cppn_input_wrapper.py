@@ -8,12 +8,20 @@ from auto_disc.legacy.input_wrappers.generic.cppn.utils import CPPNGenomeSpace
 from auto_disc.legacy.utils.config_parameters import IntegerConfigParameter
 from auto_disc.legacy.utils.spaces import DictSpace
 
+from auto_disc.auto_disc.utils.expose_config.defaults import Defaults, defaults
+from dataclasses import dataclass, field
 
-@IntegerConfigParameter(name="n_passes", default=2, min=1)
+@dataclass
+class CppnInputWrapperConfig(Defaults):
+    n_passes: int = defaults(2, min=1)
+
+
+#@IntegerConfigParameter(name="n_passes", default=2, min=1)
+@CppnInputWrapperConfig.expose_config()
 class CppnInputWrapper(BaseInputWrapper):
     """Base class to map the parameters sent by the explorer to the system's input space"""
 
-    CONFIG_DEFINITION = {}
+    
 
     input_space = DictSpace(genome=CPPNGenomeSpace())
 

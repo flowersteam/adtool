@@ -4,10 +4,17 @@ from auto_disc.legacy.input_wrappers import BaseInputWrapper
 from auto_disc.legacy.utils.config_parameters import IntegerConfigParameter
 from auto_disc.legacy.utils.spaces import BoxSpace, DictSpace
 
+from auto_disc.auto_disc.utils.expose_config.defaults import Defaults, defaults
+from dataclasses import dataclass, field
 
-@IntegerConfigParameter(name="n", default=1)
+#@IntegerConfigParameter(name="n", default=1)
+
+@dataclass
+class TimesNInputWrapperConfig(Defaults):
+    n: int = defaults(1)
+
+@TimesNInputWrapperConfig.expose_config()
 class TimesNInputWrapper(BaseInputWrapper):
-    CONFIG_DEFINITION = {}
 
     input_space = DictSpace(
         input_parameter=BoxSpace(low=-np.inf, high=np.inf, shape=())
