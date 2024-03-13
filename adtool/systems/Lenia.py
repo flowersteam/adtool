@@ -141,23 +141,38 @@ class LeniaParameters:
     init_state: torch.Tensor = torch.rand((10, 10))
 
 
-@StringConfigParameter(
-    name="version",
-    possible_values=["pytorch_fft", "pytorch_conv2d"],
-    default="pytorch_fft",
-)
-@IntegerConfigParameter(name="SX", default=256, min=1)
-@IntegerConfigParameter(name="SY", default=256, min=1)
-@IntegerConfigParameter(name="final_step", default=200, min=1, max=1000)
-@IntegerConfigParameter(name="scale_init_state", default=1, min=1)
-class Lenia(Leaf):
-    CONFIG_DEFINITION = {}
+from auto_disc.auto_disc.utils.expose_config.defaults import Defaults, defaults
 
-    def __init__(self):
+
+@dataclass(frozen=True)
+class LeniaConfig(Defaults):
+    version: str = defaults("pytorch_fft", ["pytorch_fft", "pytorch_conv2d"])
+    SX: int = defaults(256, min=1)
+    SY: int = defaults(256, min=1)
+    final_step: int = defaults(200, min=1, max=1000)
+    scale_init_state: int = defaults(1, min=1)
+
+
+
+# @StringConfigParameter(
+#     name="version",
+#     possible_values=["pytorch_fft", "pytorch_conv2d"],
+#     default="pytorch_fft",
+# )
+# @IntegerConfigParameter(name="SX", default=256, min=1)
+# @IntegerConfigParameter(name="SY", default=256, min=1)
+# @IntegerConfigParameter(name="final_step", default=200, min=1, max=1000)
+# @IntegerConfigParameter(name="scale_init_state", default=1, min=1)
+
+@LeniaConfig.expose_config()
+class Lenia:
+
+    def __init__(self, **kwargs):
         super().__init__()
         self.locator = BlobLocator()
+        print("ON LENIA INIT")
         self.orbit = torch.empty(
-            (self.config["final_step"], 1, 1, self.config["SX"], self.config["SY"]),
+            (self.config.final_step, 1, 1, self.config.SX, self.config.SY),
             requires_grad=False,
         )
 
@@ -171,7 +186,7 @@ class Lenia(Leaf):
         automaton = self._generate_automaton(params.dynamic_params)
 
         state = self.orbit[0]
-        for step in range(self.config["final_step"] - 1):
+        for step in range(self.config.final_step - 1):
             state = self._step(state, automaton)
             with torch.no_grad():
                 self.orbit[step + 1] = state
@@ -247,10 +262,10 @@ class Lenia(Leaf):
 
     def _generate_automaton(self, dyn_params: LeniaDynamicalParameters) -> Any:
         tensor_params = dyn_params.to_tensor()
-        if self.config["version"].lower() == "pytorch_fft":
+        if self.config.version.lower() == "pytorch_fft":
             automaton = LeniaStepFFT(
-                SX=self.config["SX"],
-                SY=self.config["SY"],
+                SX=self.config.SX,
+                SY=self.config.SY,
                 R=tensor_params[0],
                 T=tensor_params[1],
                 m=tensor_params[2],
@@ -281,21 +296,21 @@ class Lenia(Leaf):
         init_state = torch.zeros(
             1,
             1,
-            self.config["SY"],
-            self.config["SX"],
+            self.config.SY,
+            self.config.SX,
             dtype=torch.float64,
             requires_grad=False,
         )
 
-        scaled_SY = self.config["SY"] // self.config["scale_init_state"]
-        scaled_SX = self.config["SX"] // self.config["scale_init_state"]
+        scaled_SY = self.config.SY // self.config.scale_init_state
+        scaled_SX = self.config.SX // self.config.scale_init_state
 
         init_state[0, 0][
-            self.config["SY"] // 2
-            - math.ceil(scaled_SY / 2) : self.config["SY"] // 2
+            self.config.SY // 2
+            - math.ceil(scaled_SY / 2) : self.config.SY // 2
             + scaled_SY // 2,
-            self.config["SX"] // 2
-            - math.ceil(scaled_SX / 2) : self.config["SX"] // 2
+            self.config.SX // 2
+            - math.ceil(scaled_SX / 2) : self.config.SX // 2
             + scaled_SX // 2,
         ] = params.init_state
         # state is fixed deterministically by CPPN params,

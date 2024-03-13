@@ -75,13 +75,19 @@ class Handlers:
         return {"possible_values": [True, False]}
 
     @staticmethod
-    def int_handler(domain: List[int]) -> Dict[str, List[int]]:
-
-        return {"min": min(domain), "max": max(domain)}
+    #int or None
+    def int_handler(domain: List[Optional[int]]) -> Dict[str, Optional[int]]:
+        cleaned_domain = {i for i in domain if i is not None}
+        if len(cleaned_domain) == 0:
+            return {"min": None, "max": None}
+        return {"min": min(cleaned_domain), "max": max(cleaned_domain)}
 
     @staticmethod
-    def float_handler(domain: List[float]) -> Dict[str, List[float]]:
-        return {"min": min(domain), "max": max(domain)}
+    def float_handler(domain: List[Optional[float]]) -> Dict[str, Optional[float]]:
+        cleaned_domain = {i for i in domain if i is not None}
+        if len(cleaned_domain) == 0:
+            return {"min": None, "max": None}
+        return {"min": min(cleaned_domain), "max": max(cleaned_domain)}
 
     @staticmethod
     def str_handler(domain: List[str]) -> Dict[str, List[str]]:

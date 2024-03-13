@@ -218,10 +218,18 @@ def _compose(struct,*functions):
 
         # then add a function that override the __init__
             
+        previous_init = arg.__init__
+            
         def __init__(self, *args, **kws) -> None:
+            print("ICI", self, file=sys.stderr)
             self.config = struct(*args, **kws)
-            original_init(self, *args, **kws)
-        original_init = struct.__init__
+            # inspect to know wich class it is
+            import inspect
+            print(inspect.getmro(self.__class__), file=sys.stderr)
+            #get the signature of previous_init
+            print(inspect.signature(previous_init), file=sys.stderr)
+            print(args, kws, file=sys.stderr)
+            previous_init(self)
 
         arg.__init__ = __init__
 

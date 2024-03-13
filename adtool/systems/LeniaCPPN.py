@@ -31,16 +31,16 @@ class LeniaCPPN(System):
         self.locator = BlobLocator()
 
         self.lenia = Lenia(
-            version=self.config["version"],
-            SX=self.config["SX"],
-            SY=self.config["SY"],
-            final_step=self.config["final_step"],
-            scale_init_state=self.config["scale_init_state"],
+            version=self.config.version,
+            SX=self.config.SX,
+            SY=self.config.SY,
+            final_step=self.config.final_step,
+            scale_init_state=self.config.scale_init_state,
         )
 
         self.cppn = CPPNWrapper(
-            postmap_shape=(self.lenia.config["SY"], self.lenia.config["SX"]),
-            n_passes=self.config["cppn_n_passes"],
+            postmap_shape=(self.lenia.config.SY, self.lenia.config.SX),
+            n_passes=self.config.cppn_n_passes,
         )
 
     def map(self, input: Dict) -> Dict:
