@@ -6,10 +6,7 @@ import torch
 from adtool.systems.Lenia import Lenia
 from auto_disc.auto_disc.systems.System import System
 from auto_disc.auto_disc.wrappers.CPPNWrapper import CPPNWrapper
-from auto_disc.legacy.utils.config_parameters import (
-    IntegerConfigParameter,
-    StringConfigParameter,
-)
+
 from auto_disc.utils.leaf.locators.locators import BlobLocator
 
 import sys

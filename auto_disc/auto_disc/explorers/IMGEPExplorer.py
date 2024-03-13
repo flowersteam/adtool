@@ -12,11 +12,7 @@ from auto_disc.auto_disc.systems import System
 from auto_disc.auto_disc.wrappers.IdentityWrapper import IdentityWrapper
 from auto_disc.auto_disc.wrappers.mutators import add_gaussian_noise, call_mutate_method
 from auto_disc.auto_disc.wrappers.SaveWrapper import SaveWrapper
-from auto_disc.legacy.utils.config_parameters import (
-    DictConfigParameter,
-    IntegerConfigParameter,
-    StringConfigParameter,
-)
+
 from auto_disc.utils.leaf.Leaf import Leaf
 from auto_disc.utils.leaf.locators.locators import BlobLocator
 

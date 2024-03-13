@@ -3,11 +3,7 @@ import typing
 import torch
 from addict import Dict
 from auto_disc.legacy.output_representations import BaseOutputRepresentation
-from auto_disc.legacy.utils.config_parameters import (
-    DecimalConfigParameter,
-    IntegerConfigParameter,
-    StringConfigParameter,
-)
+
 from auto_disc.legacy.utils.misc.torch_utils import roll_n
 from auto_disc.legacy.utils.spaces import BoxSpace, DictSpace, DiscreteSpace
 from auto_disc.legacy.utils.spaces.utils import ConfigParameterBinding, distance

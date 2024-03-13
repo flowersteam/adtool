@@ -10,10 +10,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from auto_disc.legacy.utils.config_parameters import (
-    IntegerConfigParameter,
-    StringConfigParameter,
-)
+
 from auto_disc.legacy.utils.misc.torch_utils import (
     SphericPad,
     complex_mult_torch,

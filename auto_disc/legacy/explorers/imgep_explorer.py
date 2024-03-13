@@ -6,12 +6,7 @@ import numpy as np
 import torch
 from addict import Dict
 from auto_disc.legacy.explorers import BaseExplorer
-from auto_disc.legacy.utils.config_parameters import (
-    BooleanConfigParameter,
-    DecimalConfigParameter,
-    IntegerConfigParameter,
-    StringConfigParameter,
-)
+
 from auto_disc.legacy.utils.spaces import BoxSpace, DictSpace
 from torch import Tensor, nn
 

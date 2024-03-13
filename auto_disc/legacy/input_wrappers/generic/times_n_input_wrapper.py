@@ -1,7 +1,6 @@
 import numpy as np
 from addict import Dict
 from auto_disc.legacy.input_wrappers import BaseInputWrapper
-from auto_disc.legacy.utils.config_parameters import IntegerConfigParameter
 from auto_disc.legacy.utils.spaces import BoxSpace, DictSpace
 
 from auto_disc.auto_disc.utils.expose_config.defaults import Defaults, defaults
