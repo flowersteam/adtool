@@ -19,6 +19,9 @@ from auto_disc.legacy.utils.config_parameters import (
 from auto_disc.utils.leaf.Leaf import Leaf
 from auto_disc.utils.leaf.locators.locators import BlobLocator
 
+from dataclasses import dataclass, field
+from auto_disc.auto_disc.utils.expose_config.defaults import Defaults, defaults
+from auto_disc.auto_disc.maps.Map import Map
 
 @IntegerConfigParameter("equil_time", default=1, min=1)
 @StringConfigParameter(
@@ -33,6 +36,21 @@ from auto_disc.utils.leaf.locators.locators import BlobLocator
     "mutator", possible_values=["gaussian", "specific"], default="specific"
 )
 @DictConfigParameter("mutator_config", default={})
+
+
+
+
+
+# @dataclass
+# class IMGEPConfig(Defaults):
+#     equil_time: int = field(default_factory=lambda: defaults(1, min=1))
+#     behavior_map: str = field(default="Mean", metadata={"domain": ["Mean", "LeniaStatistics"]})
+#     behavior_map_config: Dict = field(default_factory=lambda: defaults({}))
+#     parameter_map: str = field(default="Uniform", metadata={"domain": ["Uniform", "LeniaParameterMap"]})
+#     parameter_map_config: Dict = field(default_factory=lambda: defaults({}))
+#     mutator: str = field(default="specific", metadata={"domain": ["gaussian", "specific"]})
+#     mutator_config: Dict = field(default_factory=lambda: defaults({}))
+# @IMGEPConfig.expose_config()
 class IMGEPFactory:
     """Factory class providing interface with config parameters and therefore the
     frontend

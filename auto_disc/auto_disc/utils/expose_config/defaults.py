@@ -184,55 +184,6 @@ def _is_default_dataclass(dc: Any):
     return dc == dc.__class__()
 
 
-# NOTE: I think this is useless
-def _is_default_field(params: Defaults, field_name: str) -> bool:
-    """Test if the dataclass field is initialized or left as
-    default.
-
-    NOTE: This is a glorified type check, so a value initialization which is the
-    same as the default value initialization will count as having overridden the
-    default
-    """
-
-    # if it's a dataclass which is not a Defaults, check if the
-    # dataclass was default-initialized
-    field_val = getattr(params, field_name)
-
-    if not isinstance(field_val, _DefaultSetting) and is_dataclass(field_val):
-        return _is_default_dataclass(field_val)
-    # if it's a Defaults, return True
-    elif isinstance(field_val, _DefaultSetting):
-        return True
-    # if it's any other type, return False, as this implies the user
-    # must have overridden the default
-    else:
-        return False
-
-
-# NOTE: I think this is useless
-def _is_default_field_r(params: Defaults, field_name: str) -> bool:
-    """Recursively test if the dataclass field is initialized or left as
-    default."""
-
-    def recurse(dc: Defaults, field_name_query: str):
-        for field in fields(dc):
-            # if match, test predicate
-            if field.name == field_name_query:
-                return _is_default_field(dc, field.name)
-            # if find nested dataclass that's not _DefaultSetting, recurse into it
-            elif is_dataclass(getattr(dc, field.name)) and not isinstance(
-                getattr(dc, field.name), _DefaultSetting
-            ):
-                child_dc = getattr(dc, field.name)
-                return recurse(child_dc, field_name_query)
-
-    query_result = recurse(params, field_name)
-    if query_result is not None:
-        return query_result
-    else:
-        raise KeyError(f"Could not find field {field_name} in object {params}.")
-
-
 @dataclass
 class _DefaultSetting:
     default: Any
