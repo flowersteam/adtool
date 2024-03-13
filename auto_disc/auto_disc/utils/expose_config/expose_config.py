@@ -30,7 +30,6 @@ class ExposeConfig:
             }
         }
 
-        print("GENERATED CONFIG", id(config_defn), config_defn, file=sys.stderr) 
 
         return config_defn
 
@@ -39,7 +38,6 @@ class ExposeConfig:
         if not hasattr(cls, "CONFIG_DEFINITION"):
             # insert
             cls.CONFIG_DEFINITION = self._config_defn
-            print("INSERTED CONFIG", id(cls.CONFIG_DEFINITION), cls.CONFIG_DEFINITION, file=sys.stderr)
         else:
             key_name = list(self._config_defn.keys())[0]
             if key_name in cls.CONFIG_DEFINITION:
@@ -78,6 +76,7 @@ class Handlers:
 
     @staticmethod
     def int_handler(domain: List[int]) -> Dict[str, List[int]]:
+
         return {"min": min(domain), "max": max(domain)}
 
     @staticmethod

@@ -38,10 +38,18 @@ class Defaults:
         # create ExposeConfig objects to chain decorate
         decoration_chain: List[ExposeConfig] = []
         cls._wrap_config_defns(config_dict, decoration_chain)
+        print(decoration_chain, file=sys.stderr)
+
+
+
+
+
+
+
 
 
         # return a big function composition of the decorator function
-        return _compose(*decoration_chain)
+        return _compose(cls,*decoration_chain)
 
     @classmethod
     def _wrap_config_defns(cls, config_dict, decoration_chain) -> List[ExposeConfig]:
@@ -201,12 +209,30 @@ class _DefaultSetting:
 
 
 
-def _compose(*functions):
+def _compose(struct,*functions):
     """Compose functions à la pipes in FP."""
 
     def inner(arg):
         for f in reversed(functions):
             arg = f(arg)
+
+        # then add a function that override the __init__
+            
+        def __init__(self, *args, **kws) -> None:
+            self.config = struct(*args, **kws)
+            original_init(self, *args, **kws)
+        original_init = struct.__init__
+
+        arg.__init__ = __init__
+
+
+            
+       
+
         return arg
+
+
+
+    
 
     return inner

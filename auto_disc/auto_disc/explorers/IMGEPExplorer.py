@@ -24,55 +24,53 @@ from dataclasses import dataclass, field
 from auto_disc.auto_disc.utils.expose_config.defaults import Defaults, defaults
 from auto_disc.auto_disc.maps.Map import Map
 
-@IntegerConfigParameter("equil_time", default=1, min=1)
-@StringConfigParameter(
-    "behavior_map", possible_values=["Mean", "LeniaStatistics"], default="Mean"
-)
-@DictConfigParameter("behavior_map_config", default={})
-@StringConfigParameter(
-    "parameter_map", possible_values=["Uniform", "LeniaParameterMap"], default="Uniform"
-)
-@DictConfigParameter("parameter_map_config", default={})
-@StringConfigParameter(
-    "mutator", possible_values=["gaussian", "specific"], default="specific"
-)
-@DictConfigParameter("mutator_config", default={})
+
+#@IntegerConfigParameter("equil_time", default=1, min=1)
+# @StringConfigParameter(
+#     "behavior_map", possible_values=["Mean", "LeniaStatistics"], default="Mean"
+# )
+# @DictConfigParameter("behavior_map_config", default={})
+# @StringConfigParameter(
+#     "parameter_map", possible_values=["Uniform", "LeniaParameterMap"], default="Uniform"
+# )
+# @DictConfigParameter("parameter_map_config", default={})
+# @StringConfigParameter(
+#     "mutator", possible_values=["gaussian", "specific"], default="specific"
+# )
+# @DictConfigParameter("mutator_config", default={})
 
 
 
 
+@dataclass(frozen=True)
+class IMGEPConfig(Defaults):
+    equil_time: int = defaults(1, min=1, max=1000)
+    behavior_map: str = defaults("Mean", domain=["Mean", "LeniaStatistics"])
+    behavior_map_config: Dict = defaults({})
+    parameter_map: str = defaults("Uniform", domain=["Uniform", "LeniaParameterMap"])
+    parameter_map_config: Dict = defaults({})
+    mutator: str = defaults("specific", domain=["gaussian", "specific"])
+    mutator_config: Dict = defaults({})
 
-# @dataclass(frozen=True)
-# class IMGEPConfig(Defaults):
-#     equil_time: int = defaults(1, min=1, max=1000)
-#     behavior_map: str = defaults("Mean", domain=["Mean", "LeniaStatistics"])
-#     behavior_map_config: Dict = defaults({})
-#     parameter_map: str = defaults("Uniform", domain=["Uniform", "LeniaParameterMap"])
-#     parameter_map_config: Dict = defaults({})
-#     mutator: str = defaults("specific", domain=["gaussian", "specific"])
-#     mutator_config: Dict = defaults({})
-
-# @IMGEPConfig.expose_config()
+@IMGEPConfig.expose_config()
 class IMGEPFactory:
-    """Factory class providing interface with config parameters and therefore the
+    """
+    Factory class providing interface with config parameters and therefore the
     frontend
     """
 
-    CONFIG_DEFINITION = {}
 
     # create specification for discovery attributes
     # TODO: kind of hard-coded for now, based on constructor defaults
     discovery_spec = ["params", "output", "raw_output", "rendered_output"]
 
-    def __init__(self):
-        # never called
-        pass
 
+        
     def __call__(self) -> "IMGEPExplorer":
         behavior_map = self.make_behavior_map()
         param_map = self.make_parameter_map()
         mutator = self.make_mutator(param_map)
-        equil_time = self.config["equil_time"]
+        equil_time = self.config.equil_time
         explorer = IMGEPExplorer(
             parameter_map=param_map,
             behavior_map=behavior_map,
@@ -83,10 +81,10 @@ class IMGEPFactory:
         return explorer
 
     def make_behavior_map(self):
-        kwargs = self.config["behavior_map_config"]
-        if self.config["behavior_map"] == "Mean":
+        kwargs = self.config.behavior_map_config
+        if self.config.behavior_map == "Mean":
             behavior_map = MeanBehaviorMap(**kwargs)
-        elif self.config["behavior_map"] == "LeniaStatistics":
+        elif self.config.behavior_map == "LeniaStatistics":
             behavior_map = LeniaStatistics(**kwargs)
         else:
             # this branch should be unreachable,
@@ -96,10 +94,10 @@ class IMGEPFactory:
         return behavior_map
 
     def make_parameter_map(self):
-        kwargs = self.config["parameter_map_config"]
-        if self.config["parameter_map"] == "Uniform":
+        kwargs = self.config.parameter_map_config
+        if self.config.parameter_map == "Uniform":
             param_map = UniformParameterMap(**kwargs)
-        elif self.config["parameter_map"] == "LeniaParameterMap":
+        elif self.config.parameter_map == "LeniaParameterMap":
             param_map = LeniaParameterMap(**kwargs)
         else:
             # this branch should be unreachable,
@@ -109,17 +107,21 @@ class IMGEPFactory:
         return param_map
 
     def make_mutator(self, param_map: Any = None):
-        if self.config["mutator"] == "specific":
+        if self.config.mutator == "specific":
             mutator = partial(call_mutate_method, param_map=param_map)
-        elif self.config["mutator"] == "gaussian":
+        elif self.config.mutator == "gaussian":
             mutator = partial(
-                add_gaussian_noise, std=self.config["mutator_config"]["std"]
+                add_gaussian_noise, std=self.config.mutator_config["std"]
             )
         else:
             mutator = torch.nn.Identity()
 
         return mutator
 
+
+#get IMGEPFactory __init__ signature
+import inspect
+print(inspect.signature(IMGEPFactory.__init__))
 
 class IMGEPExplorer(Leaf):
     """Basic IMGEP that diffuses in goalspace.

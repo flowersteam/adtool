@@ -1,5 +1,5 @@
 from auto_disc.legacy.utils.config_parameters import BaseConfigParameter
-
+import sys
 
 class DecimalConfigParameter(BaseConfigParameter):
     """
@@ -20,6 +20,7 @@ class DecimalConfigParameter(BaseConfigParameter):
             min: the lower bound
             max: the upper limit
         """
+        print("DECIMAL CONFIG PARAMETER", name, default, min, max, file=sys.stderr)
         self._min = min
         self._max = max
         super().__init__(name, default)

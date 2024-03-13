@@ -410,17 +410,8 @@ class TestMultipleClasses:
                 self.other_version = other_version
 
 
-
-
-        print("System", id(System.CONFIG_DEFINITION),
-              
-              System.CONFIG_DEFINITION
-              
-              ,file=sys.stderr)
-       # print("SYSTEM",System.CONFIG_DEFINITION,file=sys.stderr)
-
         assert OtherSystem.CONFIG_DEFINITION != System.CONFIG_DEFINITION
                 
 
-    #    assert OtherSystem.CONFIG_DEFINITION["other_version"] is not None
-    #    assert System.CONFIG_DEFINITION["version"] is not None
+        assert OtherSystem.CONFIG_DEFINITION["other_version"] is not None
+        assert System.CONFIG_DEFINITION["version"] is not None
