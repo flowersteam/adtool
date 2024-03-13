@@ -19,7 +19,7 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 
-@dataclass
+@dataclass(frozen=True)
 class Feedback:
     """Class whose objects are instances of human feedback to the exploration
     loop."""

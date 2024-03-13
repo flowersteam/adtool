@@ -21,7 +21,7 @@ def defaults(
     """
     return _DefaultSetting(default, domain, min, max)
 
-
+@dataclass(frozen=True)
 class Defaults:
     """This class is only here for namespacing purposes."""
 
@@ -104,8 +104,15 @@ class Defaults:
                             unwrap_v = v.default_factory()
                         
                         
-                        print("unwrap_v", unwrap_v, file=sys.stderr)
-                        config_dict[k] = asdict(unwrap_v)
+                        print("unwrap_vvv", type(unwrap_v), unwrap_v, file=sys.stderr)
+                        #visible even during pytest
+
+
+                        # if it's a string or a number, just set it
+                        if isinstance(unwrap_v, (str, int, float)):
+                            config_dict[k] = {"default": unwrap_v}
+                        else:
+                            config_dict[k] = asdict(unwrap_v)
 
                         # remove the leading "." from the parent
                         # in a recursive call
@@ -184,12 +191,14 @@ def _is_default_dataclass(dc: Any):
     return dc == dc.__class__()
 
 
-@dataclass
+@dataclass(frozen=True)
 class _DefaultSetting:
     default: Any
     domain: Optional[List[Any]]
     min: Any
     max: Any
+
+
 
 
 def _compose(*functions):
