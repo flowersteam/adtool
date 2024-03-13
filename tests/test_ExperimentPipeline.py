@@ -3,16 +3,16 @@ import pathlib
 import shutil
 
 import torch
-from adtool.maps.MeanBehaviorMap import MeanBehaviorMap
-from adtool.maps.UniformParameterMap import UniformParameterMap
-from adtool.systems.ExponentialMixture import ExponentialMixture
-from auto_disc.auto_disc.explorers.IMGEPExplorer import IMGEPExplorer, IMGEPFactory
-from auto_disc.auto_disc.wrappers.IdentityWrapper import IdentityWrapper
-from auto_disc.ExperimentPipeline import ExperimentPipeline
-from auto_disc.legacy.utils.callbacks.on_save_callbacks.save_leaf_callback import (
+from examples.maps.MeanBehaviorMap import MeanBehaviorMap
+from examples.maps.UniformParameterMap import UniformParameterMap
+from examples.systems.ExponentialMixture import ExponentialMixture
+from adtool.auto_disc.explorers.IMGEPExplorer import IMGEPExplorer, IMGEPFactory
+from adtool.auto_disc.wrappers.IdentityWrapper import IdentityWrapper
+from adtool.ExperimentPipeline import ExperimentPipeline
+from adtool.auto_disc.utils.callbacks.on_save_callbacks.save_leaf_callback import (
     SaveLeaf,
 )
-from auto_disc.legacy.utils.logger import AutoDiscLogger
+from adtool.auto_disc.utils.logger import AutoDiscLogger
 
 
 def setup_function(function):

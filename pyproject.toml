@@ -50,7 +50,7 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["auto_disc"]
+include = ["adtool"]
 
 [tool.pytest]
 log_cli = true

@@ -10,9 +10,9 @@ from typing import Callable, Dict, List
 
 import numpy as np
 import torch
-from auto_disc.ExperimentPipeline import ExperimentPipeline
-from auto_disc.legacy.utils.logger import AutoDiscLogger
-from auto_disc.utils.leafutils.leafstructs.registration import get_cls_from_name
+from adtool.ExperimentPipeline import ExperimentPipeline
+from adtool.auto_disc.utils.logger import AutoDiscLogger
+from adtool.utils.leafutils.leafstructs.registration import get_cls_from_name
 from mergedeep import merge
 
 

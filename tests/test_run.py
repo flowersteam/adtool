@@ -5,7 +5,7 @@ import shutil
 import subprocess
 
 import run as run
-from auto_disc.ExperimentPipeline import ExperimentPipeline
+from adtool.ExperimentPipeline import ExperimentPipeline
 
 
 def setup_function(function):
@@ -347,7 +347,7 @@ def test_save_GenerateReport():
 
 
 def test_additional_callback():
-    from auto_disc.auto_disc.utils.callbacks.on_discovery_callbacks.save_discovery_on_disk import (
+    from adtool.auto_disc.utils.callbacks.on_discovery_callbacks.save_discovery_on_disk import (
         SaveDiscoveryOnDisk,
     )
 
