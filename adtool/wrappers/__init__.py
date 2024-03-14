@@ -2,7 +2,7 @@
 convenience.
 
 Essentially identical in functionality to the interface of
-`auto_disc.maps.Map`, but wrappers are reusable and do not have a
+`adtool.maps.Map`, but wrappers are reusable and do not have a
 particular role in the context of the exploration loop. Consequently, wrappers
 may be used to do most of the computational work inside a given `Map`,
 conceptually similar to the layers of a deep neural network. For example:

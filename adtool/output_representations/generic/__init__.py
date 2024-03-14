@@ -1,3 +1,3 @@
-from adtool.auto_disc.output_representations.generic.dummy_output_representation import (
+from adtool.output_representations.generic.dummy_output_representation import (
     DummyOutputRepresentation,
 )

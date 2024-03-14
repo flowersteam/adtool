@@ -224,7 +224,7 @@ def _check_jsonify(my_dict):
         )
 
 
-def get_auto_disc_registered_modules_info(registered_modules):
+def get_adtool_registered_modules_info(registered_modules):
     infos = []
     for module_name, module_class_path in registered_modules.items():
         module_class = get_cls_from_path(module_class_path)
@@ -251,7 +251,7 @@ def get_auto_disc_registered_modules_info(registered_modules):
     return infos
 
 
-def get_auto_disc_registered_callbacks(registered_callbacks):
+def get_adtool_registered_callbacks(registered_callbacks):
     infos = []
     for category, callbacks_list in registered_callbacks.items():
         info = {}

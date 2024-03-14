@@ -24,7 +24,7 @@ example:
             work_path:
                 /path/to/workdirectory/on/the/remote/server
             local_tmp_path:
-                /tmp/auto_disc/remote_experiment/
+                /tmp/adtool/remote_experiment/
             execution:
                 bash additional_files/docker.sh $NB_SEEDS $ARGS > $EXPE_ID
             cancellation:
@@ -39,7 +39,7 @@ example:
             PIDS=""
             for ((i=0; i<$1; i++))
             do
-            PID=$(/root/anaconda3/envs/autoDiscTool/bin/python3 /home/workdir/auto_disc/auto_disc/run.py --seed ${i} ${@:2} >> experiment_logs.log & echo $!)
+            PID=$(/root/anaconda3/envs/autoDiscTool/bin/python3 /home/workdir/adtool/adtool/run.py --seed ${i} ${@:2} >> experiment_logs.log & echo $!)
             if [[ $PIDS != "" ]]
             then
                 PIDS+=" "
@@ -49,4 +49,4 @@ example:
             echo "[RUN_ID_start]$PIDS[RUN_ID_stop]"
 ```
 
-**Please note that you must first download and install the `auto_disc` lib on your remote server (follow [these steps](../README.md#autodisc-lib)) to launch experiments on this server.**
+**Please note that you must first download and install the `adtool` lib on your remote server (follow [these steps](../README.md#autodisc-lib)) to launch experiments on this server.**

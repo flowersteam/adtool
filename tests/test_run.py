@@ -30,7 +30,7 @@ def setup_function(function):
             "config": {"sequence_max": 1, "sequence_density": 20},
         },
         "explorer": {
-            "name": "auto_disc.explorers.IMGEPFactory",
+            "name": "adtool.explorers.IMGEPFactory",
             "config": {
                 "equil_time": 2,
                 "param_dim": 1,
@@ -64,7 +64,7 @@ def setup_function(function):
             },
         },
         "explorer": {
-            "name": "auto_disc.explorers.IMGEPFactory",
+            "name": "adtool.explorers.IMGEPFactory",
             "config": {
                 "mutator": "specific",
                 "equil_time": 1,

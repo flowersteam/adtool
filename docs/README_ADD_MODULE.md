@@ -14,11 +14,11 @@ In order to implement a custom module,
 
     Example: 
 
-        libs/auto_disc/auto_disc/explorers/myBeautifulNewExplorer.py
+        libs/adtool/adtool/explorers/myBeautifulNewExplorer.py
 
     or
 
-        libs/auto_disc/auto_disc/systems/python_systems/myBeautifulNewPythonSystems.py
+        libs/adtool/adtool/systems/python_systems/myBeautifulNewPythonSystems.py
 
 2. The new module must ultimately inherit from its module base class (BaseSystem, BaseOutputRepresentation...). 
 
@@ -29,7 +29,7 @@ In order to implement a custom module,
     An example to implement a new explorer :
 
         from explorers import BaseExplorer
-        from auto_disc.utils.config_parameters import StringConfigParameter
+        from adtool.utils.config_parameters import StringConfigParameter
 
         @StringConfigParameter(name="a_string_parameter", possible_values=["first_possible_value", "second_possible_value"], default="first_possible_value")
         
@@ -55,12 +55,12 @@ In order to implement a custom module,
 
     Don't forget kwargs argument in the `__init__` method and `CONFIG_DEFINITION` class variable.
 
-3. Add import in `libs/auto_disc/module_cat/subfolder_if_needed/__init__.py`
+3. Add import in `libs/adtool/module_cat/subfolder_if_needed/__init__.py`
 
     Example: 
 
-        libs/auto_disc/auto_disc/explorers/__init__.py
-        libs/auto_disc/auto_disc/systems/python_systems/__init__.py
+        libs/adtool/adtool/explorers/__init__.py
+        libs/adtool/adtool/systems/python_systems/__init__.py
 
 4. Add new module in `registration.py` in `REGISTRATION` dict
 

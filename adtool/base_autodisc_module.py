@@ -6,7 +6,7 @@ from adtool.utils.logger import AutoDiscLogger
 
 class BaseAutoDiscModule:
     """
-    Base class of all modules usable in auto_disc.legacy.
+    Base class of all modules usable in adtool.legacy.
     """
 
     _access_history = None  # Function to access (readonly) history of (input, output) pairs. Takes 1 positional argument which could be an index or a slice.
@@ -18,7 +18,7 @@ class BaseAutoDiscModule:
 
     def __init__(self, logger: AutoDiscLogger = None, **kwargs) -> None:
         """
-        initialize attributes common to all auto_disc.legacy modules
+        initialize attributes common to all adtool.legacy modules
 
         Args:
             logger: the logger which will make it possible to keep information on the progress of an experiment in the database or on files

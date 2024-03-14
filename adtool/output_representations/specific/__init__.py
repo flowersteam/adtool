@@ -1,6 +1,6 @@
-from adtool.auto_disc.output_representations.specific.lenia_output_representation import (
+from adtool.output_representations.specific.lenia_output_representation import (
     LeniaImageRepresentation,
 )
-from adtool.auto_disc.output_representations.specific.lenia_output_representation_hand_defined import (
+from adtool.output_representations.specific.lenia_output_representation_hand_defined import (
     LeniaHandDefinedRepresentation,
 )

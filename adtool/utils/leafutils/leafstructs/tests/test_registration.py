@@ -13,7 +13,7 @@ from adtool.utils.leafutils.leafstructs.registration import (
 def test_locate_cls():
     from adtool.explorers import IMGEPFactory as cls
 
-    cls_path = "auto_disc.explorers.IMGEPFactory"
+    cls_path = "adtool.explorers.IMGEPFactory"
     assert cls == locate_cls(cls_path)
     from examples.maps.LeniaStatistics import LeniaStatistics as cls
 

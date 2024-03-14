@@ -19,12 +19,12 @@ install docker:
 
 Our software consists of two primary parts:
 
-- a Python library called [`auto_disc`](libs/auto_disc) where you can
+- a Python library called [`adtool`](libs/adtool) where you can
   use/download/implement systems to explore as well as exploration algorithms.
 - a web application allowing you to perform assisted automated discovery
   experiments using a user-friendly interface.
 
-The `auto_disc` library can be used independently of the rest of Automated
+The `adtool` library can be used independently of the rest of Automated
 Discovery Tool, for example to implement some bespoke remote computing
 solutions, but its main purpose is to present a standardized interface for
 managing experimental data and configurational metadata which is modified and
@@ -76,23 +76,23 @@ Please follow these instructions when contributing on the project.
 
 The software is implemented in various microservices
 
-- `auto_disc` library : a pure Python API for implementing custom experiments \
+- `adtool` library : a pure Python API for implementing custom experiments \
   and search algorithms to use in the software
 - AutoDiscServer : simple service which performs the operations specified by
-  functionality in `auto_disc` library.
+  functionality in `adtool` library.
 - FrontEndApp : web GUI implemented in Angular for interacting with the software
 - AppDB & ExpeDB : databases which manage the metadata of experiments (linked
   with the FrontEnd) and resulting experimental data, respectively
 - JupyterLab : Jupyter instance allowing interaction with experimental data
 
-#### `auto_disc` library
+#### `adtool` library
 
 1. If you do not already have it, please install
    [Conda](https://www.anaconda.com/)
 2. Create _autoDiscTool_ conda environment: `conda env create --name
 autoDiscTool python=3.11 `
 3. Activate _autoDiscTool_ conda environment: `conda activate autoDiscTool`
-4. Go to package: `cd libs/auto_disc`
+4. Go to package: `cd libs/adtool`
 5. Install package: `pip install -e .`
 
 #### AutoDiscServer
@@ -120,7 +120,7 @@ ExpeDB/API/flask_app/requirements.txt`
 
 1. Install jupyter: `pip install -r JupyterLab/requirements.txt`
 
-### Testing the auto_disc library alone
+### Testing the adtool library alone
 
 1. Edit the `libs/tests/AutoDiscExperiment.py` file to configure the experiment
 2. Launch the experiment: `python libs/tests/AutoDiscExperiment.py`
@@ -162,7 +162,7 @@ serve`.
 
 Enter Jupyter Lab's folder: `cd ../JupyterLab` Give the appropriate rights to
 the notebook folder: `chmod 777 -R Notebooks/` Start the jupyter lab on port
-8887: `export PYTHONPATH=$(pwd)/../../libs/auto_disc_db; jupyter lab Notebooks/
+8887: `export PYTHONPATH=$(pwd)/../../libs/adtool_db; jupyter lab Notebooks/
 --config Config/jupyter_notebook_config.py`
 
 ### Using monitoring services

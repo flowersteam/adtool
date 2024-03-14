@@ -5,7 +5,7 @@ class BaseCallback:
 
     def __init__(self, logger=None, **kwargs) -> None:
         """
-        initialize attributes common to all auto_disc.legacy callbacks
+        initialize attributes common to all adtool.legacy callbacks
 
         Args:
             logger: the logger which will make it possible to keep information on the progress of an experiment in the database or on files

@@ -14,11 +14,11 @@ To add a new callback create the file in the associated folder
     Example: 
 
     ```
-    libs/auto_disc/auto_disc/utils/callbacks/on_cancelled_callbacks/my_beautiful_new_on_cancelled_callback.py
+    libs/adtool/adtool/utils/callbacks/on_cancelled_callbacks/my_beautiful_new_on_cancelled_callback.py
     ```
     or
     ```
-    libs/auto_disc/auto_disc/utils/callbacks/on_discovery_callbacks/my_beautiful_new_on_discovery_callback.py
+    libs/adtool/adtool/utils/callbacks/on_discovery_callbacks/my_beautiful_new_on_discovery_callback.py
     ```
 
 2. The new callback must inherits base callback class of its own type.
@@ -52,13 +52,13 @@ To add a new callback create the file in the associated folder
     Each time our callback will be raised the `__call__` method will be executed.
 
 
-3. Add import header file, e.g., `libs/auto_disc/auto_disc/utils/callbacks/callbacks_sub_folder/__init__.py`
+3. Add import header file, e.g., `libs/adtool/adtool/utils/callbacks/callbacks_sub_folder/__init__.py`
 
     Example: 
 
     ```
-    libs/auto_disc/auto_disc/utils/callbacks/on_discovery_callbacks/__init__.py
-    libs/auto_disc/auto_disc/utils/callbacks/on_cancelled_callbacks/__init__.py
+    libs/adtool/adtool/utils/callbacks/on_discovery_callbacks/__init__.py
+    libs/adtool/adtool/utils/callbacks/on_cancelled_callbacks/__init__.py
     ```
 4. Add new callback in registration.py in REGISTRATION dict
 

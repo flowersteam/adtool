@@ -1,5 +1,5 @@
 import torch
-from adtool.auto_disc.output_representations import BaseOutputRepresentation
+from adtool.output_representations import BaseOutputRepresentation
 from adtool.utils.spaces.utils import distance
 
 

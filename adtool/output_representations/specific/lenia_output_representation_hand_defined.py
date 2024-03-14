@@ -2,7 +2,7 @@ import typing
 
 import torch
 from addict import Dict
-from adtool.auto_disc.output_representations import BaseOutputRepresentation
+from adtool.output_representations import BaseOutputRepresentation
 
 from adtool.utils.misc.torch_utils import roll_n
 from adtool.utils.spaces import BoxSpace, DictSpace, DiscreteSpace

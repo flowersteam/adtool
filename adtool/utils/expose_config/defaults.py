@@ -4,7 +4,7 @@ import dataclasses
 from typing import Any, Callable, List, Optional
 
 from addict import Dict
-from auto_disc.auto_disc.utils.expose_config.expose_config import (
+from adtool.utils.expose_config.expose_config import (
     ExposeConfig,
     _handlers,
 )
@@ -35,7 +35,10 @@ class Defaults:
         for field in fields(self):
             if isinstance(getattr(self, field.name), _DefaultSetting):
                 setattr(self, field.name, field.default.default)
-
+                #call it recursively for each field
+                # if is_dataclass(field.default.default):
+                #     self.__post_init__()
+      #  print("AFter POST INIT self",self, file=sys.stderr)
 
     @classmethod
     def expose_config(cls) -> Callable:
@@ -120,16 +123,17 @@ class Defaults:
                         if v.default_factory is not dataclasses.MISSING:
                             unwrap_v = v.default_factory()
                         
+
                         
-                 #       print("unwrap_vvv", type(unwrap_v), unwrap_v, file=sys.stderr)
+                        print("unwrap_vvv", type(unwrap_v), unwrap_v, file=sys.stderr)
                         #visible even during pytest
 
 
-                        # if it's a string or a number, just set it
-                        if isinstance(unwrap_v, (str, int, float)):
-                            config_dict[k] = {"default": unwrap_v}
-                        else:
-                            config_dict[k] = asdict(unwrap_v)
+                        # # if it's a string or a number, just set it
+                        # if isinstance(unwrap_v, (str, int, float)):
+                        #     config_dict[k] = {"default": unwrap_v}
+                      #  else:
+                        config_dict[k] = asdict(unwrap_v)
 
                         # remove the leading "." from the parent
                         # in a recursive call
