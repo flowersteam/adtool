@@ -2,7 +2,7 @@ from copy import deepcopy
 from typing import Any, Dict, NamedTuple, Tuple
 
 import torch
-from adtool.input_wrappers.generic.cppn import pytorchneat
+from adtool.maps.cppn import pytorchneat
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 

@@ -2,10 +2,10 @@ import copy
 
 import graphviz
 import torch
-from adtool.input_wrappers.generic.cppn.pytorchneat.activations import (
+from adtool.maps.cppn.pytorchneat.activations import (
     str_to_activation,
 )
-from adtool.input_wrappers.generic.cppn.pytorchneat.aggregations import (
+from adtool.maps.cppn.pytorchneat.aggregations import (
     str_to_aggregation,
 )
 from torch import nn

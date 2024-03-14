@@ -1,4 +1,4 @@
-from adtool.input_wrappers.generic.cppn.pytorchneat import (
+from adtool.maps.cppn.pytorchneat import (
     activations,
     aggregations,
     rnn,
