@@ -25,6 +25,9 @@ def defaults(
 class Defaults:
     """This class is only here for namespacing purposes."""
 
+    def __init_subclass__(cls) -> None:
+        print("INIT SUBCLASS",cls, file=sys.stderr) #visible during pytest
+
     def __post_init__(self):
         """
         This function is called after the __init__ function of the

@@ -6,4 +6,3 @@
 .. include:: ../docs/README_ADD_REMOTE_SERVER.md
 """
 
-from adtool.base_autodisc_module import BaseAutoDiscModule
