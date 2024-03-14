@@ -4,7 +4,7 @@ import os
 
 import adtool.utils.leafutils.leafintegrations.expedb_locators as expedb_locators
 import requests
-from adtool.auto_disc.wrappers.SaveWrapper import SaveWrapper
+from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.leaf.locators.LinearBase import FileLinearLocator, Stepper
 from adtool.utils.leafutils.leafintegrations.expedb_locators import (
     ExpeDBLinearLocator,

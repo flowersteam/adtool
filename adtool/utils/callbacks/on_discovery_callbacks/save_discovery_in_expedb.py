@@ -8,7 +8,7 @@ from uuid import uuid1
 
 import requests
 import torch
-from auto_disc.legacy.utils.callbacks.on_discovery_callbacks.save_discovery import (
+from adtool.utils.callbacks.on_discovery_callbacks.save_discovery import (
     SaveDiscovery,
 )
 

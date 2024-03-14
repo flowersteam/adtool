@@ -1,8 +1,9 @@
 import threading
+from ast import Raise
 from time import sleep
 from typing import Any
 
-from auto_disc.legacy.utils.callbacks import BaseCallback
+from adtool.utils.callbacks import BaseCallback
 
 Object = lambda **kwargs: type("Object", (), kwargs)()
 global Interact

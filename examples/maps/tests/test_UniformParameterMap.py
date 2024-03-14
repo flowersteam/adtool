@@ -3,7 +3,7 @@ import pathlib
 import shutil
 
 import torch
-from adtool.auto_disc.maps.UniformParameterMap import UniformParameterMap
+from adtool.maps.UniformParameterMap import UniformParameterMap
 
 
 def setup_function(function):

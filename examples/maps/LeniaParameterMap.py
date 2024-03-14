@@ -7,9 +7,9 @@ from typing import Dict, Optional, Tuple
 
 import torch
 from examples.systems.Lenia import LeniaDynamicalParameters
-from adtool.auto_disc.maps import NEATParameterMap, UniformParameterMap
-from adtool.auto_disc.wrappers.CPPNWrapper import CPPNWrapper
-from adtool.auto_disc.wrappers.mutators import add_gaussian_noise
+from adtool.maps import NEATParameterMap, UniformParameterMap
+from adtool.wrappers.CPPNWrapper import CPPNWrapper
+from adtool.wrappers.mutators import add_gaussian_noise
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 import sys

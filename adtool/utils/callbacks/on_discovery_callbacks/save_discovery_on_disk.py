@@ -1,12 +1,16 @@
 import json
 import os
+import pickle
 from datetime import datetime
 from hashlib import sha1
 from typing import Any, Dict, Type
 
-from auto_disc.legacy.utils.callbacks.on_discovery_callbacks.save_discovery import (
+import numpy as np
+import torch
+from adtool.utils.callbacks.on_discovery_callbacks.save_discovery import (
     SaveDiscovery,
 )
+from adtool.utils.leaf.Leaf import Leaf
 
 
 class SaveDiscoveryOnDisk(SaveDiscovery):

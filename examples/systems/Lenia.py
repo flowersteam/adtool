@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from adtool.auto_disc.utils.misc.torch_utils import (
+from adtool.utils.misc.torch_utils import (
     SphericPad,
     complex_mult_torch,
     roll_n,

@@ -1,7 +1,7 @@
 import typing
 
 from addict import Dict
-from adtool.auto_disc.utils.logger import AutoDiscLogger
+from adtool.utils.logger import AutoDiscLogger
 
 
 class BaseAutoDiscModule:

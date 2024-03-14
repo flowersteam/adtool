@@ -30,7 +30,7 @@ def setup_function(function):
             "config": {"sequence_max": 1, "sequence_density": 20},
         },
         "explorer": {
-            "name": "auto_disc.auto_disc.explorers.IMGEPFactory",
+            "name": "auto_disc.explorers.IMGEPFactory",
             "config": {
                 "equil_time": 2,
                 "param_dim": 1,
@@ -64,7 +64,7 @@ def setup_function(function):
             },
         },
         "explorer": {
-            "name": "auto_disc.auto_disc.explorers.IMGEPFactory",
+            "name": "auto_disc.explorers.IMGEPFactory",
             "config": {
                 "mutator": "specific",
                 "equil_time": 1,
@@ -347,7 +347,7 @@ def test_save_GenerateReport():
 
 
 def test_additional_callback():
-    from adtool.auto_disc.utils.callbacks.on_discovery_callbacks.save_discovery_on_disk import (
+    from adtool.utils.callbacks.on_discovery_callbacks.save_discovery_on_disk import (
         SaveDiscoveryOnDisk,
     )
 

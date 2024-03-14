@@ -28,7 +28,7 @@ In order to implement a custom module,
 
     An example to implement a new explorer :
 
-        from auto_disc.explorers import BaseExplorer
+        from explorers import BaseExplorer
         from auto_disc.utils.config_parameters import StringConfigParameter
 
         @StringConfigParameter(name="a_string_parameter", possible_values=["first_possible_value", "second_possible_value"], default="first_possible_value")

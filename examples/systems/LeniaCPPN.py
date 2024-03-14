@@ -4,8 +4,8 @@ from typing import Dict, Optional, Union
 
 import torch
 from examples.systems.Lenia import Lenia
-from adtool.auto_disc.systems.System import System
-from adtool.auto_disc.wrappers.CPPNWrapper import CPPNWrapper
+from adtool.systems.System import System
+from adtool.wrappers.CPPNWrapper import CPPNWrapper
 
 from adtool.utils.leaf.locators.locators import BlobLocator
 

@@ -3,9 +3,9 @@ from copy import deepcopy
 
 import torch
 from addict import Dict
-from adtool.auto_disc.wrappers.BoxProjector import BoxProjector
+from adtool.wrappers.BoxProjector import BoxProjector
 
-from adtool.auto_disc.utils.misc.torch_utils import roll_n
+from adtool.utils.misc.torch_utils import roll_n
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 

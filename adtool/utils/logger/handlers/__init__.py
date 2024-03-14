@@ -1,1 +1,1 @@
-from auto_disc.legacy.utils.logger.handlers.file_handler import SetFileHandler
+from adtool.utils.logger.handlers.file_handler import SetFileHandler

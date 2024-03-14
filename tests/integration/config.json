@@ -10,14 +10,14 @@
     }
   },
   "system": {
-    "name": "auto_disc.systems.ExponentialMixture",
+    "name": "systems.ExponentialMixture",
     "config": {
       "sequence_max": 1,
       "sequence_density": 20
     }
   },
   "explorer": {
-    "name": "auto_disc.explorers.IMGEPFactory",
+    "name": "explorers.IMGEPFactory",
     "config": {
       "equil_time": 2,
       "param_dim": 1,

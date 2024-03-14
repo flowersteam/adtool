@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, Type
 
 import numpy as np
 import torch
-from auto_disc.utils.leaf.Leaf import Leaf
+from adtool.utils.leaf.Leaf import Leaf
 
 
 class _JSONEncoderFactory:
@@ -46,6 +46,12 @@ class _CustomJSONEncoder(json.JSONEncoder):
 
 
 class SaveDiscovery:
+    def __init__(self, **kwargs) -> None:
+        """
+        Dummy init which accepts any arguments, for backwards compatibility.
+        """
+        pass
+
     def __call__(
         self,
         resource_uri: str,

@@ -15,46 +15,46 @@ from mergedeep import merge
 _REGISTRATION: dict[str, dict] = {
     "systems": {},
     "explorers": {
-        "IMGEPExplorer": "adtool.auto_disc.explorers.IMGEPFactory",
+        "IMGEPExplorer": "adtool.explorers.IMGEPFactory",
     },
     "maps": {},
     "input_wrappers": {
-        "generic.CPPN": "adtool.legacy.input_wrappers.generic.cppn.cppn_input_wrapper.CppnInputWrapper",
+        "generic.CPPN": "adtool..input_wrappers.generic.cppn.cppn_input_wrapper.CppnInputWrapper",
     },
     "output_representations": {
-        "specific.LeniaFlattenImage": "adtool.legacy.output_representations.specific.lenia_output_representation.LeniaImageRepresentation",
-        "specific.LeniaStatistics": "adtool.legacy.output_representations.specific.lenia_output_representation_hand_defined.LeniaHandDefinedRepresentation",
+        "specific.LeniaFlattenImage": "adtool..output_representations.specific.lenia_output_representation.LeniaImageRepresentation",
+        "specific.LeniaStatistics": "adtool..output_representations.specific.lenia_output_representation_hand_defined.LeniaHandDefinedRepresentation",
     },
     "callbacks": {
         "on_discovery": {
-            "expe_db": "adtool.auto_disc.utils.callbacks.on_discovery_callbacks.save_discovery_in_expedb.SaveDiscoveryInExpeDB",
-            "disk": "adtool.auto_disc.utils.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
-            "base": "adtool.auto_disc.utils.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+            "expe_db": "adtool.utils.callbacks.on_discovery_callbacks.save_discovery_in_expedb.SaveDiscoveryInExpeDB",
+            "disk": "adtool.utils.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+            "base": "adtool.utils.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
         },
         "on_cancelled": {
-            "base": "adtool.auto_disc.utils.callbacks.on_cancelled_callbacks.BaseOnCancelledCallback"
+            "base": "adtool.utils.callbacks.on_cancelled_callbacks.BaseOnCancelledCallback"
         },
         "on_error": {
-            "base": "adtool.auto_disc.utils.callbacks.on_error_callbacks.BaseOnErrorCallback"
+            "base": "adtool.utils.callbacks.on_error_callbacks.BaseOnErrorCallback"
         },
         "on_finished": {
-            "base": "adtool.auto_disc.utils.callbacks.on_finished_callbacks.BaseOnFinishedCallback"
+            "base": "adtool.utils.callbacks.on_finished_callbacks.BaseOnFinishedCallback"
         },
         "on_saved": {
-            "base": "adtool.auto_disc.utils.callbacks.on_save_callbacks.save_leaf_callback.SaveLeaf",
-            "expe_db": "adtool.auto_disc.utils.callbacks.on_save_callbacks.save_leaf_callback_in_expedb.SaveLeafExpeDB",
+            "base": "adtool.utils.callbacks.on_save_callbacks.save_leaf_callback.SaveLeaf",
+            "expe_db": "adtool.utils.callbacks.on_save_callbacks.save_leaf_callback_in_expedb.SaveLeafExpeDB",
         },
         "on_save_finished": {
-            "base": "adtool.auto_disc.utils.callbacks.on_save_finished_callbacks.generate_report_callback.GenerateReport",
+            "base": "adtool.utils.callbacks.on_save_finished_callbacks.generate_report_callback.GenerateReport",
         },
         "interact": {
-            "base": "adtool.auto_disc.utils.callbacks.interact_callbacks.BaseInteractCallback",
-            "saveDisk": "adtool.auto_disc.utils.callbacks.interact_callbacks.SaveDiskInteractCallback",
-            "readDisk": "adtool.auto_disc.utils.callbacks.interact_callbacks.ReadDiskInteractCallback",
+            "base": "adtool.utils.callbacks.interact_callbacks.BaseInteractCallback",
+            "saveDisk": "adtool.utils.callbacks.interact_callbacks.SaveDiskInteractCallback",
+            "readDisk": "adtool.utils.callbacks.interact_callbacks.ReadDiskInteractCallback",
         },
     },
     "logger_handlers": {
-        "logFile": "adtool.auto_disc.utils.logger.handlers.file_handler.SetFileHandler"
+        "logFile": "adtool.utils.logger.handlers.file_handler.SetFileHandler"
     },
 }
 

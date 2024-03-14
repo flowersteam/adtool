@@ -6,7 +6,7 @@ from typing import Dict, Tuple
 import matplotlib
 import matplotlib.pyplot as plt
 import torch
-from adtool.auto_disc.systems.System import System
+from adtool.systems.System import System
 from adtool.utils.expose_config.defaults import Defaults, defaults
 
 from adtool.utils.leaf.locators.locators import BlobLocator

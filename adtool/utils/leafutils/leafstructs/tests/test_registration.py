@@ -11,9 +11,9 @@ from adtool.utils.leafutils.leafstructs.registration import (
 
 
 def test_locate_cls():
-    from adtool.auto_disc.explorers import IMGEPFactory as cls
+    from adtool.explorers import IMGEPFactory as cls
 
-    cls_path = "auto_disc.auto_disc.explorers.IMGEPFactory"
+    cls_path = "auto_disc.explorers.IMGEPFactory"
     assert cls == locate_cls(cls_path)
     from examples.maps.LeniaStatistics import LeniaStatistics as cls
 
@@ -23,9 +23,9 @@ def test_locate_cls():
 
 def test_get_cls_from_path():
     # test legacy path
-    path = "auto_disc.explorers.imgep_explorer.IMGEPExplorer"
+    path = "explorers.imgep_explorer.IMGEPExplorer"
     cls = get_cls_from_path(path)
-    from adtool.auto_disc.explorers.imgep_explorer import IMGEPExplorer as compare_cls
+    from adtool.explorers.imgep_explorer import IMGEPExplorer as compare_cls
 
     assert cls == compare_cls
 
@@ -43,10 +43,10 @@ def test_get_cls_from_path():
 
 
 def test_get_path_from_cls():
-    from adtool.auto_disc.explorers.imgep_explorer import IMGEPExplorer as compare_cls
+    from adtool.explorers.imgep_explorer import IMGEPExplorer as compare_cls
 
     compare_path = get_path_from_cls(compare_cls)
-    path = "auto_disc.explorers.imgep_explorer.IMGEPExplorer"
+    path = "explorers.imgep_explorer.IMGEPExplorer"
     assert compare_path == path
 
     from examples.maps.LeniaStatistics import LeniaStatistics as compare_cls
@@ -67,11 +67,11 @@ def test_get_path_from_cls():
 def test_get_cls_from_name():
     from examples.maps.LeniaStatistics import LeniaStatistics
     from examples.systems.ExponentialMixture import ExponentialMixture
-    from adtool.auto_disc.explorers import IMGEPFactory
-    from adtool.auto_disc.utils.callbacks.on_save_callbacks.save_leaf_callback import (
+    from adtool.explorers import IMGEPFactory
+    from adtool.utils.callbacks.on_save_callbacks.save_leaf_callback import (
         SaveLeaf,
     )
-    from adtool.auto_disc.utils.callbacks.on_save_finished_callbacks.generate_report_callback import (
+    from adtool.utils.callbacks.on_save_finished_callbacks.generate_report_callback import (
         GenerateReport,
     )
 

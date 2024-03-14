@@ -6,13 +6,13 @@ import torch
 from examples.maps.MeanBehaviorMap import MeanBehaviorMap
 from examples.maps.UniformParameterMap import UniformParameterMap
 from examples.systems.ExponentialMixture import ExponentialMixture
-from adtool.auto_disc.explorers.IMGEPExplorer import IMGEPExplorer, IMGEPFactory
-from adtool.auto_disc.wrappers.IdentityWrapper import IdentityWrapper
+from adtool.explorers.IMGEPExplorer import IMGEPExplorer, IMGEPFactory
+from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.ExperimentPipeline import ExperimentPipeline
-from adtool.auto_disc.utils.callbacks.on_save_callbacks.save_leaf_callback import (
+from adtool.utils.callbacks.on_save_callbacks.save_leaf_callback import (
     SaveLeaf,
 )
-from adtool.auto_disc.utils.logger import AutoDiscLogger
+from adtool.utils.logger import AutoDiscLogger
 
 
 def setup_function(function):

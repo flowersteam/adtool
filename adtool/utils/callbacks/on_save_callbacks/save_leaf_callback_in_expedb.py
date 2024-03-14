@@ -3,10 +3,10 @@ import os
 from datetime import datetime
 from uuid import uuid1
 
-from auto_disc.legacy.utils.callbacks.on_save_callbacks.save_leaf_callback import (
+from adtool.utils.callbacks.on_save_callbacks.save_leaf_callback import (
     SaveLeaf,
 )
-from auto_disc.utils.leaf.Leaf import Leaf, LeafUID
+from adtool.utils.leaf.Leaf import Leaf, LeafUID
 
 
 class SaveLeafExpeDB(SaveLeaf):

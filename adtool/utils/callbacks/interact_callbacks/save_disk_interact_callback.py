@@ -1,7 +1,7 @@
 import os
 import pickle
 
-from auto_disc.legacy.utils.callbacks.interact_callbacks import BaseInteractCallback
+from adtool.utils.callbacks.interact_callbacks import BaseInteractCallback
 
 
 class SaveDiskInteractCallback(BaseInteractCallback):

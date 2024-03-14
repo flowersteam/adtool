@@ -2,7 +2,7 @@ import os
 import pickle
 from time import sleep
 
-from auto_disc.legacy.utils.callbacks.interact_callbacks import BaseInteractCallback
+from adtool.utils.callbacks.interact_callbacks import BaseInteractCallback
 
 
 class ReadDiskInteractCallback(BaseInteractCallback):

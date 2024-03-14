@@ -3,10 +3,10 @@ import os
 from datetime import datetime
 from uuid import uuid1
 
-from auto_disc.legacy.utils.callbacks.on_save_finished_callbacks import (
+from adtool.utils.callbacks.on_save_finished_callbacks import (
     BaseOnSaveFinishedCallback,
 )
-from auto_disc.utils.leaf.Leaf import LeafUID
+from adtool.utils.leaf.Leaf import LeafUID
 
 
 class GenerateReport:

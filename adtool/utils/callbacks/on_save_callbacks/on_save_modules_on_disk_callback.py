@@ -4,7 +4,7 @@ import pickle
 
 import matplotlib.pyplot as plt
 import requests
-from auto_disc.legacy.utils.callbacks.on_save_callbacks import BaseOnSaveCallback
+from adtool.utils.callbacks.on_save_callbacks import BaseOnSaveCallback
 from torch import Tensor
 
 
