@@ -19,7 +19,10 @@ from mergedeep import merge
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
+
 from dataclasses import field
+
+from adtool.explorers.IMGEPExplorer import IMGEPExplorer
 
 @dataclass(frozen=True)
 class Callbacks:
@@ -63,8 +66,8 @@ def create(
     # add handlers to registration
     handlers = []
     for logger_handler in parameters["logger_handlers"]:
-        logger_handler["name"]
-        cls_path=f"{logger_handler['name']}"
+        logger_handler["path"]
+        cls_path=f"{logger_handler['path']}"
         handler_class=cast(type, _locate(cls_path))
         handler = handler_class(**logger_handler["config"], experiment_id=experiment_id)
         handlers.append(handler)
@@ -81,25 +84,24 @@ def create(
     # NOTE: stateful callbacks are deprecated, and new callbacks simply have a
     # dummy __init__ to obey this interface
 
-    # FIXME: null guard
     if len(parameters["callbacks"]) > 0:
         for cb_key in parameters["callbacks"].keys():
 
             cb_requests = parameters["callbacks"][cb_key]
             for cb in cb_requests:
-                callback = _locate(cb["name"])
+                callback = _locate(cb["path"])
                     # initialize callback instance
                 callbacks[cb_key].append(callback(**cb['config']))
-
-    #cast to a callback object
-    callbacks = Callbacks(**callbacks) 
-
         
 
     # add additional callbacks which are already initialized Callables
     if additional_callbacks:
         for cb_key, lst in additional_callbacks.items():
             callbacks[cb_key] += lst
+
+    #cast to a callback object
+    callbacks = Callbacks(**callbacks) 
+
 
     # short circuit if "resume_from_uid" is set
     resume_ckpt = parameters["experiment"]["config"].get("resume_from_uid", None)
@@ -122,16 +124,22 @@ def create(
         return experiment
 
     # Get explorer factory and generate explorer
-    explorer_factory_class = get_cls_from_name(
-        parameters["explorer"]["name"], "explorers"
-    )
+    print(parameters["explorer"]["path"])
+    explorer_factory_class = _locate(parameters["explorer"]["path"])
+    if explorer_factory_class is None:
+        raise ValueError(
+            f"Could not retrieve class from path: {parameters['explorer']['path']}."
+        )
   
     explorer_factory = explorer_factory_class(**parameters["explorer"]["config"])
     explorer = explorer_factory()
     
 
-    # Get system
-    system_class = get_cls_from_name(parameters["system"]["name"], "systems")
+    system_class = _locate(parameters["system"]["path"])
+    if system_class is None:
+        raise ValueError(
+            f"Could not retrieve class from path: {parameters['system']['path']}."
+        )
     system = system_class(**parameters["system"]["config"])
 
     # Create experiment pipeline

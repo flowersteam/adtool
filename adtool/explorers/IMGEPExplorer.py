@@ -80,81 +80,10 @@ from adtool.utils.expose_config.expose_config import Expose
 
 
 
-    
-class IMGEPFactory(metaclass=Expose):
-
-    config_type = IMGEPConfig
-
-
-    def __init__(self, *args, **kwargs):
-        self.config=self.config_type(*args, **kwargs)
-
-
-    # create specification for discovery attributes
-    # TODO: kind of hard-coded for now, based on constructor defaults
-    discovery_spec = ["params", "output", "raw_output", "rendered_output"]
-
-
-        
-    def __call__(self) -> "IMGEPExplorer":
-        behavior_map = self.make_behavior_map()
-        param_map = self.make_parameter_map()
-        mutator = self.make_mutator(param_map)
-        equil_time = self.config.equil_time
-        explorer = IMGEPExplorer(
-            parameter_map=param_map,
-            behavior_map=behavior_map,
-            equil_time=equil_time,
-            mutator=mutator,
-        )
-
-        return explorer
-
-    def make_behavior_map(self):
-        kwargs = self.config.behavior_map_config
-        if self.config.behavior_map == BehaviorMapEnum.Mean:
-            behavior_map = MeanBehaviorMap(**kwargs)
-        elif self.config.behavior_map == BehaviorMapEnum.LeniaStatistics:
-            behavior_map = LeniaStatistics(**kwargs)
-        else:
-            # this branch should be unreachable,
-            # because the ConfigParameter decorator checks
-            raise Exception("unreachable")
-
-        return behavior_map
-
-    def make_parameter_map(self):
-        kwargs = self.config.parameter_map_config
-        if self.config.parameter_map== ParameterMapEnum.Uniform:
-            param_map = UniformParameterMap(**kwargs)
-        elif self.config.parameter_map == ParameterMapEnum.LeniaParameterMap:
-            param_map = LeniaParameterMap(**kwargs)
-        else:
-            # this branch should be unreachable,
-            # because the ConfigParameter decorator checks
-            raise Exception("unreachable")
-
-        return param_map
-
-    def make_mutator(self, param_map: Any = None):
-        if self.config.mutator== MutatorEnum.Specific:
-            mutator = partial(call_mutate_method, param_map=param_map)
-        elif self.config.mutator == MutatorEnum.Gaussian:
-            mutator = partial(
-                add_gaussian_noise, std=self.config.mutator_config["std"]
-            )
-        else:
-            mutator = torch.nn.Identity()
-
-        return mutator
-    
-
-
-
-class IMGEPExplorer(Leaf):
+class IMGEPExplorerInstance(Leaf):
     """Basic IMGEP that diffuses in goalspace.
 
-    A class instance of `IMGEPExplorer` has access to a provided
+    A class instance of `IMGEPExplorerInstance` has access to a provided
     `parameter_map`, `behavior_map`, and `mutator` as attributes, whereas it
     receives data from the system under study through the `.map` method.
     """
@@ -335,3 +264,76 @@ class IMGEPExplorer(Leaf):
         source_policy = param_history[source_policy_idx]
 
         return source_policy
+
+
+
+class IMGEPExplorer(metaclass=Expose):
+
+    config_type = IMGEPConfig
+
+
+    def __init__(self, *args, **kwargs):
+        self.config=self.config_type(*args, **kwargs)
+
+
+    # create specification for discovery attributes
+    # TODO: kind of hard-coded for now, based on constructor defaults
+    discovery_spec = ["params", "output", "raw_output", "rendered_output"]
+
+
+        
+    def __call__(self) -> "IMGEPExplorerInstance":
+        behavior_map = self.make_behavior_map()
+        param_map = self.make_parameter_map()
+        mutator = self.make_mutator(param_map)
+        equil_time = self.config.equil_time
+        explorer = IMGEPExplorerInstance(
+            parameter_map=param_map,
+            behavior_map=behavior_map,
+            equil_time=equil_time,
+            mutator=mutator,
+        )
+
+        return explorer
+
+    def make_behavior_map(self):
+        kwargs = self.config.behavior_map_config
+        if self.config.behavior_map == BehaviorMapEnum.Mean:
+            behavior_map = MeanBehaviorMap(**kwargs)
+        elif self.config.behavior_map == BehaviorMapEnum.LeniaStatistics:
+            behavior_map = LeniaStatistics(**kwargs)
+        else:
+            # this branch should be unreachable,
+            # because the ConfigParameter decorator checks
+            raise Exception("unreachable")
+
+        return behavior_map
+
+    def make_parameter_map(self):
+        kwargs = self.config.parameter_map_config
+        if self.config.parameter_map== ParameterMapEnum.Uniform:
+            param_map = UniformParameterMap(**kwargs)
+        elif self.config.parameter_map == ParameterMapEnum.LeniaParameterMap:
+            param_map = LeniaParameterMap(**kwargs)
+        else:
+            # this branch should be unreachable,
+            # because the ConfigParameter decorator checks
+            raise Exception("unreachable")
+
+        return param_map
+
+    def make_mutator(self, param_map: Any = None):
+        if self.config.mutator== MutatorEnum.Specific:
+            mutator = partial(call_mutate_method, param_map=param_map)
+        elif self.config.mutator == MutatorEnum.Gaussian:
+            mutator = partial(
+                add_gaussian_noise, std=self.config.mutator_config["std"]
+            )
+        else:
+            mutator = torch.nn.Identity()
+
+        return mutator
+    
+
+
+
