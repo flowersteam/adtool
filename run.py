@@ -4,9 +4,11 @@ This file `run.py` can also be run as `__main__`,
 for example in remote configurations.
 """
 import argparse
+from ctypes import cast
 import json
 import random
 from typing import Callable, Dict, List
+from pydoc import locate as _locate
 
 import numpy as np
 import torch
@@ -15,6 +17,18 @@ from adtool.logger import AutoDiscLogger
 from adtool.utils.leafutils.leafstructs.registration import get_cls_from_name
 from mergedeep import merge
 import sys
+from collections import defaultdict
+from dataclasses import dataclass
+from dataclasses import field
+
+@dataclass(frozen=True)
+class Callbacks:
+    on_discovery: List[Callable] = field(default_factory=list)
+    on_save_finished: List[Callable] = field(default_factory=list)
+    on_finished: List[Callable] =  field(default_factory=list)
+    on_error: List[Callable] =  field(default_factory=list)
+    on_cancelled: List[Callable] =  field(default_factory=list)
+    on_saved: List[Callable] =  field(default_factory=list)
 
 def create(
     parameters: Dict,
@@ -49,7 +63,9 @@ def create(
     # add handlers to registration
     handlers = []
     for logger_handler in parameters["logger_handlers"]:
-        handler_class = get_cls_from_name(logger_handler["name"], "handlers")
+        logger_handler["name"]
+        cls_path=f"{logger_handler['name']}"
+        handler_class=cast(type, _locate(cls_path))
         handler = handler_class(**logger_handler["config"], experiment_id=experiment_id)
         handlers.append(handler)
     if additional_handlers is not None:
@@ -57,30 +73,28 @@ def create(
 
     logger = AutoDiscLogger(experiment_id, seed, handlers)
 
+
+
     # Get callbacks
-    callbacks = {
-        "on_discovery": [],
-        "on_save_finished": [],
-        "on_finished": [],
-        "on_error": [],
-        "on_cancelled": [],
-        "on_saved": [],
-    }
+    callbacks = defaultdict(list)
     # initialize callbacks which require lookup
     # NOTE: stateful callbacks are deprecated, and new callbacks simply have a
     # dummy __init__ to obey this interface
 
     # FIXME: null guard
     if len(parameters["callbacks"]) > 0:
-        cb_request = parameters["callbacks"]
-        for cb_key in cb_request.keys():
-            for cb in cb_request[cb_key]:
-                cb_config = cb["config"]
-                type_name = "callbacks." + cb_key
-                print('cb["name"]',cb["name"], file=sys.stderr)
-                callback = get_cls_from_name(cb["name"], ad_type_name=type_name)
-                # initialize callback instance
-                callbacks[cb_key].append(callback(**cb_config))
+        for cb_key in parameters["callbacks"].keys():
+
+            cb_requests = parameters["callbacks"][cb_key]
+            for cb in cb_requests:
+                callback = _locate(cb["name"])
+                    # initialize callback instance
+                callbacks[cb_key].append(callback(**cb['config']))
+
+    #cast to a callback object
+    callbacks = Callbacks(**callbacks) 
+
+        
 
     # add additional callbacks which are already initialized Callables
     if additional_callbacks:
@@ -97,12 +111,12 @@ def create(
 
         # set attributes pruned by save_leaf
         experiment.logger = logger
-        experiment._on_discovery_callbacks = callbacks["on_discovery"]
-        experiment._on_save_finished_callbacks = callbacks["on_save_finished"]
-        experiment._on_finished_callbacks = callbacks["on_finished"]
-        experiment._on_cancelled_callbacks = callbacks["on_cancelled"]
-        experiment._on_save_callbacks = callbacks["on_saved"]
-        experiment._on_error_callbacks = callbacks["on_error"]
+        experiment._on_discovery_callbacks = callbacks.on_discovery
+        experiment._on_save_finished_callbacks = callbacks.on_save_finished
+        experiment._on_finished_callbacks = callbacks.on_finished
+        experiment._on_cancelled_callbacks = callbacks.on_cancelled
+        experiment._on_save_callbacks = callbacks.on_saved
+        experiment._on_error_callbacks = callbacks.on_error
         # experiment._interact_callbacks = callbacks['interact']
 
         return experiment
@@ -127,12 +141,12 @@ def create(
         save_frequency=parameters["experiment"]["config"]["save_frequency"],
         system=system,
         explorer=explorer,
-        on_discovery_callbacks=callbacks["on_discovery"],
-        on_save_finished_callbacks=callbacks["on_save_finished"],
-        on_finished_callbacks=callbacks["on_finished"],
-        on_cancelled_callbacks=callbacks["on_cancelled"],
-        on_save_callbacks=callbacks["on_saved"],
-        on_error_callbacks=callbacks["on_error"],
+        on_discovery_callbacks=callbacks.on_discovery,
+        on_save_finished_callbacks=callbacks.on_save_finished,
+        on_finished_callbacks=callbacks.on_finished,
+        on_cancelled_callbacks=callbacks.on_cancelled,
+        on_save_callbacks=callbacks.on_saved,
+        on_error_callbacks=callbacks.on_error,
         logger=logger,
         resource_uri=parameters["experiment"]["config"]["save_location"],
     )

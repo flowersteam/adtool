@@ -13,10 +13,7 @@ from mergedeep import merge
 
 
 
-# type for an unbouded dictionary 
-__REGISTRATION :dict = {
 
-}
 
 # legacy compatibility
 _REGISTRATION: dict[str, dict] = {
@@ -31,37 +28,6 @@ _REGISTRATION: dict[str, dict] = {
     "output_representations": {
         "specific.LeniaFlattenImage": "adtool.output_representations.specific.lenia_output_representation.LeniaImageRepresentation",
         "specific.LeniaStatistics": "adtool.output_representations.specific.lenia_output_representation_hand_defined.LeniaHandDefinedRepresentation",
-    },
-    "callbacks": {
-        "on_discovery": {
-            "expe_db": "adtool.callbacks.on_discovery_callbacks.save_discovery_in_expedb.SaveDiscoveryInExpeDB",
-            "disk": "adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
-            "base": "adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
-        },
-        "on_cancelled": {
-            "base": "adtool.callbacks.on_cancelled_callbacks.BaseOnCancelledCallback"
-        },
-        "on_error": {
-            "base": "adtool.callbacks.on_error_callbacks.BaseOnErrorCallback"
-        },
-        "on_finished": {
-            "base": "adtool.callbacks.on_finished_callbacks.BaseOnFinishedCallback"
-        },
-        "on_saved": {
-            "base": "adtool.callbacks.on_save_callbacks.save_leaf_callback.SaveLeaf",
-            "expe_db": "adtool.callbacks.on_save_callbacks.save_leaf_callback_in_expedb.SaveLeafExpeDB",
-        },
-        "on_save_finished": {
-            "base": "adtool.callbacks.on_save_finished_callbacks.generate_report_callback.GenerateReport",
-        },
-        "interact": {
-            "base": "adtool.callbacks.interact_callbacks.BaseInteractCallback",
-            "saveDisk": "adtool.callbacks.interact_callbacks.SaveDiskInteractCallback",
-            "readDisk": "adtool.callbacks.interact_callbacks.ReadDiskInteractCallback",
-        },
-    },
-    "logger_handlers": {
-        "logFile": "adtool.logger.handlers.file_handler.SetFileHandler"
     },
 }
 
@@ -145,7 +111,6 @@ def get_submodules(submodule: str, namespace: str) -> dict[str, str]:
             # TODO: logging here
             pass
 
-    print("adtool_module_dict", adtool_module_dict, file=sys.stderr)
     return adtool_module_dict
 
 
