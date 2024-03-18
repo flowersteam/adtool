@@ -33,7 +33,11 @@ class LeniaCPPNConfig(Defaults):
     scale_init_state: int=defaults(1, min=1)
     cppn_n_passes: int=defaults(2, min=1)
 
-    
+# now import enum
+from enum import Enum, auto, unique, StrEnum
+
+LeniaCPPNVersionEnum = StrEnum("version","pytorch_fft pytorch_conv2d")
+
 
  
 @LeniaCPPNConfig.expose_config()

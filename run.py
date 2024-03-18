@@ -24,14 +24,7 @@ from dataclasses import field
 
 from adtool.explorers.IMGEPExplorer import IMGEPExplorer
 
-@dataclass(frozen=True)
-class Callbacks:
-    on_discovery: List[Callable] = field(default_factory=list)
-    on_save_finished: List[Callable] = field(default_factory=list)
-    on_finished: List[Callable] =  field(default_factory=list)
-    on_error: List[Callable] =  field(default_factory=list)
-    on_cancelled: List[Callable] =  field(default_factory=list)
-    on_saved: List[Callable] =  field(default_factory=list)
+
 
 def create(
     parameters: Dict,
@@ -99,8 +92,7 @@ def create(
         for cb_key, lst in additional_callbacks.items():
             callbacks[cb_key] += lst
 
-    #cast to a callback object
-    callbacks = Callbacks(**callbacks) 
+
 
 
     # short circuit if "resume_from_uid" is set
@@ -113,12 +105,12 @@ def create(
 
         # set attributes pruned by save_leaf
         experiment.logger = logger
-        experiment._on_discovery_callbacks = callbacks.on_discovery
-        experiment._on_save_finished_callbacks = callbacks.on_save_finished
-        experiment._on_finished_callbacks = callbacks.on_finished
-        experiment._on_cancelled_callbacks = callbacks.on_cancelled
-        experiment._on_save_callbacks = callbacks.on_saved
-        experiment._on_error_callbacks = callbacks.on_error
+        experiment._on_discovery_callbacks = callbacks['on_discovery']
+        experiment._on_save_finished_callbacks = callbacks['on_save_finished']
+        experiment._on_finished_callbacks = callbacks['on_finished']
+        experiment._on_cancelled_callbacks = callbacks['on_cancelled']
+        experiment._on_save_callbacks = callbacks['on_saved']
+        experiment._on_error_callbacks = callbacks['on_error']
         # experiment._interact_callbacks = callbacks['interact']
 
         return experiment
@@ -149,12 +141,12 @@ def create(
         save_frequency=parameters["experiment"]["config"]["save_frequency"],
         system=system,
         explorer=explorer,
-        on_discovery_callbacks=callbacks.on_discovery,
-        on_save_finished_callbacks=callbacks.on_save_finished,
-        on_finished_callbacks=callbacks.on_finished,
-        on_cancelled_callbacks=callbacks.on_cancelled,
-        on_save_callbacks=callbacks.on_saved,
-        on_error_callbacks=callbacks.on_error,
+        on_discovery_callbacks=callbacks['on_discovery'],
+        on_save_finished_callbacks=callbacks['on_save_finished'],
+        on_finished_callbacks=callbacks['on_finished'],
+        on_cancelled_callbacks=callbacks['on_cancelled'],
+        on_save_callbacks=callbacks['on_saved'],
+        on_error_callbacks=callbacks['on_error'],
         logger=logger,
         resource_uri=parameters["experiment"]["config"]["save_location"],
     )

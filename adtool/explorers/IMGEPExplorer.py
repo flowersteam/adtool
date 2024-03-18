@@ -36,8 +36,9 @@ from adtool.maps.Map import Map
 # @DictConfigParameter("mutator_config", default={})
 
 
-from enum import Enum
+from enum import Enum,StrEnum
 from pydantic import Field
+
 
 class BehaviorMapEnum(Enum):
     Mean = 'Mean'
@@ -50,6 +51,8 @@ class ParameterMapEnum(Enum):
 class MutatorEnum(Enum):
     Gaussian = 'gaussian'
     Specific = 'specific'
+
+
 
 
 
@@ -266,15 +269,9 @@ class IMGEPExplorerInstance(Leaf):
         return source_policy
 
 
-
+# (config_type=IMGEPConfig)
 class IMGEPExplorer(metaclass=Expose):
-
-    config_type = IMGEPConfig
-
-
-    def __init__(self, *args, **kwargs):
-        self.config=self.config_type(*args, **kwargs)
-
+    config_type=IMGEPConfig
 
     # create specification for discovery attributes
     # TODO: kind of hard-coded for now, based on constructor defaults

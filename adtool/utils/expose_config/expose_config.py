@@ -38,14 +38,32 @@ def export_config(cls):
     return json
 
 class Expose(type):
-
-
     def __init__(self, clsname, bases, clsdict, **kwargs):
         dict_config = export_config(
         clsdict.get("config_type")
         )
         self.JSON_CONFIG = dict_config
+        def __init__(self, *args, **kwargs):
+            self.config=self.config_type(*args, **kwargs)
+        self.__init__ = __init__
 
+
+
+# class Expose:
+#     def __init__(self, config_type):
+#         self.config_type = config_type
+
+#     def __call__(self, *args, **kwargs):
+#         new_class = type(*args, **kwargs)
+#         new_class.config_type = self.config_type
+
+#         #add a new init
+#         def __init__(self, *args, **kwargs):
+#             self.config=self.config_type(*args, **kwargs)
+
+#         new_class.__init__ = __init__
+
+#         return new_class
 
 
 
