@@ -28,13 +28,13 @@
   "callbacks": {
     "on_discovery": [
       {
-        "name": "utils.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+        "name": "callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
         "config": {}
       }
     ],
     "on_save_finished": [
       {
-        "name": "utils.callbacks.on_save_finished_callbacks.generate_report_callback.GenerateReport",
+        "name": "callbacks.on_save_finished_callbacks.generate_report_callback.GenerateReport",
         "config": {}
       }
     ]

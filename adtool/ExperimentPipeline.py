@@ -47,7 +47,7 @@ class ExperimentPipeline(Leaf):
 
     In order to monitor the experiment, you must provide **callbacks**, which
     will be called every time a discovery has been made.
-    Please see: `utils.callbacks.base_callback.BaseCallback`.
+    Please see: `callbacks.base_callback.BaseCallback`.
     """
 
     def __init__(

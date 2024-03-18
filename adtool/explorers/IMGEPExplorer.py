@@ -36,24 +36,58 @@ from adtool.maps.Map import Map
 # @DictConfigParameter("mutator_config", default={})
 
 
+from enum import Enum
+from pydantic import Field
+
+class BehaviorMapEnum(Enum):
+    Mean = 'Mean'
+    LeniaStatistics = 'LeniaStatistics'
+
+class ParameterMapEnum(Enum):
+    Uniform = 'Uniform'
+    LeniaParameterMap = 'LeniaParameterMap'
+
+class MutatorEnum(Enum):
+    Gaussian = 'gaussian'
+    Specific = 'specific'
 
 
-@dataclass
-class IMGEPConfig(Defaults):
-    equil_time: int = defaults(1, min=1, max=1000)
-    behavior_map: str = defaults("Mean", domain=["Mean", "LeniaStatistics"])
-    behavior_map_config: Dict = defaults({})
-    parameter_map: str = defaults("Uniform", domain=["Uniform", "LeniaParameterMap"])
-    parameter_map_config: Dict = defaults({})
-    mutator: str = defaults("specific", domain=["gaussian", "specific"])
-    mutator_config: Dict = defaults({})
 
-@IMGEPConfig.expose_config()
-class IMGEPFactory:
-    """
-    Factory class providing interface with config parameters and therefore the
-    frontend
-    """
+from typing import Dict
+from dataclasses import dataclass
+
+from pydantic import BaseModel
+
+import sys
+
+
+
+
+
+
+class IMGEPConfig(BaseModel):
+    equil_time: int = Field(1, ge=1, le=1000)
+    behavior_map: BehaviorMapEnum = Field(BehaviorMapEnum.Mean)
+    behavior_map_config: Dict = Field({})
+    parameter_map: ParameterMapEnum = Field(ParameterMapEnum.Uniform)
+    parameter_map_config: Dict = Field({})
+    mutator: MutatorEnum = Field(MutatorEnum.Specific)
+    mutator_config: Dict = Field({})
+
+
+
+from adtool.utils.expose_config.expose_config import Expose
+
+
+
+    
+class IMGEPFactory(metaclass=Expose):
+
+    config_type = IMGEPConfig
+
+
+    def __init__(self, *args, **kwargs):
+        self.config=self.config_type(*args, **kwargs)
 
 
     # create specification for discovery attributes
@@ -78,9 +112,9 @@ class IMGEPFactory:
 
     def make_behavior_map(self):
         kwargs = self.config.behavior_map_config
-        if self.config.behavior_map == "Mean":
+        if self.config.behavior_map == BehaviorMapEnum.Mean:
             behavior_map = MeanBehaviorMap(**kwargs)
-        elif self.config.behavior_map == "LeniaStatistics":
+        elif self.config.behavior_map == BehaviorMapEnum.LeniaStatistics:
             behavior_map = LeniaStatistics(**kwargs)
         else:
             # this branch should be unreachable,
@@ -91,9 +125,9 @@ class IMGEPFactory:
 
     def make_parameter_map(self):
         kwargs = self.config.parameter_map_config
-        if self.config.parameter_map == "Uniform":
+        if self.config.parameter_map== ParameterMapEnum.Uniform:
             param_map = UniformParameterMap(**kwargs)
-        elif self.config.parameter_map == "LeniaParameterMap":
+        elif self.config.parameter_map == ParameterMapEnum.LeniaParameterMap:
             param_map = LeniaParameterMap(**kwargs)
         else:
             # this branch should be unreachable,
@@ -103,9 +137,9 @@ class IMGEPFactory:
         return param_map
 
     def make_mutator(self, param_map: Any = None):
-        if self.config.mutator == "specific":
+        if self.config.mutator== MutatorEnum.Specific:
             mutator = partial(call_mutate_method, param_map=param_map)
-        elif self.config.mutator == "gaussian":
+        elif self.config.mutator == MutatorEnum.Gaussian:
             mutator = partial(
                 add_gaussian_noise, std=self.config.mutator_config["std"]
             )
@@ -113,6 +147,7 @@ class IMGEPFactory:
             mutator = torch.nn.Identity()
 
         return mutator
+    
 
 
 

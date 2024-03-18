@@ -2,6 +2,53 @@ from collections import namedtuple
 from typing import Any, Dict, List, NamedTuple, Optional
 import sys
 
+#from adtool.utils.leafutils.leafstructs.registration import _REGISTRATION
+
+from annotated_types import BaseMetadata, Le, Ge, Gt, Lt, Annotated
+
+def annotated_metadatas_to_json(annotation: List[BaseMetadata]):
+    json = {}
+    for m in annotation:
+        if isinstance(m, Le):
+            json["le"] = m.le
+        if isinstance(m, Ge):
+            json["ge"] = m.ge
+        if isinstance(m, Gt):
+            json["gt"] = m.gt
+        if isinstance(m, Lt):
+            json["lt"] = m.lt
+    return json
+
+from enum import Enum
+
+def export_config(cls):
+    json = {}
+    for k,v in cls.model_fields.items():
+        json[k] = {
+            "type": v.annotation.__name__,
+        #   "required": field.required,
+            "default": v.default if v.default is not None else None
+        }
+        if  isinstance(v.annotation, Enum):
+            json[k]["enum"] =  map(lambda x: x.value, v.annotation)
+
+        if v.metadata:
+            json[k]["metadata"] = annotated_metadatas_to_json(v.metadata)
+
+    return json
+
+class Expose(type):
+
+
+    def __init__(self, clsname, bases, clsdict, **kwargs):
+        dict_config = export_config(
+        clsdict.get("config_type")
+        )
+        self.JSON_CONFIG = dict_config
+
+
+
+
 class ExposeConfig:
     def __init__(self, *args, **kwargs) -> None:
         self._config_defn = self._generate_config(*args, **kwargs)

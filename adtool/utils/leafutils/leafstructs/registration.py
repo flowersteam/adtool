@@ -11,6 +11,13 @@ import sys
 
 from mergedeep import merge
 
+
+
+# type for an unbouded dictionary 
+__REGISTRATION :dict = {
+
+}
+
 # legacy compatibility
 _REGISTRATION: dict[str, dict] = {
     "systems": {},
@@ -19,42 +26,42 @@ _REGISTRATION: dict[str, dict] = {
     },
     "maps": {},
     "input_wrappers": {
-        "generic.CPPN": "adtool..input_wrappers.generic.cppn.cppn_input_wrapper.CppnInputWrapper",
+        "generic.CPPN": "adtool.input_wrappers.generic.cppn.cppn_input_wrapper.CppnInputWrapper",
     },
     "output_representations": {
-        "specific.LeniaFlattenImage": "adtool..output_representations.specific.lenia_output_representation.LeniaImageRepresentation",
-        "specific.LeniaStatistics": "adtool..output_representations.specific.lenia_output_representation_hand_defined.LeniaHandDefinedRepresentation",
+        "specific.LeniaFlattenImage": "adtool.output_representations.specific.lenia_output_representation.LeniaImageRepresentation",
+        "specific.LeniaStatistics": "adtool.output_representations.specific.lenia_output_representation_hand_defined.LeniaHandDefinedRepresentation",
     },
     "callbacks": {
         "on_discovery": {
-            "expe_db": "adtool.utils.callbacks.on_discovery_callbacks.save_discovery_in_expedb.SaveDiscoveryInExpeDB",
-            "disk": "adtool.utils.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
-            "base": "adtool.utils.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+            "expe_db": "adtool.callbacks.on_discovery_callbacks.save_discovery_in_expedb.SaveDiscoveryInExpeDB",
+            "disk": "adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+            "base": "adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
         },
         "on_cancelled": {
-            "base": "adtool.utils.callbacks.on_cancelled_callbacks.BaseOnCancelledCallback"
+            "base": "adtool.callbacks.on_cancelled_callbacks.BaseOnCancelledCallback"
         },
         "on_error": {
-            "base": "adtool.utils.callbacks.on_error_callbacks.BaseOnErrorCallback"
+            "base": "adtool.callbacks.on_error_callbacks.BaseOnErrorCallback"
         },
         "on_finished": {
-            "base": "adtool.utils.callbacks.on_finished_callbacks.BaseOnFinishedCallback"
+            "base": "adtool.callbacks.on_finished_callbacks.BaseOnFinishedCallback"
         },
         "on_saved": {
-            "base": "adtool.utils.callbacks.on_save_callbacks.save_leaf_callback.SaveLeaf",
-            "expe_db": "adtool.utils.callbacks.on_save_callbacks.save_leaf_callback_in_expedb.SaveLeafExpeDB",
+            "base": "adtool.callbacks.on_save_callbacks.save_leaf_callback.SaveLeaf",
+            "expe_db": "adtool.callbacks.on_save_callbacks.save_leaf_callback_in_expedb.SaveLeafExpeDB",
         },
         "on_save_finished": {
-            "base": "adtool.utils.callbacks.on_save_finished_callbacks.generate_report_callback.GenerateReport",
+            "base": "adtool.callbacks.on_save_finished_callbacks.generate_report_callback.GenerateReport",
         },
         "interact": {
-            "base": "adtool.utils.callbacks.interact_callbacks.BaseInteractCallback",
-            "saveDisk": "adtool.utils.callbacks.interact_callbacks.SaveDiskInteractCallback",
-            "readDisk": "adtool.utils.callbacks.interact_callbacks.ReadDiskInteractCallback",
+            "base": "adtool.callbacks.interact_callbacks.BaseInteractCallback",
+            "saveDisk": "adtool.callbacks.interact_callbacks.SaveDiskInteractCallback",
+            "readDisk": "adtool.callbacks.interact_callbacks.ReadDiskInteractCallback",
         },
     },
     "logger_handlers": {
-        "logFile": "adtool.utils.logger.handlers.file_handler.SetFileHandler"
+        "logFile": "adtool.logger.handlers.file_handler.SetFileHandler"
     },
 }
 
@@ -138,17 +145,14 @@ def get_submodules(submodule: str, namespace: str) -> dict[str, str]:
             # TODO: logging here
             pass
 
+    print("adtool_module_dict", adtool_module_dict, file=sys.stderr)
     return adtool_module_dict
 
 
-def get_custom_modules(submodule: str) -> dict[str, str]:
-    return get_submodules(submodule, namespace="adtool_custom")
 
-
-def get_default_modules(submodule: str) -> dict[str, str]:
-    return get_submodules(submodule, namespace="adtool")
 
 def get_examples_modules(submodule: str) -> dict[str, str]:
+    
     return get_submodules(submodule, namespace="examples")
 
 
@@ -173,12 +177,8 @@ def get_modules(submodule_type: str) -> dict:
         {"SystemName" : "adtool.systems.SystemName.SystemName"}
 
     """
-    if submodule_type == "input_wrappers" or submodule_type == "output_representations":
-        # legacy guard, there is no input_wrappers or output_representations
-        # in the new module spec
-        return get_legacy_modules(submodule_type)
-    else:
-        return dict(
+
+    result= dict(
             merge(
                 # because merge mutates the first arg
                 {},
@@ -188,6 +188,8 @@ def get_modules(submodule_type: str) -> dict:
               #  get_custom_modules(submodule_type),
             )
         )
+    print("result", result, file=sys.stderr)
+    return result
 
 
 def _check_jsonify(my_dict):

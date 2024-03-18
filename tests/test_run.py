@@ -347,7 +347,7 @@ def test_save_GenerateReport():
 
 
 def test_additional_callback():
-    from adtool.utils.callbacks.on_discovery_callbacks.save_discovery_on_disk import (
+    from adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk import (
         SaveDiscoveryOnDisk,
     )
 

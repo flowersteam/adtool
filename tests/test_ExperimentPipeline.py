@@ -9,10 +9,10 @@ from examples.systems.ExponentialMixture import ExponentialMixture
 from adtool.explorers.IMGEPExplorer import IMGEPExplorer, IMGEPFactory
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.ExperimentPipeline import ExperimentPipeline
-from adtool.utils.callbacks.on_save_callbacks.save_leaf_callback import (
+from adtool.callbacks.on_save_callbacks.save_leaf_callback import (
     SaveLeaf,
 )
-from adtool.utils.logger import AutoDiscLogger
+from adtool.logger import AutoDiscLogger
 
 
 def setup_function(function):

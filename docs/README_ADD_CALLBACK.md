@@ -36,7 +36,7 @@ To add a new callback create the file in the associated folder
    ```
     A full example:
     ```
-        from utils.callbacks.on_discovery_callbacks import BaseOnDiscoveryCallback
+        from callbacks.on_discovery_callbacks import BaseOnDiscoveryCallback
         
         class MyBeautifullNewOnDiscoveryCallback(BaseOnDiscoveryCallback):
 

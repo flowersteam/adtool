@@ -11,10 +11,10 @@ from typing import Callable, Dict, List
 import numpy as np
 import torch
 from adtool.ExperimentPipeline import ExperimentPipeline
-from adtool.utils.logger import AutoDiscLogger
+from adtool.logger import AutoDiscLogger
 from adtool.utils.leafutils.leafstructs.registration import get_cls_from_name
 from mergedeep import merge
-
+import sys
 
 def create(
     parameters: Dict,
@@ -77,6 +77,7 @@ def create(
             for cb in cb_request[cb_key]:
                 cb_config = cb["config"]
                 type_name = "callbacks." + cb_key
+                print('cb["name"]',cb["name"], file=sys.stderr)
                 callback = get_cls_from_name(cb["name"], ad_type_name=type_name)
                 # initialize callback instance
                 callbacks[cb_key].append(callback(**cb_config))
@@ -110,8 +111,10 @@ def create(
     explorer_factory_class = get_cls_from_name(
         parameters["explorer"]["name"], "explorers"
     )
+  
     explorer_factory = explorer_factory_class(**parameters["explorer"]["config"])
     explorer = explorer_factory()
+    
 
     # Get system
     system_class = get_cls_from_name(parameters["system"]["name"], "systems")

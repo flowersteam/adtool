@@ -68,10 +68,10 @@ def test_get_cls_from_name():
     from examples.maps.LeniaStatistics import LeniaStatistics
     from examples.systems.ExponentialMixture import ExponentialMixture
     from adtool.explorers import IMGEPFactory
-    from adtool.utils.callbacks.on_save_callbacks.save_leaf_callback import (
+    from adtool.callbacks.on_save_callbacks.save_leaf_callback import (
         SaveLeaf,
     )
-    from adtool.utils.callbacks.on_save_finished_callbacks.generate_report_callback import (
+    from adtool.callbacks.on_save_finished_callbacks.generate_report_callback import (
         GenerateReport,
     )
 
