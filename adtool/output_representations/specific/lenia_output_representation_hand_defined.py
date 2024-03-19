@@ -287,21 +287,25 @@ def calc_image_moments(image: torch.Tensor) -> typing.Dict[str, torch.Tensor]:
     return result
 
 
-# @StringConfigParameter(name="distance_function", possible_values=["L2"], default="L2")
-# @IntegerConfigParameter(name="SX", default=256, min=1)
-# @IntegerConfigParameter(name="SY", default=256, min=1)
+from pydantic import BaseModel
+from pydantic.fields import Field
+from examples.systems.enums import LeniaCPPNVersionEnum
+from adtool.utils.expose_config.expose_config import expose
+ 
 
-from adtool.utils.expose_config.defaults import Defaults, defaults
-from dataclasses import dataclass, field
 
-@dataclass
-class LeniaHandDefinedRepresentationConfig(Defaults):
-    distance_function: str = defaults("L2", domain=["L2"])
-    SX: int = defaults(256, min=1)
-    SY: int = defaults(256, min=1)
 
-@LeniaHandDefinedRepresentationConfig.expose_config()
+from adtool.utils.enums import DistanceFunctionEnum
+
+class LeniaHandDefinedRepresentationConfig(BaseModel):
+    distance_function: DistanceFunctionEnum = Field(DistanceFunctionEnum.L2)
+    SX: int = Field(256, ge=1)
+    SY: int = Field(256, ge=1)
+
+@expose
 class LeniaHandDefinedRepresentation(BaseOutputRepresentation):
+
+    config_type = LeniaHandDefinedRepresentationConfig
 
     output_space = DictSpace(embedding=BoxSpace(low=0, high=0, shape=(17,)))
 

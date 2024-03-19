@@ -6,6 +6,8 @@ import sys
 
 from annotated_types import BaseMetadata, Le, Ge, Gt, Lt, Annotated
 
+from adtool.utils.leafutils.leafstructs.registration import _REGISTRATION
+
 def annotated_metadatas_to_json(annotation: List[BaseMetadata]):
     json = {}
     for m in annotation:
@@ -37,15 +39,45 @@ def export_config(cls):
 
     return json
 
-class Expose(type):
-    def __init__(self, clsname, bases, clsdict, **kwargs):
-        dict_config = export_config(
-        clsdict.get("config_type")
-        )
-        self.JSON_CONFIG = dict_config
-        def __init__(self, *args, **kwargs):
-            self.config=self.config_type(*args, **kwargs)
-        self.__init__ = __init__
+
+
+
+
+#same but with a decorator
+def expose(cls):
+    dict_config = export_config(
+    cls.config_type
+    
+    )
+
+    previous_init = cls.__init__
+
+    cls.JSON_CONFIG = dict_config
+    def __init__(self, *args, **kwargs):
+        self.config=self.config_type(*args, **kwargs)
+
+        previous_init(self)
+
+
+    cls.__init__ = __init__
+
+    sub = cls.__module__.split(".")
+    current = _REGISTRATION
+    for i in range(1, len(sub)-1):
+        if sub[i] not in current:
+            current[sub[i]] = {}
+        current = current[sub[i]]
+    if sub[-1] not in current:
+
+        current[sub[-1]] = [cls.__name__] 
+    else:
+        if not isinstance(current[sub[-1]], list):
+            raise Exception(f"Error: {sub[-1]} is not a list")
+        current[sub[-1]].append(cls.__name__)
+
+
+    print("_REGISTRATION", _REGISTRATION, file=sys.stderr)
+    return cls
 
 
 

@@ -10,38 +10,32 @@ from adtool.wrappers.CPPNWrapper import CPPNWrapper
 from adtool.utils.leaf.locators.locators import BlobLocator
 
 import sys
-# @StringConfigParameter(
-#     name="version",
-#     possible_values=["pytorch_fft", "pytorch_conv2d"],
-#     default="pytorch_fft",
-# )
-# @IntegerConfigParameter(name="SX", default=256, min=1)
-# @IntegerConfigParameter(name="SY", default=256, min=1)
-# @IntegerConfigParameter(name="final_step", default=200, min=1, max=1000)
-# @IntegerConfigParameter(name="scale_init_state", default=1, min=1)
-# @IntegerConfigParameter(name="cppn_n_passes", default=2, min=1)
 
-
-from adtool.utils.expose_config.defaults import Defaults, defaults
-
-@dataclass
-class LeniaCPPNConfig(Defaults):
-    version: str=defaults("pytorch_fft", domain=["pytorch_fft", "pytorch_conv2d"])
-    SX: int=defaults(256, min=1)
-    SY: int=defaults(256, min=1)
-    final_step: int=defaults(200, min=1, max=1000)
-    scale_init_state: int=defaults(1, min=1)
-    cppn_n_passes: int=defaults(2, min=1)
 
 # now import enum
 from enum import Enum, auto, unique, StrEnum
 
-LeniaCPPNVersionEnum = StrEnum("version","pytorch_fft pytorch_conv2d")
 
 
+from pydantic import BaseModel
+from pydantic.fields import Field
+from examples.systems.enums import LeniaCPPNVersionEnum
+from adtool.utils.expose_config.expose_config import expose
  
-@LeniaCPPNConfig.expose_config()
+
+class LeniaCPPNConfig(BaseModel):
+    version: LeniaCPPNVersionEnum = Field(LeniaCPPNVersionEnum.pytorch_fft)
+    SX: int = Field(256, ge=1)
+    SY: int = Field(256, ge=1)
+    final_step: int = Field(200, ge=1, le=1000)
+    scale_init_state: int = Field(1, ge=1)
+    cppn_n_passes: int = Field(2, ge=1)
+
+#@LeniaCPPNConfig.expose_config()
+@expose
 class LeniaCPPN(System):
+
+    config_type=LeniaCPPNConfig
 
     def __init__(self):
         super().__init__()

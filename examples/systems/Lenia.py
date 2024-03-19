@@ -23,6 +23,8 @@ from matplotlib.animation import FuncAnimation
 from numpy import ndarray
 from PIL import Image
 
+from  examples.systems.enums import LeniaCPPNVersionEnum
+
 # backwards compatiblity for torch.rfft deprecation after PyTorch 1.7
 # https://github.com/pytorch/pytorch/wiki/The-torch.fft-module-in-PyTorch-1.7
 split_version = torch.__version__.split(".")
@@ -140,29 +142,22 @@ class LeniaParameters:
 
 from adtool.utils.expose_config.defaults import Defaults, defaults
 
-
-@dataclass
-class LeniaConfig(Defaults):
-    version: str = defaults("pytorch_fft", ["pytorch_fft", "pytorch_conv2d"])
-    SX: int = defaults(256, min=1)
-    SY: int = defaults(256, min=1)
-    final_step: int = defaults(200, min=1, max=1000)
-    scale_init_state: int = defaults(1, min=1)
+from pydantic import BaseModel
+from pydantic.fields import Field
+from adtool.utils.expose_config.expose_config import expose
 
 
+class LeniaConfig(BaseModel):
+    version: LeniaCPPNVersionEnum = Field(LeniaCPPNVersionEnum.pytorch_fft)
+    SX: int = Field(256, ge=1)
+    SY: int = Field(256, ge=1)
+    final_step: int = Field(200, ge=1, le=1000)
+    scale_init_state: int = Field(1, ge=1)
 
-# @StringConfigParameter(
-#     name="version",
-#     possible_values=["pytorch_fft", "pytorch_conv2d"],
-#     default="pytorch_fft",
-# )
-# @IntegerConfigParameter(name="SX", default=256, min=1)
-# @IntegerConfigParameter(name="SY", default=256, min=1)
-# @IntegerConfigParameter(name="final_step", default=200, min=1, max=1000)
-# @IntegerConfigParameter(name="scale_init_state", default=1, min=1)
-
-@LeniaConfig.expose_config()
+@expose
 class Lenia:
+
+    config_type=LeniaConfig
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -258,7 +253,8 @@ class Lenia:
 
     def _generate_automaton(self, dyn_params: LeniaDynamicalParameters) -> Any:
         tensor_params = dyn_params.to_tensor()
-        if self.config.version.lower() == "pytorch_fft":
+        if self.config.version == LeniaCPPNVersionEnum.pytorch_fft:
+        #lower() == "pytorch_fft":
             automaton = LeniaStepFFT(
                 SX=self.config.SX,
                 SY=self.config.SY,
@@ -270,7 +266,7 @@ class Lenia:
                 kn=0,
                 gn=1,
             )
-        elif self.config["version"].lower() == "pytorch_conv2d":
+        elif self.config["version"] == LeniaCPPNVersionEnum.pytorch_conv2d:
             automaton = LeniaStepConv2d(
                 R=tensor_params[0],
                 T=tensor_params[1],

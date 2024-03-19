@@ -17,23 +17,8 @@ from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 
 from dataclasses import dataclass, field
-from adtool.utils.expose_config.defaults import Defaults, defaults
 from adtool.maps.Map import Map
 
-
-#@IntegerConfigParameter("equil_time", default=1, min=1)
-# @StringConfigParameter(
-#     "behavior_map", possible_values=["Mean", "LeniaStatistics"], default="Mean"
-# )
-# @DictConfigParameter("behavior_map_config", default={})
-# @StringConfigParameter(
-#     "parameter_map", possible_values=["Uniform", "LeniaParameterMap"], default="Uniform"
-# )
-# @DictConfigParameter("parameter_map_config", default={})
-# @StringConfigParameter(
-#     "mutator", possible_values=["gaussian", "specific"], default="specific"
-# )
-# @DictConfigParameter("mutator_config", default={})
 
 
 from enum import Enum,StrEnum
@@ -79,7 +64,7 @@ class IMGEPConfig(BaseModel):
 
 
 
-from adtool.utils.expose_config.expose_config import Expose
+from adtool.utils.expose_config.expose_config import expose
 
 
 
@@ -269,8 +254,8 @@ class IMGEPExplorerInstance(Leaf):
         return source_policy
 
 
-# (config_type=IMGEPConfig)
-class IMGEPExplorer(metaclass=Expose):
+@expose
+class IMGEPExplorer():
     config_type=IMGEPConfig
 
     # create specification for discovery attributes

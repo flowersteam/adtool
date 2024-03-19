@@ -16,19 +16,8 @@ from mergedeep import merge
 
 
 # legacy compatibility
-_REGISTRATION: dict[str, dict] = {
-    "systems": {},
-    "explorers": {
-        "IMGEPExplorer": "adtool.explorers.IMGEPFactory",
-    },
-    "maps": {},
-    "input_wrappers": {
-        "generic.CPPN": "adtool.input_wrappers.generic.cppn.cppn_input_wrapper.CppnInputWrapper",
-    },
-    "output_representations": {
-        "specific.LeniaFlattenImage": "adtool.output_representations.specific.lenia_output_representation.LeniaImageRepresentation",
-        "specific.LeniaStatistics": "adtool.output_representations.specific.lenia_output_representation_hand_defined.LeniaHandDefinedRepresentation",
-    },
+_REGISTRATION: dict = {
+
 }
 
 
