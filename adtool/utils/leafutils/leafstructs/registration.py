@@ -15,7 +15,6 @@ from mergedeep import merge
 
 
 
-# legacy compatibility
 _REGISTRATION: dict = {
 
 }

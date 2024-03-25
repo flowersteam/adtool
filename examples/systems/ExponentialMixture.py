@@ -7,17 +7,23 @@ import matplotlib
 import matplotlib.pyplot as plt
 import torch
 from adtool.systems.System import System
-from adtool.utils.expose_config.defaults import Defaults, defaults
 
 from adtool.utils.leaf.locators.locators import BlobLocator
 import sys
 
 matplotlib.use("Agg")
 
-@dataclass
-class SystemParams(Defaults):
-    sequence_max: float = defaults(100.0, min=0.0, max=1000.0)
-    sequence_density: int = defaults(100, min=1, max=1000)
+from pydantic import BaseModel
+#import the Fields class from pydantic
+from pydantic.fields import Field
+
+
+class SystemParams(BaseModel):
+    sequence_max: float = Field(100.0, ge=0.0, le=1000.0)
+    sequence_density: int = Field(100, ge=1, le=1000)
+
+
+
 
 
 print("SystemParams", SystemParams, file=sys.stderr)

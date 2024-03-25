@@ -37,7 +37,7 @@ def test_get_cls_from_path():
 
     path = "adtool.maps.MeanBehaviorMap.MeanBehaviorMap"
     cls = get_cls_from_path(path)
-    from examples.maps.MeanBehaviorMap import MeanBehaviorMap as compare_cls
+    from adtool.maps.MeanBehaviorMap import MeanBehaviorMap as compare_cls
 
     assert cls == compare_cls
 
@@ -57,7 +57,7 @@ def test_get_path_from_cls():
     path = "adtool.maps.LeniaStatistics.LeniaStatistics"
     assert compare_path == path
 
-    from examples.maps.MeanBehaviorMap import MeanBehaviorMap as compare_cls
+    from adtool.maps.MeanBehaviorMap import MeanBehaviorMap as compare_cls
 
     compare_path = get_path_from_cls(compare_cls)
     path = "adtool.maps.MeanBehaviorMap.MeanBehaviorMap"

@@ -6,7 +6,7 @@ from io import StringIO
 from typing import Dict, Optional, Tuple
 
 import torch
-from examples.systems.Lenia import LeniaDynamicalParameters
+from examples.systems.Lenia import LeniaDynamicalParameters, LeniaHyperParameters
 from adtool.maps import NEATParameterMap, UniformParameterMap
 from adtool.wrappers.CPPNWrapper import CPPNWrapper
 from adtool.wrappers.mutators import add_gaussian_noise
@@ -15,20 +15,7 @@ from adtool.utils.leaf.locators.locators import BlobLocator
 import sys
 
 
-@dataclass
-class LeniaHyperParameters:
-    """Holds parameters to initialize Lenia model."""
 
-    tensor_low: torch.Tensor = LeniaDynamicalParameters().to_tensor()
-    tensor_high: torch.Tensor = LeniaDynamicalParameters().to_tensor()
-    tensor_bound_low: torch.Tensor = torch.tensor(
-        [0.0, 1.0, 0.0, 0.001, 0.0, 0.0, 0.0, 0.0]
-    )
-    tensor_bound_high: torch.Tensor = torch.tensor(
-        [20.0, 20.0, 1.0, 0.3, 1.0, 1.0, 1.0, 1.0]
-    )
-    init_state_dim: Tuple[int, int] = (10, 10)
-    cppn_n_passes: int = 2
 
 
 class LeniaParameterMap(Leaf):

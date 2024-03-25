@@ -289,7 +289,6 @@ def calc_image_moments(image: torch.Tensor) -> typing.Dict[str, torch.Tensor]:
 
 from pydantic import BaseModel
 from pydantic.fields import Field
-from examples.systems.enums import LeniaCPPNVersionEnum
 from adtool.utils.expose_config.expose_config import expose
  
 
@@ -305,7 +304,7 @@ class LeniaHandDefinedRepresentationConfig(BaseModel):
 @expose
 class LeniaHandDefinedRepresentation(BaseOutputRepresentation):
 
-    config_type = LeniaHandDefinedRepresentationConfig
+    config = LeniaHandDefinedRepresentationConfig
 
     output_space = DictSpace(embedding=BoxSpace(low=0, high=0, shape=(17,)))
 

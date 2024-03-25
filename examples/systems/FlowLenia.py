@@ -3,7 +3,7 @@ import io
 import math
 from copy import deepcopy
 from dataclasses import asdict, dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import imageio
 import matplotlib
@@ -23,64 +23,27 @@ from matplotlib.animation import FuncAnimation
 from numpy import ndarray
 from PIL import Image
 
-
-
-
-
-def patched_rfft(input, signal_ndim: int = 1, onesided: bool = True):
-    dim = (-3,-2,-1)[-signal_ndim:]
-
-    def partial_application(x, f):
-        """Applies f and returns complex tensor encoded as a real-valued tensor
-        with an extra dimension of size 2."""
-        return torch.view_as_real(f(x, dim=dim))
-
-    if onesided:
-        return partial_application(input, torch.fft.rfftn)
-    else:
-        # non-onesided FFT is equivalent to the normal one
-        return partial_application(input, torch.fft.fftn)
-
-
-def patched_irfft(input, signal_ndim: int = 1, onesided: bool = True):
-    dim = (-3,-2,-1)[-signal_ndim:]
-
-    def partial_application(x, f):
-        """Applies f and returns complex tensor encoded as a real-valued tensor
-        with an extra dimension of size 2."""
-        # take only the real part, as this is what we expect by the inverse
-        # FFT to a real-valued signal (numerically, it will only be real within
-        # machine epsilon, so we explicitly cast)
-        return torch.real(f(x, dim=dim))
-
-    # because the torch.fft functions expect a complex Tensor
-    input = torch.view_as_complex(input)
-
-    if onesided:
-        return partial_application(input, torch.fft.irfftn)
-    else:
-        # non-onesided FFT is equivalent to the normal one
-        return partial_application(input, torch.fft.ifftn)
-
-
-torch.rfft = patched_rfft
-torch.irfft = patched_irfft
-
-
-
-
+            # "r" : {'low' : .2, 'high' : 1., 'mut_std' : .2, 'shape' : None},
+            # "b" : {'low' : .001, 'high' : 1., 'mut_std' : .2, 'shape' : (3,)},
+            # "w" : {'low' : .01, 'high' : .5, 'mut_std' : .2, 'shape' : (3,)},
+            # "a" : {'low' : .0, 'high' : 1., 'mut_std' : .2, 'shape' : (3,)},
+            # "m" : {'low' : .05, 'high' : .5, 'mut_std' : .2, 'shape' : None},
+            # "s" : {'low' : .001, 'high' : .18, 'mut_std' : .01, 'shape' : None},
+            # "h" : {'low' : .01, 'high' : 1., 'mut_std' : .2, 'shape' : None},
+            # 'R' : {'low' : 2., 'high' : 25., 'mut_std' : .2, 'shape' : None},
 
 
 @dataclass
-class LeniaDynamicalParameters:
+class FlowLeniaDynamicalParameters:
     R: Union[int, float] = 0
     T: float = 1.0
+    b: torch.Tensor = torch.tensor([0.0, 0.0, 0.0, 0.0])
     m: float = 0.0
     s: float = 0.001
-    b: torch.Tensor = torch.tensor([0.0, 0.0, 0.0, 0.0])
 
     def __post_init__(self):
-        print("####################################### POST INIT self",self)
+        #print who instanciated this
+        print("POST INIT self #######################",self)
         # convert out of tensors
         if isinstance(self.R, torch.Tensor):
             self.R = self.R.item()
@@ -127,8 +90,9 @@ class LeniaDynamicalParameters:
 class LeniaParameters:
     """Holds input parameters for Lenia model."""
 
-    dynamic_params: LeniaDynamicalParameters = field(default_factory=lambda : LeniaDynamicalParameters())
+    dynamic_params: FlowLeniaDynamicalParameters = field(default_factory=lambda : FlowLeniaDynamicalParameters())
     init_state: torch.Tensor = field(default_factory=lambda : torch.rand((10, 10)))
+
 
 
 from pydantic import BaseModel
@@ -139,7 +103,7 @@ from adtool.utils.expose_config.expose_config import expose
 
 from adtool.systems.System import System
 
-class Lenia(System):
+class FlowLenia(System):
 
 
     def __init__(self, SX=256,
@@ -149,7 +113,16 @@ class Lenia(System):
                  sigma=.65,
                  mix="softmax",
                  final_step=200,
-                 scale_init_state=1):
+                 scale_init_state=1,
+
+
+                     nb_k: int = 4,
+    C: int = 1,
+    n: int = 2, #exponent for alpha
+    theta_A : float = 1.
+                 
+                 
+                 ):
         super().__init__()
         self.SX= SX
         self.SY= SY
@@ -244,12 +217,14 @@ class Lenia(System):
         """
         init_params = deepcopy(input_dict["params"])
         if not isinstance(init_params, LeniaParameters):
-            dyn_p = LeniaDynamicalParameters(**init_params["dynamic_params"])
+            dyn_p = FlowLeniaDynamicalParameters(**init_params["dynamic_params"])
             init_state = init_params["init_state"]
             params = LeniaParameters(dynamic_params=dyn_p, init_state=init_state)
         return params
 
-    def _generate_automaton(self, dyn_params: LeniaDynamicalParameters) -> Any:
+    def _generate_automaton(self, dyn_params: FlowLeniaDynamicalParameters) -> Any:
+        
+        tensor_params = dyn_params.to_tensor()
         automaton = LeniaStepFFT(
                 SX=self.SX,
                 SY=self.SY,
@@ -453,36 +428,3 @@ class LeniaStepFFT(torch.nn.Module):
         #     print("break")
 
         return output_img
-
-
-
-@dataclass
-class LeniaHyperParameters:
-    """Holds parameters to initialize Lenia model."""
-
-    tensor_low: torch.Tensor = LeniaDynamicalParameters().to_tensor()
-    tensor_high: torch.Tensor = LeniaDynamicalParameters().to_tensor()
-    tensor_bound_low: torch.Tensor = LeniaDynamicalParameters(
-
-        R=0.0,
-        T=1.0,
-        b=torch.tensor([0.0, 0.0, 0.0, 0.0]),
-        m=0.0,
-        s=0.001
-
-
-
-
-    ).to_tensor()
-    tensor_bound_high: torch.Tensor = LeniaDynamicalParameters(
-            
-            R=20,
-            T=20,
-            b=torch.tensor([1.0, 1.0, 1.0, 1.0]),
-            m=1.0,
-            s=0.3
-    
-        ).to_tensor()
-
-    init_state_dim: Tuple[int, int] = (10, 10)
-    cppn_n_passes: int = 2

@@ -3,8 +3,7 @@ import pathlib
 import shutil
 
 import torch
-from examples.maps.MeanBehaviorMap import MeanBehaviorMap
-from examples.maps.UniformParameterMap import UniformParameterMap
+from adtool.maps.MeanBehaviorMap import MeanBehaviorMap
 
 
 def setup_function(function):

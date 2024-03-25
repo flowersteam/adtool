@@ -4,14 +4,11 @@ from functools import partial
 from typing import Any, Dict, List
 
 import torch
-from examples.maps.LeniaParameterMap import LeniaParameterMap
-from examples.maps.LeniaStatistics import LeniaStatistics
-from examples.maps.MeanBehaviorMap import MeanBehaviorMap
-from examples.maps.UniformParameterMap import UniformParameterMap
 from adtool.systems import System
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.mutators import add_gaussian_noise, call_mutate_method
 from adtool.wrappers.SaveWrapper import SaveWrapper
+from adtool.utils.expose_config.expose_config import expose
 
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
@@ -19,19 +16,12 @@ from adtool.utils.leaf.locators.locators import BlobLocator
 from dataclasses import dataclass, field
 from adtool.maps.Map import Map
 
-
-
 from enum import Enum,StrEnum
 from pydantic import Field
 
+from pydoc import locate
 
-class BehaviorMapEnum(Enum):
-    Mean = 'Mean'
-    LeniaStatistics = 'LeniaStatistics'
 
-class ParameterMapEnum(Enum):
-    Uniform = 'Uniform'
-    LeniaParameterMap = 'LeniaParameterMap'
 
 class MutatorEnum(Enum):
     Gaussian = 'gaussian'
@@ -42,29 +32,19 @@ class MutatorEnum(Enum):
 
 
 from typing import Dict
-from dataclasses import dataclass
 
 from pydantic import BaseModel
-
-import sys
-
-
-
 
 
 
 class IMGEPConfig(BaseModel):
     equil_time: int = Field(1, ge=1, le=1000)
-    behavior_map: BehaviorMapEnum = Field(BehaviorMapEnum.Mean)
+    behavior_map: str = Field("adtool.maps.MeanBehaviorMap.MeanBehaviorMap")
     behavior_map_config: Dict = Field({})
-    parameter_map: ParameterMapEnum = Field(ParameterMapEnum.Uniform)
+    parameter_map: str = Field("adtool.maps.UniformParameterMap.UniformParameterMap")
     parameter_map_config: Dict = Field({})
     mutator: MutatorEnum = Field(MutatorEnum.Specific)
     mutator_config: Dict = Field({})
-
-
-
-from adtool.utils.expose_config.expose_config import expose
 
 
 
@@ -183,6 +163,7 @@ class IMGEPExplorerInstance(Leaf):
 
         params_trial = self.mutator(source_policy)
 
+
         return params_trial
 
     def observe_results(self, system_output: Dict) -> Dict:
@@ -256,7 +237,7 @@ class IMGEPExplorerInstance(Leaf):
 
 @expose
 class IMGEPExplorer():
-    config_type=IMGEPConfig
+    config=IMGEPConfig
 
     # create specification for discovery attributes
     # TODO: kind of hard-coded for now, based on constructor defaults
@@ -280,28 +261,12 @@ class IMGEPExplorer():
 
     def make_behavior_map(self):
         kwargs = self.config.behavior_map_config
-        if self.config.behavior_map == BehaviorMapEnum.Mean:
-            behavior_map = MeanBehaviorMap(**kwargs)
-        elif self.config.behavior_map == BehaviorMapEnum.LeniaStatistics:
-            behavior_map = LeniaStatistics(**kwargs)
-        else:
-            # this branch should be unreachable,
-            # because the ConfigParameter decorator checks
-            raise Exception("unreachable")
-
+        behavior_map=locate(self.config.behavior_map)(**kwargs)
         return behavior_map
 
     def make_parameter_map(self):
         kwargs = self.config.parameter_map_config
-        if self.config.parameter_map== ParameterMapEnum.Uniform:
-            param_map = UniformParameterMap(**kwargs)
-        elif self.config.parameter_map == ParameterMapEnum.LeniaParameterMap:
-            param_map = LeniaParameterMap(**kwargs)
-        else:
-            # this branch should be unreachable,
-            # because the ConfigParameter decorator checks
-            raise Exception("unreachable")
-
+        param_map=locate(self.config.parameter_map)(**kwargs)
         return param_map
 
     def make_mutator(self, param_map: Any = None):

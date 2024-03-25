@@ -46,7 +46,7 @@ def export_config(cls):
 #same but with a decorator
 def expose(cls):
     dict_config = export_config(
-    cls.config_type
+    cls.config
     
     )
 
@@ -54,7 +54,7 @@ def expose(cls):
 
     cls.JSON_CONFIG = dict_config
     def __init__(self, *args, **kwargs):
-        self.config=self.config_type(*args, **kwargs)
+        self.config=self.config(*args, **kwargs)
 
         previous_init(self)
 
@@ -144,23 +144,6 @@ class ExposeConfig:
         return cls
 
 
-class expose_config(ExposeConfig):
-    """
-    This is the decorator that should be used to expose config options.
-    It's just a factory for ExposeConfig.
-    """
-
-    pass
-
-
-def _handle_type(type: type, domain: Optional[List[Any]]) -> Dict[str, Any]:
-    """
-    Converts the data in `domain` to the proper key-value pairs for inclusion
-    in the CONFIG_DEFINITION.
-    """
-    py_type_name = type.__name__.upper()
-    type_handler = _handlers[_python_type_to_config_type[py_type_name]]
-    return type_handler(domain)
 
 
 class Handlers:
@@ -195,33 +178,3 @@ class Handlers:
         # NOTE: this should never be used due to mutability of dicts
         return {"possible_values": domain}
 
-
-_handlers = {
-    "BOOLEAN": Handlers.bool_handler,
-    "INTEGER": Handlers.int_handler,
-    "DECIMAL": Handlers.float_handler,
-    "STRING": Handlers.str_handler,
-    "DICT": Handlers.dict_handler,
-}
-
-_python_type_to_config_type = {
-    "BOOL": "BOOLEAN",
-    "INT": "INTEGER",
-    "FLOAT": "DECIMAL",
-    "STR": "STRING",
-    "DICT": "DICT",
-}
-
-
-# def _update(d, u):
-#     """
-#     Small function for recursively updating a dict, taken from
-#     https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
-
-#     """
-#     for k, v in u.items():
-#         if isinstance(v, dict):
-#             d[k] = _update(d.get(k, {}), v)
-#         else:
-#             d[k] = v
-#     return d

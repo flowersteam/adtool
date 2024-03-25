@@ -3,8 +3,8 @@ import pathlib
 import shutil
 
 import torch
-from examples.maps.MeanBehaviorMap import MeanBehaviorMap
-from examples.maps.UniformParameterMap import UniformParameterMap
+from adtool.maps.MeanBehaviorMap import MeanBehaviorMap
+from adtool.maps.UniformParameterMap import UniformParameterMap
 from examples.systems.ExponentialMixture import ExponentialMixture
 from adtool.explorers.IMGEPExplorer import IMGEPExplorer, IMGEPFactory
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
