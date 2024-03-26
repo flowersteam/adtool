@@ -240,35 +240,47 @@ class RecurrentNetwork(nn.Module):
 
     def activate(self, inputs, n_passes=1):
         """
-        :param inputs: tensor of size (..., n_inputs) => only the last dim matter, then CPPN is applied on all coordinates
+        :param inputs: tensor of size (..., n_channels, n_inputs) => only the last two dims matter, then CPPN is applied on all coordinates
         :param n_passes: number of passes in the RNN TODO: currently global passes should it be internal passes as in pytorch-neat by uber research ?
-        returns: (..., n_outputs)
+        returns: (..., n_channels, n_outputs)
         """
-        input_size = inputs.shape[:-1]
+        input_size = inputs.shape[:-2]
+        channel_size = inputs.shape[-2]
         batch_size = torch.prod(torch.tensor(input_size))
         assert inputs.shape[-1] == self.n_inputs
 
         if isinstance(inputs, torch.Tensor):
-            forward_inputs = inputs.view(-1, self.n_inputs)
+            # Flatten the last two dimensions of inputs (n_channels and n_inputs)
+            forward_inputs = inputs.reshape(-1, self.n_inputs)
+            # Repeat the batch dimension to account for the number of channels
+          #  forward_inputs = forward_inputs.repeat(channel_size, 1)
         elif use_Minkowski_inputs:
             forward_inputs = inputs.features
 
-        self.hidden_activs = torch.zeros((batch_size, self.n_hidden)).to(self.device)
-        self.output_activs = torch.zeros((batch_size, self.n_outputs)).to(self.device)
+        self.hidden_activs = torch.zeros((batch_size * channel_size, self.n_hidden)).to(self.device)
+        self.output_activs = torch.zeros((batch_size * channel_size, self.n_outputs)).to(self.device)
 
         for _ in range(n_passes):
+            print("forward_inputs.shape",forward_inputs.shape)
             outputs = self.forward(forward_inputs)
+            print("outputs.shape",outputs.shape)
 
         if isinstance(inputs, torch.Tensor):
-            outputs = outputs.view(input_size + (self.n_outputs,))
+            # Reshape outputs to match the original input shape, except for the last dimension
+            outputs = outputs.reshape(input_size + (channel_size, self.n_outputs)).squeeze()
         elif use_Minkowski_inputs:
             outputs = ME.SparseTensor(
                 outputs,
                 coordinate_map_key=inputs.coordinate_map_key,
                 coordinate_manager=inputs.coordinate_manager,
             )
-
+        print("final outputs.shape",outputs.shape)
         return outputs
+
+
+
+
+
 
     def draw_net(
         self, view=False, filename=None, node_names=None, node_colors=None, fmt="svg"

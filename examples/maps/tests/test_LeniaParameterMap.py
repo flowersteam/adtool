@@ -4,9 +4,9 @@ from dataclasses import asdict
 
 import pytest
 import torch
-from examples.systems.Lenia import LeniaDynamicalParameters
+from examples.lenia.systems.Lenia import LeniaDynamicalParameters
 from adtool.maps import NEATParameterMap
-from adtool.maps.lenia.LeniaParameterMap import (
+from examples.lenia.maps.LeniaParameterMap import (
     LeniaHyperParameters,
     LeniaParameterMap,
 )

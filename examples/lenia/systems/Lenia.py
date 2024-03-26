@@ -23,6 +23,8 @@ from matplotlib.animation import FuncAnimation
 from numpy import ndarray
 from PIL import Image
 
+from examples.lenia.systems.LeniaParameters import LeniaDynamicalParameters, LeniaParameters
+
 
 
 
@@ -68,75 +70,6 @@ torch.irfft = patched_irfft
 
 
 
-
-
-
-@dataclass
-class LeniaDynamicalParameters:
-    R: Union[int, float] = 0
-    T: float = 1.0
-    m: float = 0.0
-    s: float = 0.001
-    b: torch.Tensor = torch.tensor([0.0, 0.0, 0.0, 0.0])
-
-    def __post_init__(self):
-        print("####################################### POST INIT self",self)
-        # convert out of tensors
-        if isinstance(self.R, torch.Tensor):
-            self.R = self.R.item()
-        if isinstance(self.T, torch.Tensor):
-            self.T = self.T.item()
-        if isinstance(self.m, torch.Tensor):
-            self.m = self.m.item()
-        if isinstance(self.s, torch.Tensor):
-            self.s = self.s.item()
-
-        # check constraints
-        if isinstance(self.R, float):
-            self.R = min(19,round(self.R))
-
-        self.m = min(1.0, max(0.0, self.m))
-
-        self.s = min(0.3, max(0.001, self.s))
-        
-        self.T =min(10.0, max(1.0, self.T))
-
-        if self.b.size() != (4,):
-            raise ValueError("b must be a 4-vector.")
-        self.b = torch.clamp(self.b, min=0.0, max=1.0)
-
-
-
-
-    def to_tensor(self) -> torch.Tensor:
-        return torch.cat(
-            (torch.tensor([self.R, self.T]), torch.tensor([self.m, self.s]), self.b)
-        )
-
-    @classmethod
-    def from_tensor(cls, tensor: torch.Tensor):
-        r = tensor[0].item()
-        t = tensor[1].item()
-        m = tensor[2].item()
-        s = tensor[3].item()
-        b = tensor[4:8]
-        return cls(R=r, T=t, m=m, s=s, b=b)
-
-
-@dataclass
-class LeniaParameters:
-    """Holds input parameters for Lenia model."""
-
-    dynamic_params: LeniaDynamicalParameters = field(default_factory=lambda : LeniaDynamicalParameters())
-    init_state: torch.Tensor = field(default_factory=lambda : torch.rand((10, 10)))
-
-
-from pydantic import BaseModel
-from pydantic.fields import Field
-from adtool.utils.expose_config.expose_config import expose
-
-
-
 from adtool.systems.System import System
 
 class Lenia(System):
@@ -149,7 +82,7 @@ class Lenia(System):
                  sigma=.65,
                  mix="softmax",
                  final_step=200,
-                 scale_init_state=1):
+                 scale_init_state=1, **kwargs):
         super().__init__()
         self.SX= SX
         self.SY= SY
@@ -289,6 +222,7 @@ class Lenia(System):
         del params.init_state
         with torch.no_grad():
             self.orbit[0] = init_state
+
 
         return
 
@@ -456,33 +390,3 @@ class LeniaStepFFT(torch.nn.Module):
 
 
 
-@dataclass
-class LeniaHyperParameters:
-    """Holds parameters to initialize Lenia model."""
-
-    tensor_low: torch.Tensor = LeniaDynamicalParameters().to_tensor()
-    tensor_high: torch.Tensor = LeniaDynamicalParameters().to_tensor()
-    tensor_bound_low: torch.Tensor = LeniaDynamicalParameters(
-
-        R=0.0,
-        T=1.0,
-        b=torch.tensor([0.0, 0.0, 0.0, 0.0]),
-        m=0.0,
-        s=0.001
-
-
-
-
-    ).to_tensor()
-    tensor_bound_high: torch.Tensor = LeniaDynamicalParameters(
-            
-            R=20,
-            T=20,
-            b=torch.tensor([1.0, 1.0, 1.0, 1.0]),
-            m=1.0,
-            s=0.3
-    
-        ).to_tensor()
-
-    init_state_dim: Tuple[int, int] = (10, 10)
-    cppn_n_passes: int = 2

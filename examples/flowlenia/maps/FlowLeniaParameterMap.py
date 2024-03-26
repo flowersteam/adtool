@@ -6,7 +6,9 @@ from io import StringIO
 from typing import Dict, Optional, Tuple
 
 import torch
-from examples.systems.Lenia import LeniaDynamicalParameters, LeniaHyperParameters
+from adtool.systems import System
+from examples.flowlenia.systems.FlowLenia import FlowLenia
+from examples.flowlenia.systems.FlowLeniaParameters import FlowLeniaDynamicalParameters, FlowLeniaHyperParameters, FlowLeniaKernelGrowthDynamicalParameters
 from adtool.maps import NEATParameterMap, UniformParameterMap
 from adtool.wrappers.CPPNWrapper import CPPNWrapper
 from adtool.wrappers.mutators import add_gaussian_noise
@@ -18,7 +20,7 @@ import sys
 
 
 
-class LeniaParameterMap(Leaf):
+class FlowLeniaParameterMap(Leaf):
     """
     Due to the complexities of initializing Lenia parameters,
     it's easier to make this custom parameter map.
@@ -26,9 +28,10 @@ class LeniaParameterMap(Leaf):
 
     def __init__(
         self,
+        system: FlowLenia,
         premap_key: str = "params",
-        param_obj: LeniaHyperParameters = LeniaHyperParameters(),
-        neat_config_path: str = "./maps/cppn/config.cfg",
+        param_obj: FlowLeniaHyperParameters = FlowLeniaHyperParameters(),
+        neat_config_path: str = "./adtool/maps/cppn/config.cfg",
         neat_config_str: Optional[str] = None,
         **config_decorator_kwargs,
     ):
@@ -56,12 +59,42 @@ class LeniaParameterMap(Leaf):
                 premap_key=f"genome_{self.premap_key}", config_str=neat_config_str
             )
 
-        # multi-dimensional "ragged" Gaussian noise
-        # based upon the tensor representation of LeniaDynamicalParameters
+
         self.uniform_mutator = partial(
             add_gaussian_noise,
-            mean=torch.tensor([0.0]),
-            std=torch.tensor([0.5, 0.5, 0.1, 0.05, 0.1, 0.1, 0.1, 0.1]),
+            mean=FlowLeniaDynamicalParameters(
+                R = 0.2,
+                KernelGrowths = [
+                    FlowLeniaKernelGrowthDynamicalParameters(
+                        r = 0.2,
+                        b = torch.tensor([0.2, 0.2, 0.2]),
+                        w = torch.tensor([0.2, 0.2, 0.2]),
+                        a = torch.tensor([0.2, 0.2, 0.2]),
+                        h = 0.2,
+                        m = 0.2,
+                        s = 0.01
+                    )
+                ] * system.nb_k
+            ).to_tensor(),
+            
+
+    
+
+            std=FlowLeniaDynamicalParameters(
+
+                R = 0.2,
+                KernelGrowths = [
+                    FlowLeniaKernelGrowthDynamicalParameters(
+                        r = 0.2,
+                        b = torch.tensor([0.2, 0.2, 0.2]),
+                        w = torch.tensor([0.2, 0.2, 0.2]),
+                        a = torch.tensor([0.2, 0.2, 0.2]),
+                        h = 0.2,
+                        m = 0.2,
+                        s = 0.01
+                    )
+                ] * system.nb_k
+    ).to_tensor()
         )
 
         self.SX = param_obj.init_state_dim[1]
@@ -98,14 +131,14 @@ class LeniaParameterMap(Leaf):
         # sample genome
         genome = self.neat.sample()
 
+
         # convert to parameter objects
-        dp = LeniaDynamicalParameters().from_tensor(p_dyn_tensor)
+        dp = FlowLeniaDynamicalParameters().from_tensor(p_dyn_tensor)
         p_dict = {
             "dynamic_params": asdict(dp),
             "genome": genome,
             "neat_config": self.neat.neat_config,
         }
-
         return p_dict
 
     def mutate(self, parameter_dict: Dict) -> Dict:
@@ -116,7 +149,7 @@ class LeniaParameterMap(Leaf):
         intermed_dict = deepcopy(parameter_dict)
 
         # mutate dynamic parameters
-        dp = LeniaDynamicalParameters(**parameter_dict["dynamic_params"])
+        dp = FlowLeniaDynamicalParameters(**parameter_dict["dynamic_params"])
         dp_tensor = dp.to_tensor()
         mutated_dp_tensor = self.uniform_mutator(dp_tensor)
 
@@ -127,7 +160,7 @@ class LeniaParameterMap(Leaf):
         # reassemble parameter_dict
         intermed_dict["genome"] = genome
         intermed_dict["dynamic_params"] = asdict(
-            LeniaDynamicalParameters().from_tensor(mutated_dp_tensor)
+            FlowLeniaDynamicalParameters().from_tensor(mutated_dp_tensor)
         )
 
         return intermed_dict
@@ -138,7 +171,7 @@ class LeniaParameterMap(Leaf):
         cppn_input["neat_config"] = neat_config
 
         cppn_out = CPPNWrapper(
-            postmap_shape=(self.SX, self.SY), n_passes=self.cppn_n_passes
+            postmap_shape=(self.SX, self.SY,self.C), n_passes=self.cppn_n_passes
         ).map(cppn_input)
         init_state = cppn_out["init_state"]
         return init_state

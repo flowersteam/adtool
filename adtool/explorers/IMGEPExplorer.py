@@ -12,16 +12,12 @@ from adtool.utils.expose_config.expose_config import expose
 
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
-
-from dataclasses import dataclass, field
-from adtool.maps.Map import Map
-
-from enum import Enum,StrEnum
 from pydantic import Field
 
 from pydoc import locate
 
 
+from enum import Enum
 
 class MutatorEnum(Enum):
     Gaussian = 'gaussian'
@@ -243,11 +239,14 @@ class IMGEPExplorer():
     # TODO: kind of hard-coded for now, based on constructor defaults
     discovery_spec = ["params", "output", "raw_output", "rendered_output"]
 
+    def __init__(self, *args, **kwargs):
+        pass
+
 
         
-    def __call__(self) -> "IMGEPExplorerInstance":
-        behavior_map = self.make_behavior_map()
-        param_map = self.make_parameter_map()
+    def __call__(self,system) -> "IMGEPExplorerInstance":
+        behavior_map = self.make_behavior_map(system)
+        param_map = self.make_parameter_map(system)
         mutator = self.make_mutator(param_map)
         equil_time = self.config.equil_time
         explorer = IMGEPExplorerInstance(
@@ -259,14 +258,15 @@ class IMGEPExplorer():
 
         return explorer
 
-    def make_behavior_map(self):
+    def make_behavior_map(self, system: System):
         kwargs = self.config.behavior_map_config
-        behavior_map=locate(self.config.behavior_map)(**kwargs)
+        print("system",system)
+        behavior_map=locate(self.config.behavior_map)(system,**kwargs)
         return behavior_map
 
-    def make_parameter_map(self):
+    def make_parameter_map(self, system: System):
         kwargs = self.config.parameter_map_config
-        param_map=locate(self.config.parameter_map)(**kwargs)
+        param_map=locate(self.config.parameter_map)(system,**kwargs)
         return param_map
 
     def make_mutator(self, param_map: Any = None):

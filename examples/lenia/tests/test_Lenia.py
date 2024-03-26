@@ -2,7 +2,7 @@ from copy import deepcopy
 from dataclasses import asdict
 
 import torch
-from examples.systems.Lenia import (
+from examples.lenia.systems.Lenia import (
     Lenia,
     LeniaDynamicalParameters,
     LeniaParameters,

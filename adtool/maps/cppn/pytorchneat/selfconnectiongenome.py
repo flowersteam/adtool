@@ -173,6 +173,8 @@ class SelfConnectionGenome(neat.genome.DefaultGenome):
 
     @classmethod
     def parse_config(cls, param_dict):
+
         param_dict["node_gene_type"] = neat.genes.DefaultNodeGene
         param_dict["connection_gene_type"] = SelfConnectionGene
+
         return neat.genome.DefaultGenomeConfig(param_dict)

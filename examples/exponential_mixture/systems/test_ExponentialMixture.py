@@ -1,5 +1,5 @@
 import torch
-from examples.systems.ExponentialMixture import ExponentialMixture
+from examples.exponential_mixture.systems.ExponentialMixture import ExponentialMixture
 
 
 def test_init():

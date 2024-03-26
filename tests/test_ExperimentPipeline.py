@@ -5,7 +5,7 @@ import shutil
 import torch
 from adtool.maps.MeanBehaviorMap import MeanBehaviorMap
 from adtool.maps.UniformParameterMap import UniformParameterMap
-from examples.systems.ExponentialMixture import ExponentialMixture
+from examples.exponential_mixture.systems.ExponentialMixture import ExponentialMixture
 from adtool.explorers.IMGEPExplorer import IMGEPExplorer, IMGEPFactory
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.ExperimentPipeline import ExperimentPipeline

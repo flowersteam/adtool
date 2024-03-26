@@ -40,7 +40,7 @@ def export_config(cls):
     return json
 
 
-
+import inspect
 
 
 #same but with a decorator
@@ -50,16 +50,30 @@ def expose(cls):
     
     )
 
+    print("expose", cls, cls.__module__, file=sys.stderr)
+
     previous_init = cls.__init__
+
+    #get signature of the init
+    signature = inspect.signature(cls.__init__)
+    print("signature", signature, file=sys.stderr)
 
     cls.JSON_CONFIG = dict_config
     def __init__(self, *args, **kwargs):
+        print("CURRENT SELF", self, file=sys.stderr)
         self.config=self.config(*args, **kwargs)
 
-        previous_init(self)
+        print("CURRENT ARGS", kwargs, file=sys.stderr)
+
+        previous_init(self, **kwargs)
+
+
+        
 
 
     cls.__init__ = __init__
+
+    
 
     sub = cls.__module__.split(".")
     current = _REGISTRATION
@@ -96,52 +110,6 @@ def expose(cls):
 #         new_class.__init__ = __init__
 
 #         return new_class
-
-
-
-class ExposeConfig:
-    def __init__(self, *args, **kwargs) -> None:
-        self._config_defn = self._generate_config(*args, **kwargs)
-
-    @staticmethod
-    def _generate_config(
-        name: str,
-        default: Any,
-        domain: Optional[List[Any]] = None,
-        parent: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        # convert Python type names to the corresponding config type names
-        exposed_type = type(default)
-        exposed_type_name = _python_type_to_config_type[exposed_type.__name__.upper()]
-
-        # convert the domain specification to the proper key-value pairs
-        domain_entry = _handle_type(exposed_type, domain)
-
-        # construct the config definition
-        config_defn = {
-            name: {
-                "type": exposed_type_name,
-                "default": default,
-                "parent": parent,
-                **domain_entry,
-            }
-        }
-
-
-        return config_defn
-
-    def __call__(self, cls: type) -> Any:
-        # upsert CONFIG_DEFINITION into the class
-        if not hasattr(cls, "CONFIG_DEFINITION"):
-            # insert
-            cls.CONFIG_DEFINITION = self._config_defn
-        else:
-            key_name = list(self._config_defn.keys())[0]
-            if key_name in cls.CONFIG_DEFINITION:
-                raise ValueError(f"Config option {key_name} already exists.")
-            # update
-            cls.CONFIG_DEFINITION= {**cls.CONFIG_DEFINITION, **self._config_defn}
-        return cls
 
 
 

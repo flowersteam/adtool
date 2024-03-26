@@ -2,7 +2,7 @@ import os
 from copy import deepcopy
 
 import torch
-from examples.systems.LeniaCPPN import LeniaCPPN
+from examples.lenia.systems.LeniaCPPN import LeniaCPPN
 from adtool.maps.NEATParameterMap import NEATParameterMap
 from adtool.utils.filetype_converter.filetype_converter import is_mp4
 

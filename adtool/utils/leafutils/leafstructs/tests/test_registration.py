@@ -15,7 +15,7 @@ def test_locate_cls():
 
     cls_path = "adtool.explorers.IMGEPFactory"
     assert cls == locate_cls(cls_path)
-    from examples.maps.LeniaStatistics import LeniaStatistics as cls
+    from examples.lenia.maps.LeniaStatistics import LeniaStatistics as cls
 
     cls_path = "adtool.maps.LeniaStatistics.LeniaStatistics"
     assert cls == locate_cls(cls_path)
@@ -31,7 +31,7 @@ def test_get_cls_from_path():
 
     path = "adtool.maps.LeniaStatistics.LeniaStatistics"
     cls = get_cls_from_path(path)
-    from examples.maps.LeniaStatistics import LeniaStatistics as compare_cls
+    from examples.lenia.maps.LeniaStatistics import LeniaStatistics as compare_cls
 
     assert cls == compare_cls
 
@@ -49,7 +49,7 @@ def test_get_path_from_cls():
     path = "explorers.imgep_explorer.IMGEPExplorer"
     assert compare_path == path
 
-    from examples.maps.LeniaStatistics import LeniaStatistics as compare_cls
+    from examples.lenia.maps.LeniaStatistics import LeniaStatistics as compare_cls
 
     compare_path = get_path_from_cls(compare_cls)
     # here we see that `get_path_from_cls` gives an explicit FQDN
@@ -65,8 +65,8 @@ def test_get_path_from_cls():
 
 
 def test_get_cls_from_name():
-    from examples.maps.LeniaStatistics import LeniaStatistics
-    from examples.systems.ExponentialMixture import ExponentialMixture
+    from examples.lenia.maps.LeniaStatistics import LeniaStatistics
+    from examples.exponential_mixture.systems.ExponentialMixture import ExponentialMixture
     from adtool.explorers import IMGEPFactory
     from adtool.callbacks.on_save_callbacks.save_leaf_callback import (
         SaveLeaf,

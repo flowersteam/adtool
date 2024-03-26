@@ -32,8 +32,6 @@ class UniformParameterMap(Map):
         super().__init__()
         self.locator = BlobLocator()
         self.premap_key = premap_key
-
-        print("tensor_lowww", type(tensor_low) ,flush=True)
         
 
         # convert all Union types to tensors

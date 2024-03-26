@@ -14,15 +14,7 @@ import numpy as np
 import torch
 from adtool.ExperimentPipeline import ExperimentPipeline
 from adtool.logger import AutoDiscLogger
-from adtool.utils.leafutils.leafstructs.registration import get_cls_from_name
-from mergedeep import merge
-import sys
 from collections import defaultdict
-from dataclasses import dataclass
-
-from dataclasses import field
-
-from adtool.explorers.IMGEPExplorer import IMGEPExplorer
 
 
 
@@ -114,6 +106,14 @@ def create(
         # experiment._interact_callbacks = callbacks['interact']
 
         return experiment
+    
+    system_class = _locate(parameters["system"]["path"])
+    if system_class is None:
+        raise ValueError(
+            f"Could not retrieve class from path: {parameters['system']['path']}."
+        )
+    print("ON INJECTE DANS SYSTEM CLASS")
+    system = system_class(**parameters["system"]["config"])
 
     # Get explorer factory and generate explorer
     print(parameters["explorer"]["path"])
@@ -124,15 +124,10 @@ def create(
         )
   
     explorer_factory = explorer_factory_class(**parameters["explorer"]["config"])
-    explorer = explorer_factory()
+    explorer = explorer_factory(system)
     
 
-    system_class = _locate(parameters["system"]["path"])
-    if system_class is None:
-        raise ValueError(
-            f"Could not retrieve class from path: {parameters['system']['path']}."
-        )
-    system = system_class(**parameters["system"]["config"])
+
 
     # Create experiment pipeline
     experiment = ExperimentPipeline(

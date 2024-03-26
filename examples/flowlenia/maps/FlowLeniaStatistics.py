@@ -8,6 +8,7 @@ from adtool.wrappers.BoxProjector import BoxProjector
 from adtool.utils.misc.torch_utils import roll_n
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
+from examples.flowlenia.systems.FlowLenia import FlowLenia
 
 EPS = 0.0001
 DISTANCE_WEIGHT = 2  # 1=linear, 2=quadratic, ...
@@ -288,26 +289,26 @@ def calc_image_moments(image: torch.Tensor) -> typing.Dict[str, torch.Tensor]:
     return result
 
 
-class LeniaStatistics(Leaf):
+class FlowLeniaStatistics(Leaf):
     """
     Outputs 17-dimensional embedding.
     """
 
     def __init__(
         self,
+        system: FlowLenia,
         premap_key: str = "output",
         postmap_key: str = "output",
-        SX: int = 256,
-        SY: int = 256,
     ):
+        print("####### INIT LeniaStatistics")
         super().__init__()
         self.locator = BlobLocator()
 
         self.premap_key = premap_key
         self.postmap_key = postmap_key
 
-        self.SX = SX
-        self.SY = SY
+        self.SX = system.SX
+        self.SY = system.SY
 
         # model
         self._statistic_names = [
@@ -343,6 +344,7 @@ class LeniaStatistics(Leaf):
         Returns:
             Return a torch tensor in dict
         """
+
         intermed_dict = deepcopy(input)
 
         # store raw output
@@ -359,6 +361,7 @@ class LeniaStatistics(Leaf):
         return intermed_dict
 
     def sample(self):
+        print("####### LeniaStatistics sample")
         return self.projector.sample()
 
     def _calc_distance(

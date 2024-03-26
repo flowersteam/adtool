@@ -24,6 +24,7 @@ class CPPNWrapper(Leaf):
         super().__init__()
         self.locator = BlobLocator()
 
+        print("CPPNWrapper init", postmap_shape)
         self.premap_key = premap_key
         self.postmap_key = postmap_key
         self.postmap_shape = postmap_shape
@@ -31,6 +32,9 @@ class CPPNWrapper(Leaf):
         self.n_passes = n_passes
 
     def map(self, input: Dict) -> Dict:
+
+        print(input.keys())
+        
         intermed_dict = deepcopy(input)
 
         # generate init_state and add to dict
@@ -38,6 +42,8 @@ class CPPNWrapper(Leaf):
         neat_config = intermed_dict[self.premap_key.neat_config]
         postmap_shape = self.postmap_shape
         n_passes = self.n_passes
+
+
 
         init_state = self._generate_init_state(
             genome, neat_config, postmap_shape, n_passes
@@ -49,7 +55,7 @@ class CPPNWrapper(Leaf):
 
     @staticmethod
     def _generate_init_state(
-        cppn_genome: Any, neat_config: Any, shape: Tuple[int, int], n_passes: int
+        cppn_genome: Any, neat_config: Any, shape: tuple[int], n_passes: int
     ) -> torch.Tensor:
         """
         Takes NEAT configuration and outputs the init_state tensor for Lenia
@@ -59,15 +65,15 @@ class CPPNWrapper(Leaf):
             cppn_genome, neat_config
         )
 
-        # configure output size
-        cppn_output_height = int(shape[0])
-        cppn_output_width = int(shape[1])
+
 
         cppn_input = pytorchneat.utils.create_image_cppn_input(
-            (cppn_output_height, cppn_output_width),
+            shape,
             is_distance_to_center=True,
             is_bias=True,
         )
+        #keep only one last dimension for the output and remove the rest
+     #   cppn_input = cppn_input[ :, :, :, -1].squeeze()
         cppn_output = initialization_cppn.activate(cppn_input, n_passes)
         cppn_net_output = (1.0 - cppn_output.abs()).squeeze()
 
