@@ -105,7 +105,6 @@ class FlowLenia(System):
 
         state = self.orbit[0]
         for step in range(self.final_step - 1):
-            print("state",state.shape)
             state = self._step(state, automaton)
             with torch.no_grad():
                 self.orbit[step + 1] = state
@@ -117,37 +116,25 @@ class FlowLenia(System):
         output_dict["output"] = self.orbit[-1].detach().clone()
 
         return output_dict
+    
+
 
     def render(self, data_dict, mode: str = "PIL_image") -> Optional[bytes]:
         # ignores data_dict, as the render is based on self.orbit
         # in which only the last state is stored in data_dict["output"]
 
-        colormap = create_colormap(
-            np.array(
-                [
-                    [255, 255, 255],
-                    [119, 255, 255],
-                    [23, 223, 252],
-                    [0, 190, 250],
-                    [0, 158, 249],
-                    [0, 142, 249],
-                    [81, 125, 248],
-                    [150, 109, 248],
-                    [192, 77, 247],
-                    [232, 47, 247],
-                    [255, 9, 247],
-                    [200, 0, 84],
-                ]
-            )
-            / 255
-            * 8
-        )
+
         im_array = []
         for img in self.orbit:
             # need to squeeze leading dimensions
-            parsed_img = img.squeeze().cpu().detach().numpy()
-            im = im_from_array_with_colormap(parsed_img, colormap)
-            im_array.append(im.convert("RGB"))
+            parsed_img = img.cpu().detach().numpy()
+
+            img=state2img(parsed_img)
+            if img.dtype in [np.float32, np.float64]:
+                img = np.uint8(img.clip(0, 1)*255)
+            if len(img.shape) == 2:
+                img = np.repeat(img[..., None], 3, -1)
+            im_array.append(img)
 
         if mode == "human":
             matplotlib.use("TkAgg")
@@ -179,8 +166,7 @@ class FlowLenia(System):
             params = FlowLeniaParameters(dynamic_params=dyn_p, init_state=init_state)
         return params
 
-    def _generate_automaton(self, dyn_params: FlowLeniaDynamicalParameters) -> Any:
-        
+    def _generate_automaton(self, dyn_params: FlowLeniaDynamicalParameters) -> Any:  
         
         automaton = TorchFlowLenia(
                 SX=self.SX,
@@ -243,43 +229,15 @@ class FlowLenia(System):
 Lenia Main
 ============================================================================================= """
 
-
-def create_colormap(colors: ndarray, is_marker_w: bool = True) -> List[int]:
-    MARKER_COLORS_W = [0x5F, 0x5F, 0x5F, 0x7F, 0x7F, 0x7F, 0xFF, 0xFF, 0xFF]
-    MARKER_COLORS_B = [0x9F, 0x9F, 0x9F, 0x7F, 0x7F, 0x7F, 0x0F, 0x0F, 0x0F]
-    nval = 253
-    ncol = colors.shape[0]
-    colors = np.vstack((colors, np.array([[0, 0, 0]])))
-    v = np.repeat(range(nval), 3)  # [0 0 0 1 1 1 ... 252 252 252]
-    i = np.array(list(range(3)) * nval)  # [0 1 2 0 1 2 ... 0 1 2]
-    k = v / (nval - 1) * (ncol - 1)  # interpolate between 0 .. ncol-1
-    k1 = k.astype(int)
-    c1, c2 = colors[k1, i], colors[k1 + 1, i]
-    c = (k - k1) * (c2 - c1) + c1  # interpolate between c1 .. c2
-    return np.rint(c / 8 * 255).astype(int).tolist() + (
-        MARKER_COLORS_W if is_marker_w else MARKER_COLORS_B
-    )
+def state2img(A):
+    C = A.shape[-1]
+    if C == 1:
+        return A[..., 0]
+    if C == 2:
+        return np.dstack([A[..., 0], A[..., 0], A[..., 1]])
+    return A[..., :3]
 
 
-def im_from_array_with_colormap(np_array: ndarray, colormap: List[int]) -> Image:
-    """
-    Function that transforms the color palette of a PIL image
-
-    input:
-        - image: the PIL image to transform
-        - colormap: the desired colormap
-    output: the transformed PIL image
-    """
-    image_array = np.uint8(np_array.astype(float) * 252.0)
-    transformed_image = Image.fromarray(image_array)
-    transformed_image.putpalette(colormap)
-
-    return transformed_image
-
-
-""" =============================================================================================
-Lenia Main
-============================================================================================= """
 
 # Lenia family of functions for the kernel K and for the growth mapping g
 kernel_core = {

@@ -42,38 +42,19 @@ def export_config(cls):
 
 import inspect
 
-
-#same but with a decorator
 def expose(cls):
-    dict_config = export_config(
-    cls.config
-    
-    )
-
-    print("expose", cls, cls.__module__, file=sys.stderr)
+    dict_config = export_config(cls.config  )
 
     previous_init = cls.__init__
 
-    #get signature of the init
-    signature = inspect.signature(cls.__init__)
-    print("signature", signature, file=sys.stderr)
 
     cls.JSON_CONFIG = dict_config
     def __init__(self, *args, **kwargs):
-        print("CURRENT SELF", self, file=sys.stderr)
         self.config=self.config(*args, **kwargs)
-
-        print("CURRENT ARGS", kwargs, file=sys.stderr)
-
         previous_init(self, **kwargs)
-
-
-        
-
 
     cls.__init__ = __init__
 
-    
 
     sub = cls.__module__.split(".")
     current = _REGISTRATION
@@ -90,26 +71,9 @@ def expose(cls):
         current[sub[-1]].append(cls.__name__)
 
 
-    print("_REGISTRATION", _REGISTRATION, file=sys.stderr)
     return cls
 
 
-
-# class Expose:
-#     def __init__(self, config_type):
-#         self.config_type = config_type
-
-#     def __call__(self, *args, **kwargs):
-#         new_class = type(*args, **kwargs)
-#         new_class.config_type = self.config_type
-
-#         #add a new init
-#         def __init__(self, *args, **kwargs):
-#             self.config=self.config_type(*args, **kwargs)
-
-#         new_class.__init__ = __init__
-
-#         return new_class
 
 
 

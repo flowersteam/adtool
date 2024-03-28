@@ -1,0 +1,46 @@
+{
+        "experiment": {
+            "config": {
+                "save_location": "./",
+                "save_frequency": 1
+            }
+        },
+        "system": {
+            "path": "examples.flowlenia.systems.FlowLeniaCPPN.FlowLeniaCPPN",
+            "config": {
+                "SX": 128,
+                "SY": 128,
+                "final_step": 100,
+                                "cppn_n_passes":2,
+                "C":1,
+                "nb_k":3
+            }
+        },
+        "explorer": {
+            "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
+            "config": {
+                "mutator": "specific",
+                "equil_time": 1,
+                "behavior_map": "examples.flowlenia.maps.FlowLeniaStatistics.FlowLeniaStatistics",
+                "parameter_map": "examples.flowlenia.maps.FlowLeniaCPPNParameterMap.FlowLeniaCPPNParameterMap",
+                "mutator_config": {},
+                "behavior_map_config": {},
+                "parameter_map_config": {
+                    "init_state_dim": [10, 10],
+                    "neat_config_path": "/home/flowers-user/adtool/adtool/maps/cppn/config.cfg"
+                }
+            }
+        },
+        "input_wrappers": [],
+        "output_representations": [],
+        "logger_handlers":[],
+        "callbacks": {
+        "on_discovery":[
+        {"path":"adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+        "config": {}
+        }
+        ]
+        
+    }
+    
+    }

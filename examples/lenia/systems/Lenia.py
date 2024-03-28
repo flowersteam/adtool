@@ -216,7 +216,7 @@ class Lenia(System):
             self.SX // 2
             - math.ceil(scaled_SX / 2) : self.SX // 2
             + scaled_SX // 2,
-        ] = params.init_state
+        ] = params.init_state.squeeze()
         # state is fixed deterministically by CPPN params,
         # so no need to save it after this point
         del params.init_state

@@ -362,7 +362,6 @@ class LeniaStatistics(Leaf):
         return intermed_dict
 
     def sample(self):
-        print("####### LeniaStatistics sample")
         return self.projector.sample()
 
     def _calc_distance(

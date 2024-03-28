@@ -126,7 +126,6 @@ class FlowLeniaDynamicalParameters:
         
         if i != tensor.size()[0]:
             raise ValueError("tensor size mismatch")
-        print("from_tensor KernelGrowths",len(KernelGrowths))
         return cls( R=R, KernelGrowths=KernelGrowths)
 
 

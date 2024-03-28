@@ -1,4 +1,6 @@
 from copy import deepcopy
+
+import torch
 from examples.flowlenia.systems.FlowLenia import FlowLenia
 from adtool.systems.System import System
 from adtool.wrappers.CPPNWrapper import CPPNWrapper
@@ -16,35 +18,32 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 from adtool.utils.expose_config.expose_config import expose
 
-class FlowLeniaCPPNConfig(BaseModel):
+class FlowLeniaNoiseConfig(BaseModel):
     SX: int = Field(256, ge=1)
     SY: int = Field(256, ge=1)
     final_step: int = Field(200, ge=1, le=1000)
     scale_init_state: int = Field(1, ge=1)
-    cppn_n_passes: int = Field(2, ge=1)
     C: int  = Field(1, ge=1, le=5)
 
 @expose
-class FlowLeniaCPPN(FlowLenia):
+class FlowLeniaNoise(FlowLenia):
 
-    config=FlowLeniaCPPNConfig
+    config=FlowLeniaNoiseConfig
 
     def __init__(self, *args, **kwargs):    
         super().__init__( *args, **kwargs)
+        self.scale_init_state = self.config.scale_init_state
 
-        self.cppn = CPPNWrapper(
-            postmap_shape=(self.SY, self.SX  ,self.C),
-            n_passes=self.config.cppn_n_passes,
-        )
+
 
     def map(self, input: Dict) -> Dict:
         intermed_dict = deepcopy(input)
         # turns genome into init_state
         # as CPPNWrapper is a wrapper, it operates on the lowest level
-        intermed_dict["params"] = self.cppn.map(intermed_dict["params"])
-
-
-        print("intermed_dict", intermed_dict["params"]['init_state'].shape)
+     #   intermed_dict["params"] = self.cppn.map(intermed_dict["params"])
+        #random tensor of size (SY//scale_init_state, SX//scale_init_state, C)
+        intermed_dict['params']["init_state"] = torch.rand((self.SY//self.scale_init_state, self.SX//self.scale_init_state, self.C))
+        
         # pass params to Lenia
         intermed_dict = super().map(intermed_dict)
         return intermed_dict

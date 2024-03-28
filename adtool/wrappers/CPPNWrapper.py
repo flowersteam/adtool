@@ -24,7 +24,6 @@ class CPPNWrapper(Leaf):
         super().__init__()
         self.locator = BlobLocator()
 
-        print("CPPNWrapper init", postmap_shape)
         self.premap_key = premap_key
         self.postmap_key = postmap_key
         self.postmap_shape = postmap_shape
@@ -74,12 +73,9 @@ class CPPNWrapper(Leaf):
         )
         #keep only one last dimension for the output and remove the rest
      #   cppn_input = cppn_input[ :, :, :, -1].squeeze()
-        print("cppn_input", cppn_input.shape)
         cppn_output = initialization_cppn.activate(cppn_input, n_passes)
-        print("cppn_output", cppn_output.shape)
         
         cppn_net_output = (1.0 - cppn_output.abs())#.squeeze()
 
-        print("cppn_net_output", cppn_net_output.shape)
 
         return cppn_net_output

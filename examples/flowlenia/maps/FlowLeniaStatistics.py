@@ -302,7 +302,6 @@ class FlowLeniaStatistics(Leaf):
         premap_key: str = "output",
         postmap_key: str = "output",
     ):
-        print("####### INIT LeniaStatistics")
         super().__init__()
         self.locator = BlobLocator()
 
@@ -364,7 +363,6 @@ class FlowLeniaStatistics(Leaf):
         return intermed_dict
 
     def sample(self):
-        print("####### LeniaStatistics sample")
         return self.projector.sample()
 
     def _calc_distance(
@@ -381,7 +379,6 @@ class FlowLeniaStatistics(Leaf):
         """Calculates the final statistics for lenia last observation"""
 
         # sum the last dimension
-        print("final_obs.shape",final_obs.shape)
         final_obs = torch.sum(final_obs, dim=-1).squeeze()
 
         feature_vector = torch.zeros(self._n_latents)

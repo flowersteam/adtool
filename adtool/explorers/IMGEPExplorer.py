@@ -261,7 +261,6 @@ class IMGEPExplorer():
 
     def make_behavior_map(self, system: System):
         kwargs = self.config.behavior_map_config
-        print("system",system)
         behavior_map=locate(self.config.behavior_map)(system,**kwargs)
         return behavior_map
 

@@ -20,7 +20,7 @@ import sys
 
 
 
-class FlowLeniaParameterMap(Leaf):
+class FlowLeniaCPPNParameterMap(Leaf):
     """
     Due to the complexities of initializing Lenia parameters,
     it's easier to make this custom parameter map.
@@ -31,6 +31,8 @@ class FlowLeniaParameterMap(Leaf):
         system: FlowLenia,
         premap_key: str = "params",
         param_obj: FlowLeniaHyperParameters = None,
+        neat_config_path: str = "./adtool/maps/cppn/config.cfg",
+        neat_config_str: Optional[str] = None,
         **config_decorator_kwargs,
     ):
         super().__init__()
@@ -52,6 +54,14 @@ class FlowLeniaParameterMap(Leaf):
             tensor_bound_low=param_obj.tensor_bound_low,
             tensor_bound_high=param_obj.tensor_bound_high,
         )
+        if not neat_config_str:
+            self.neat = NEATParameterMap(
+                premap_key=f"genome_{self.premap_key}", config_path=neat_config_path
+            )
+        else:
+            self.neat = NEATParameterMap(
+                premap_key=f"genome_{self.premap_key}", config_str=neat_config_str
+            )
 
 
         self.uniform_mutator = partial(
@@ -122,13 +132,16 @@ class FlowLeniaParameterMap(Leaf):
         # sample dynamical parameters
         p_dyn_tensor = self.uniform.sample()
 
-
+        # sample genome
+        genome = self.neat.sample()
 
 
         # convert to parameter objects
         dp = FlowLeniaDynamicalParameters().from_tensor(p_dyn_tensor)
         p_dict = {
             "dynamic_params": asdict(dp),
+            "genome": genome,
+            "neat_config": self.neat.neat_config,
         }
         return p_dict
 
@@ -144,8 +157,25 @@ class FlowLeniaParameterMap(Leaf):
         dp_tensor = dp.to_tensor()
         mutated_dp_tensor = self.uniform_mutator(dp_tensor)
 
+        # mutate CPPN genome
+        genome = intermed_dict["genome"]
+        genome.mutate(self.neat.neat_config.genome_config)
+
+        # reassemble parameter_dict
+        intermed_dict["genome"] = genome
         intermed_dict["dynamic_params"] = asdict(
             FlowLeniaDynamicalParameters().from_tensor(mutated_dp_tensor)
         )
 
         return intermed_dict
+
+    def _cppn_map_genome(self, genome, neat_config) -> torch.Tensor:
+        cppn_input = {}
+        cppn_input["genome"] = genome
+        cppn_input["neat_config"] = neat_config
+
+        cppn_out = CPPNWrapper(
+            postmap_shape=(self.SX, self.SY,self.C), n_passes=self.cppn_n_passes
+        ).map(cppn_input)
+        init_state = cppn_out["init_state"]
+        return init_state

@@ -112,11 +112,9 @@ def create(
         raise ValueError(
             f"Could not retrieve class from path: {parameters['system']['path']}."
         )
-    print("ON INJECTE DANS SYSTEM CLASS")
     system = system_class(**parameters["system"]["config"])
 
     # Get explorer factory and generate explorer
-    print(parameters["explorer"]["path"])
     explorer_factory_class = _locate(parameters["explorer"]["path"])
     if explorer_factory_class is None:
         raise ValueError(

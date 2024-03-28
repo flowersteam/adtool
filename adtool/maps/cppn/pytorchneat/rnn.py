@@ -246,7 +246,6 @@ class RecurrentNetwork(nn.Module):
         """
         input_size = inputs.shape[:-2]
         channel_size = inputs.shape[-2]
-        print("channel_size", channel_size)
         batch_size = torch.prod(torch.tensor(input_size))
         assert inputs.shape[-1] == self.n_inputs
 
@@ -264,7 +263,6 @@ class RecurrentNetwork(nn.Module):
         self.output_activs = torch.zeros((batch_size * channel_size, self.n_outputs)).to(self.device)
 
         for _ in range(n_passes):
-            print("forward_inputs", forward_inputs.shape)
             outputs = self.forward(forward_inputs)
 
         if isinstance(inputs, torch.Tensor):
@@ -278,7 +276,6 @@ class RecurrentNetwork(nn.Module):
                 coordinate_map_key=inputs.coordinate_map_key,
                 coordinate_manager=inputs.coordinate_manager,
             )
-        print("outputs", outputs.shape)
         return outputs
 
 
