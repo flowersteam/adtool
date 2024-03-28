@@ -73,7 +73,9 @@ class FlowLenia(System):
         self.nb_k= nb_k
         self.C= C
         self.n= n
+        self.R= R
         self.theta_A= theta_A
+
 
         self.locator = BlobLocator()
         self.orbit = torch.empty(
@@ -81,8 +83,10 @@ class FlowLenia(System):
             requires_grad=False,
         )
 
-        M = torch.ones((C, C), dtype=int) * nb_k
+        M = torch.ones((C, C), dtype=int) * self.nb_k
+
         self.nb_k = int(M.sum())
+
         self.c0, self.c1 = conn_from_matrix(M)
 
 
@@ -110,7 +114,7 @@ class FlowLenia(System):
         # must detach here as gradients are not used
         # and this also leads to a deepcopy error downstream
         # also, squeezing leading dimensions for convenience
-        output_dict["output"] = self.orbit[-1].detach().clone().squeeze()
+        output_dict["output"] = self.orbit[-1].detach().clone()
 
         return output_dict
 
@@ -157,7 +161,7 @@ class FlowLenia(System):
         elif mode == "PIL_image":
             byte_img = io.BytesIO()
             imageio.mimwrite(
-                byte_img, im_array, "mp4", fps=1, output_params=["-f", "mp4"]
+                byte_img, im_array, "mp4", fps=10, output_params=["-f", "mp4"]
             )
             return byte_img.getvalue()
         else:
@@ -206,15 +210,10 @@ class FlowLenia(System):
             requires_grad=False,
         )
 
-        print("init_state.shape",init_state.shape)
-        print("params.init_state.shape",params.init_state.shape)
         scaled_SY = self.SY // self.scale_init_state
         scaled_SX = self.SX // self.scale_init_state
 
-        print("rangeX",self.SY // 2
-            - math.ceil(scaled_SY / 2), self.SY // 2 + scaled_SY // 2)
-        print("rangeY",self.SX // 2
-            - math.ceil(scaled_SX / 2), self.SX // 2 + scaled_SX // 2)
+
 
         init_state[
             self.SY // 2
@@ -343,6 +342,7 @@ class TorchFlowLenia(torch.nn.Module):
         self.R = R
         self.kernelgrowths = kernelgrowths
 
+
         self.c0 = c0
         self.c1 = c1
 
@@ -374,10 +374,10 @@ class TorchFlowLenia(torch.nn.Module):
         midY=self.SY//2
         
 
-        Ds = [ np.linalg.norm(np.mgrid[-midX:midX, -midY:midY], axis=0) /
-                ((self.R+15) * k.r) for k in self.kernelgrowths ]  # (x,y,k)
+        # Ds = [ np.linalg.norm(np.mgrid[-midX:midX, -midY:midY], axis=0) /
+        #         ((self.R+15) * k.r) for k in self.kernelgrowths ]  # (x,y,k)
         
-        print("Ds",Ds[0].shape)
+
         
 
         x = torch.linspace(-midX, midX, 2*midX, dtype=torch.float)
@@ -387,7 +387,7 @@ class TorchFlowLenia(torch.nn.Module):
                 ((self.R+15) * k.r) for k in self.kernelgrowths ]
 
 
-        print("Ds",Ds[0].shape)
+
         
         
 
@@ -403,7 +403,6 @@ class TorchFlowLenia(torch.nn.Module):
     
         fK = torch.fft.fft2(torch.fft.fftshift(nK, dim=(0,1)), dim=(0,1))
 
-        fK=fK
 
         self.fK=fK
         self.K=K

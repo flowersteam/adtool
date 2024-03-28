@@ -38,8 +38,9 @@ class FlowLeniaCPPN(FlowLenia):
             SX=self.SX,
             SY=self.SY,
             C=self.C,
-            final_step=self.config.final_step,
+            final_step=self.final_step,
             scale_init_state=self.config.scale_init_state,
+            nb_k=self.nb_k
         )
         self.cppn = CPPNWrapper(
             postmap_shape=(self.SY, self.SX  ,self.C),
@@ -53,6 +54,7 @@ class FlowLeniaCPPN(FlowLenia):
         intermed_dict["params"] = self.cppn.map(intermed_dict["params"])
         # pass params to Lenia
         intermed_dict = self.flowlenia.map(intermed_dict)
+        print("intermed_dict.dynamic_params",intermed_dict['output'].shape)
         return intermed_dict
     
     

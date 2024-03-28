@@ -30,12 +30,16 @@ class FlowLeniaParameterMap(Leaf):
         self,
         system: FlowLenia,
         premap_key: str = "params",
-        param_obj: FlowLeniaHyperParameters = FlowLeniaHyperParameters(),
+        param_obj: FlowLeniaHyperParameters = None,
         neat_config_path: str = "./adtool/maps/cppn/config.cfg",
         neat_config_str: Optional[str] = None,
         **config_decorator_kwargs,
     ):
         super().__init__()
+
+        if param_obj is None:
+            param_obj = FlowLeniaHyperParameters.from_nb_k(system.nb_k)
+
         self.locator = BlobLocator()
         # if config options set by decorator, override config
         if len(config_decorator_kwargs) > 0:
@@ -58,6 +62,8 @@ class FlowLeniaParameterMap(Leaf):
             self.neat = NEATParameterMap(
                 premap_key=f"genome_{self.premap_key}", config_str=neat_config_str
             )
+
+        print("nb_k",system.nb_k)
 
 
         self.uniform_mutator = partial(

@@ -18,8 +18,7 @@ def create_image_cppn_input(output_size, is_distance_to_center=True, is_bias=Tru
 
     cppn_input = cppn_input.unsqueeze(-2).expand(-1, -1, output_size[-1], -1)
         
-        
-    print("create_image_cppn_input",cppn_input.shape)
+    
         
          
     return cppn_input

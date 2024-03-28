@@ -59,6 +59,23 @@ class FlowLeniaKernelGrowthDynamicalParameters:
 @dataclass
 class FlowLeniaDynamicalParameters:
 
+    @staticmethod
+    def from_nb_k(nb_k: int):
+        return FlowLeniaDynamicalParameters(
+            R=0.2,
+            KernelGrowths=[
+                FlowLeniaKernelGrowthDynamicalParameters(
+                    r=0.2,
+                    b=torch.tensor([0.2, 0.2, 0.2]),
+                    w=torch.tensor([0.2, 0.2, 0.2]),
+                    a=torch.tensor([0.2, 0.2, 0.2]),
+                    h=0.2,
+                    m=0.2,
+                    s=0.01,
+                )
+            for _ in range(nb_k) ]
+        )
+
     R: Union[int, float] = 10
     KernelGrowths: List[FlowLeniaKernelGrowthDynamicalParameters ] = field(default_factory=lambda : [FlowLeniaKernelGrowthDynamicalParameters()]*40)
 
@@ -109,7 +126,7 @@ class FlowLeniaDynamicalParameters:
         
         if i != tensor.size()[0]:
             raise ValueError("tensor size mismatch")
-
+        print("from_tensor KernelGrowths",len(KernelGrowths))
         return cls( R=R, KernelGrowths=KernelGrowths)
 
 
@@ -128,13 +145,27 @@ from adtool.utils.expose_config.expose_config import expose
 
 
 
-
-
 @dataclass
 class FlowLeniaHyperParameters:
     """Holds parameters to initialize Lenia model."""
 
-    tensor_low: torch.Tensor = FlowLeniaDynamicalParameters().to_tensor()
+    @staticmethod
+    def from_nb_k(nb_k: int):
+        return FlowLeniaHyperParameters(
+            tensor_low=FlowLeniaDynamicalParameters.from_nb_k(nb_k).to_tensor(),
+            tensor_high=FlowLeniaDynamicalParameters.from_nb_k(nb_k).to_tensor(),
+            tensor_bound_low=FlowLeniaDynamicalParameters.from_nb_k(nb_k).to_tensor(),
+            tensor_bound_high=FlowLeniaDynamicalParameters.from_nb_k(nb_k).to_tensor(),
+            init_state_dim=(10, 10,10),
+            cppn_n_passes=2
+        )
+
+
+
+
+
+    tensor_low: torch.Tensor = FlowLeniaDynamicalParameters(
+    ).to_tensor()
     tensor_high: torch.Tensor = FlowLeniaDynamicalParameters().to_tensor()
 
 
@@ -151,10 +182,11 @@ class FlowLeniaHyperParameters:
                 m=0.2,
                 s=0.01,
             )
-        ]*40,
+      for _ in range(40) ],
 
 
     ).to_tensor()
+
     tensor_bound_high: torch.Tensor = FlowLeniaDynamicalParameters(
             
         R=25,
@@ -168,7 +200,7 @@ class FlowLeniaHyperParameters:
                 m=0.5,
                 s=0.18,
             )
-        ]*40,
+        for _ in range(40) ],
     
         ).to_tensor()
 

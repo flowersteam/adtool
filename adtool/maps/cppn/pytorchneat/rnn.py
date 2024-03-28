@@ -246,12 +246,15 @@ class RecurrentNetwork(nn.Module):
         """
         input_size = inputs.shape[:-2]
         channel_size = inputs.shape[-2]
+        print("channel_size", channel_size)
         batch_size = torch.prod(torch.tensor(input_size))
         assert inputs.shape[-1] == self.n_inputs
 
         if isinstance(inputs, torch.Tensor):
             # Flatten the last two dimensions of inputs (n_channels and n_inputs)
+            #only if channel_size > 1
             forward_inputs = inputs.reshape(-1, self.n_inputs)
+
             # Repeat the batch dimension to account for the number of channels
           #  forward_inputs = forward_inputs.repeat(channel_size, 1)
         elif use_Minkowski_inputs:
@@ -261,20 +264,21 @@ class RecurrentNetwork(nn.Module):
         self.output_activs = torch.zeros((batch_size * channel_size, self.n_outputs)).to(self.device)
 
         for _ in range(n_passes):
-            print("forward_inputs.shape",forward_inputs.shape)
+            print("forward_inputs", forward_inputs.shape)
             outputs = self.forward(forward_inputs)
-            print("outputs.shape",outputs.shape)
 
         if isinstance(inputs, torch.Tensor):
             # Reshape outputs to match the original input shape, except for the last dimension
-            outputs = outputs.reshape(input_size + (channel_size, self.n_outputs)).squeeze()
+            outputs = outputs.reshape(input_size + (channel_size, self.n_outputs))
+            #squeeze just the last dimension
+            outputs.squeeze_(-1)
         elif use_Minkowski_inputs:
             outputs = ME.SparseTensor(
                 outputs,
                 coordinate_map_key=inputs.coordinate_map_key,
                 coordinate_manager=inputs.coordinate_manager,
             )
-        print("final outputs.shape",outputs.shape)
+        print("outputs", outputs.shape)
         return outputs
 
 

@@ -15,7 +15,9 @@ DISTANCE_WEIGHT = 2  # 1=linear, 2=quadratic, ...
 
 
 def center_of_mass(input_array: torch.Tensor) -> torch.Tensor:
+
     normalizer = input_array.sum()
+
     grids = torch.meshgrid(*[torch.arange(0, i) for i in input_array.shape])
 
     center = torch.tensor(
@@ -379,8 +381,8 @@ class FlowLeniaStatistics(Leaf):
         """Calculates the final statistics for lenia last observation"""
 
         # sum the last dimension
-        final_obs = torch.sum(final_obs, dim=-1).squeeze()
         print("final_obs.shape",final_obs.shape)
+        final_obs = torch.sum(final_obs, dim=-1).squeeze()
 
         feature_vector = torch.zeros(self._n_latents)
         cur_idx = 0

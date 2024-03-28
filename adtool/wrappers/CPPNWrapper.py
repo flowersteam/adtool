@@ -74,7 +74,12 @@ class CPPNWrapper(Leaf):
         )
         #keep only one last dimension for the output and remove the rest
      #   cppn_input = cppn_input[ :, :, :, -1].squeeze()
+        print("cppn_input", cppn_input.shape)
         cppn_output = initialization_cppn.activate(cppn_input, n_passes)
-        cppn_net_output = (1.0 - cppn_output.abs()).squeeze()
+        print("cppn_output", cppn_output.shape)
+        
+        cppn_net_output = (1.0 - cppn_output.abs())#.squeeze()
+
+        print("cppn_net_output", cppn_net_output.shape)
 
         return cppn_net_output
