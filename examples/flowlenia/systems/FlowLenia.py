@@ -39,6 +39,7 @@ from adtool.utils.expose_config.expose_config import expose
 
 
 from adtool.systems.System import System
+from examples.flowlenia.systems.ReintegrationTracking import ReintegrationTracking
 from examples.flowlenia.systems.Utils import conn_from_matrix, growth, ker_f, sigmoid, sobel
 
 class FlowLenia(System):
@@ -76,13 +77,15 @@ class FlowLenia(System):
 
         self.locator = BlobLocator()
         self.orbit = torch.empty(
-                (self.final_step, 1, 1, self.SX, self.SY,self.C),
+                (self.final_step, self.SX, self.SY,self.C),
             requires_grad=False,
         )
 
         M = torch.ones((C, C), dtype=int) * nb_k
         self.nb_k = int(M.sum())
         self.c0, self.c1 = conn_from_matrix(M)
+
+
 
 
     def map(self, input: Dict) -> Dict:
@@ -195,10 +198,7 @@ class FlowLenia(System):
 
     def _bootstrap(self, params: FlowLeniaParameters):
 
-        print("self.C",self.C)
         init_state = torch.zeros(
-            1,
-            1,
             self.SY,
             self.SX,
             self.C,
@@ -206,16 +206,24 @@ class FlowLenia(System):
             requires_grad=False,
         )
 
+        print("init_state.shape",init_state.shape)
+        print("params.init_state.shape",params.init_state.shape)
         scaled_SY = self.SY // self.scale_init_state
         scaled_SX = self.SX // self.scale_init_state
 
-        init_state[0, 0][
+        print("rangeX",self.SY // 2
+            - math.ceil(scaled_SY / 2), self.SY // 2 + scaled_SY // 2)
+        print("rangeY",self.SX // 2
+            - math.ceil(scaled_SX / 2), self.SX // 2 + scaled_SX // 2)
+
+        init_state[
             self.SY // 2
             - math.ceil(scaled_SY / 2) : self.SY // 2
             + scaled_SY // 2,
             self.SX // 2
             - math.ceil(scaled_SX / 2) : self.SX // 2
             + scaled_SX // 2,
+            
         ] = params.init_state
         # state is fixed deterministically by CPPN params,
         # so no need to save it after this point
@@ -223,7 +231,6 @@ class FlowLenia(System):
         with torch.no_grad():
             self.orbit[0] = init_state
 
-        print("self.orbit[0].shape",self.orbit[0].shape)
 
         return
 
@@ -324,7 +331,6 @@ class TorchFlowLenia(torch.nn.Module):
     ) -> None:
         torch.nn.Module.__init__(self)
 
-        self.register_buffer("R", R )
         self.register_buffer("dt", torch.tensor(dt))
         self.register_buffer("dd", torch.tensor(dd))
         self.register_buffer("sigma", torch.tensor(sigma))
@@ -334,6 +340,7 @@ class TorchFlowLenia(torch.nn.Module):
         self.register_buffer("n", torch.tensor(n))
         self.register_buffer("theta_A", torch.tensor(theta_A))
 
+        self.R = R
         self.kernelgrowths = kernelgrowths
 
         self.c0 = c0
@@ -345,8 +352,12 @@ class TorchFlowLenia(torch.nn.Module):
         self.SY = SY
         self.spheric_pad = SphericPad(self.R)
 
+        self.RT = ReintegrationTracking(self.SX, self.SY, self.dt,
+            self.dd, self.sigma)
 
         self.device = device
+
+
 
         self.compute_kernel()
 
@@ -366,6 +377,19 @@ class TorchFlowLenia(torch.nn.Module):
         Ds = [ np.linalg.norm(np.mgrid[-midX:midX, -midY:midY], axis=0) /
                 ((self.R+15) * k.r) for k in self.kernelgrowths ]  # (x,y,k)
         
+        print("Ds",Ds[0].shape)
+        
+
+        x = torch.linspace(-midX, midX, 2*midX, dtype=torch.float)
+        y = torch.linspace(-midY, midY, 2*midY, dtype=torch.float)
+        X, Y = torch.meshgrid(x, y)
+        Ds = [ torch.norm(torch.stack((X, Y), dim=0), dim=0) /
+                ((self.R+15) * k.r) for k in self.kernelgrowths ]
+
+
+        print("Ds",Ds[0].shape)
+        
+        
 
 
 
@@ -379,7 +403,7 @@ class TorchFlowLenia(torch.nn.Module):
     
         fK = torch.fft.fft2(torch.fft.fftshift(nK, dim=(0,1)), dim=(0,1))
 
-        fK=fK[None,None,...]
+        fK=fK
 
         self.fK=fK
         self.K=K
@@ -392,38 +416,30 @@ class TorchFlowLenia(torch.nn.Module):
     def forward(self, A: torch.Tensor) -> torch.Tensor:
         # A has shape [1, 1, 256, 256, 2]
 
-  
-        fA = torch.fft.fft2(A, dim=(2, 3))  # (1, 1, x, y, c)
+
+        fA = torch.fft.fft2(A,dim=(0,1))  # (x,y,c)
+
+        fAk = fA[:, :, self.c0]  # (x,y,k)
 
 
-        fAk = fA[:, :, :, :, self.c0]  # (1, 1, x, y, k)
-
-        print("fAk.shape", fAk.shape)
-        print("self.fK.shape", self.fK.shape)
-
-        U = torch.fft.ifft2(self.fK * fAk, dim=(2, 3)).real  # (1, 1, x, y, k)
-
-        print("U.shape", U.shape) # (1, 1, x, y, k)
-        # growth takes (x, y, k) and returns (x, y, k)
-        U = growth(    U , self.m, self.s) * self.h 
-        # apply it to  each batch
+        U = torch.fft.ifft2(self.fK * fAk,dim=(0,1) ).real  # (x,y,k)
         
+        U = growth(U, self.m, self.s) * self.h  # (x,y,k)
 
-        
 
-        print("U.shape", U.shape)
+        U = torch.stack([ U[:, :, self.c1[c]].sum(axis=-1) for c in range(self.C) ], dim=-1)  # (x,y,c)
 
-        U = torch.stack([U[:, :, :, :, self.c1[c]].sum(dim=-1) for c in range(self.C)], dim=-1)  # (1, 1, x, y, c)
+        #-------------------------------FLOW------------------------------------------
+        nabla_U = sobel(U) #(x, y, 2, c)   
 
-        # -------------------------------FLOW------------------------------------------
-        nabla_U = sobel(U)  # (1, 1, x, y, 2, c)
+        nabla_A = sobel(A.sum(axis = -1, keepdims = True).double()) #(x, y, 2, 1)
 
-        nabla_A = sobel(A.sum(dim=-1, keepdims=True).double())  # (1, 1, x, y, 2, 1)
+        alpha = torch.clip((A[:, :, None, :]/self.theta_A)**self.n, .0, 1.)
 
-        alpha = torch.clip((A[:, :, :, :, None] / self.theta_A) ** self.n, .0, 1.)
-
-        F = nabla_U * (1 - alpha) - nabla_A * alpha
+        F = nabla_U * (1 - alpha)  - nabla_A * alpha #
 
         nA = self.RT(A, F)
+
+
 
         return nA

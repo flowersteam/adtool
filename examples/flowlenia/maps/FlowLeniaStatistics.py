@@ -29,7 +29,7 @@ def center_of_mass(input_array: torch.Tensor) -> torch.Tensor:
         center = torch.tensor(
             [int((input_array.shape[0] - 1) / 2), int((input_array.shape[1] - 1) / 2)]
         )
-
+    
     return center
 
 
@@ -309,6 +309,7 @@ class FlowLeniaStatistics(Leaf):
 
         self.SX = system.SX
         self.SY = system.SY
+        self.C = system.C
 
         # model
         self._statistic_names = [
@@ -376,6 +377,10 @@ class FlowLeniaStatistics(Leaf):
 
     def _calc_static_statistics(self, final_obs: torch.Tensor) -> torch.Tensor:
         """Calculates the final statistics for lenia last observation"""
+
+        # sum the last dimension
+        final_obs = torch.sum(final_obs, dim=-1).squeeze()
+        print("final_obs.shape",final_obs.shape)
 
         feature_vector = torch.zeros(self._n_latents)
         cur_idx = 0

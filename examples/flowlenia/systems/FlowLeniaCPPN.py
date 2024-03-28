@@ -1,19 +1,14 @@
 from copy import deepcopy
-from dataclasses import asdict, dataclass
-from typing import Dict, Optional, Union
-
-import torch
 from examples.flowlenia.systems.FlowLenia import FlowLenia
 from adtool.systems.System import System
 from adtool.wrappers.CPPNWrapper import CPPNWrapper
 
 from adtool.utils.leaf.locators.locators import BlobLocator
 
-import sys
 
+from typing import Dict
 
-# now import enum
-from enum import Enum, auto, unique, StrEnum
+from typing import Optional
 
 
 
