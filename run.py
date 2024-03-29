@@ -13,7 +13,7 @@ from pydoc import locate as _locate
 import numpy as np
 import torch
 from adtool.ExperimentPipeline import ExperimentPipeline
-from adtool.logger import AutoDiscLogger
+from adtool.utils.logger import AutoDiscLogger
 from collections import defaultdict
 
 

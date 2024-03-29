@@ -12,7 +12,7 @@ from adtool.ExperimentPipeline import ExperimentPipeline
 from adtool.callbacks.on_save_callbacks.save_leaf_callback import (
     SaveLeaf,
 )
-from adtool.logger import AutoDiscLogger
+from adtool.utils.logger import AutoDiscLogger
 
 
 def setup_function(function):

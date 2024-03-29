@@ -48,6 +48,12 @@ dev = [
 docs = [
     "pdoc>=13.1.1",
 ]
+sd = [
+    "transformers",
+    "diffusers",
+    "accelerate"
+]
+
 
 [tool.setuptools.packages.find]
 where = ["."]
