@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import io
+import pickle
 import random
 from copy import deepcopy
 from dataclasses import dataclass
@@ -12,10 +13,14 @@ import torch
 from adtool.systems.System import System
 from adtool.utils.expose_config.expose_config import expose
 from adtool.utils.leaf.locators.locators import BlobLocator
-from diffusers import AutoencoderKL, PNDMScheduler, UNet2DConditionModel
+from diffusers import AutoencoderKL, LCMScheduler, UNet2DConditionModel
 from PIL import Image
 from tqdm.auto import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
+from diffusers import UNet2DConditionModel
+
+from diffusers import AutoencoderKL
+
 
 TORCH_DEVICE = "mps"
 TORCH_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -27,45 +32,62 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 from adtool.systems.System import System
 
+from diffusers import DiffusionPipeline
 
 class GenerationParams(BaseModel):
     height: int = Field(512, ge=64, le=1024)
     width: int = Field(512, ge=64, le=1024)
-    num_inference_steps: int = Field(16, ge=8, le=256)
-    guidance_scale: float = Field(7.5, ge=1.0, le=20.0)
+    num_inference_steps: int = Field(3, ge=0, le=50)
+    guidance_scale: float = Field(7.5, ge=0, le=20.0)
     initial_condition_seed: int = Field(0, ge=0, le=999999)
 
 
-@expose
-class StableDiffusionPropagator(System):
+def default_unet():
+    from peft import PeftModel
+    unet=UNet2DConditionModel.from_pretrained("segmind/tiny-sd", subfolder="unet")
+    PeftModel.from_pretrained(unet, "akameswa/lcm-lora-tiny-sd")
     
-    config=GenerationParams
+    return unet
+
+def default_scheduler():
+    scheduler= LCMScheduler.from_pretrained("segmind/tiny-sd", subfolder="scheduler")
+    return scheduler
+
+
+
+    
+
+class StableDiffusion(System):
+    
 
     def __init__(
         self,
-        premap_key="params",
-        postmap_key="output",
         height=512,
         width=512,
-        num_inference_steps=16,
         guidance_scale=7.5,
-        seed_prompt="a photo of a miniature schnauzer on the beach",
+        num_inference_steps: int = 3,
+        vae=AutoencoderKL.from_pretrained("segmind/tiny-sd", subfolder="vae"),
+        unet=default_unet(),
+        scheduler=default_scheduler(),
         initial_condition_seed=0,
+         *args, **kwargs
+
     ) -> None:
-        super().__init__()
-        self.premap_key = premap_key
-        self.postmap_key = postmap_key
+      #  super().__init__()
+        super().__init__( *args, **kwargs)
+        self.premap_key = "params"
+        self.postmap_key = "output"
         self.locator = BlobLocator()
 
         # pipeline hyperparameters
-        self.height = height  # default height of Stable Diffusion
-        self.width = width  # default width of Stable Diffusion
+        self.height = height
+        self.width = width
 
-        self.num_inference_steps = num_inference_steps  # Number of denoising steps
+        self.num_inference_steps = num_inference_steps  
+        # Number of denoising steps
 
         self.guidance_scale = guidance_scale  # Scale for classifier-free guidance
 
-        self.seed_prompt = seed_prompt
 
         self.initial_condition_seed = initial_condition_seed
 
@@ -73,26 +95,14 @@ class StableDiffusionPropagator(System):
         self.latents_over_t = []
         ## Load models
         # Load the autoencoder model which will be used to decode the latents into image space.
-        self.vae = AutoencoderKL.from_pretrained(
-            "segmind/tiny-sd", subfolder="vae"
-        )
+        self.vae = vae
 
         # The UNet model for reverse diffusing the latents.
-        self.unet = UNet2DConditionModel.from_pretrained(
-            "segmind/tiny-sd", subfolder="unet"
-        )
-        self.unet.set_attention_slice(slice_size="auto")
+        self.unet = unet
+       # self.unet.set_attention_slice(slice_size="auto")
 
         # Scheduler for determining the denoising schedule
-        self.scheduler = PNDMScheduler(
-            num_train_timesteps=1000,
-            beta_start=0.00085,
-            beta_end=0.012,
-            beta_schedule="scaled_linear",
-            skip_prk_steps=True,
-            steps_offset=1,
-            set_alpha_to_one=False,
-        )
+        self.scheduler = scheduler
         self.scheduler.set_timesteps(self.num_inference_steps)
 
         ## Move to GPU
@@ -105,21 +115,9 @@ class StableDiffusionPropagator(System):
         batch_size = 1
 
         # generate initial condition
-        if fix_seed:
-            latents = torch.randn(
-                (
-                    batch_size,
-                    self.unet.config.in_channels,
-                    self.height // 8,
-                    self.width // 8,
-                ),
-                generator=torch.Generator(TORCH_DEVICE).manual_seed(
-                    self.initial_condition_seed
-                ),
-                device=TORCH_DEVICE,
-            )
-        else:
-            latents = torch.randn(
+
+
+        latents = torch.randn(
                 (
                     batch_size,
                     self.unet.config.in_channels,
@@ -139,6 +137,9 @@ class StableDiffusionPropagator(System):
             size=tuple(list(self.scheduler.timesteps.size()) + list(latents.size())),
             device=TORCH_DEVICE,
         )
+    #    latents=pickle.load(open('true_latents.pkl', 'rb'))
+
+
 
         for i, t in enumerate(tqdm(self.scheduler.timesteps)):
             # expand the latents if we are doing classifier-free guidance to avoid doing two forward passes.
@@ -193,3 +194,18 @@ class StableDiffusionPropagator(System):
         byte_img = io.BytesIO()
         imageio.mimwrite(byte_img, imgs, "mp4", fps=5, output_params=["-f", "mp4"])
         return byte_img.getvalue()
+
+
+
+@expose
+class StableDiffusionPropagator(StableDiffusion):
+    
+    config=GenerationParams
+
+    def __init__(
+        self,
+         *args, **kwargs
+
+    ) -> None:
+        print("StableDiffusionPropagator", args, kwargs)
+        super().__init__( *args, **kwargs)

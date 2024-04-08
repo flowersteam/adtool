@@ -8,7 +8,8 @@ from typing import Dict, Optional, Tuple
 import torch
 from examples.lenia.systems.Lenia import Lenia
 from examples.lenia.systems.LeniaParameters import LeniaDynamicalParameters, LeniaHyperParameters
-from adtool.maps import NEATParameterMap, UniformParameterMap
+from adtool.maps.UniformParameterMap import UniformParameterMap
+from adtool.maps.NEATParameterMap import NEATParameterMap
 from adtool.wrappers.CPPNWrapper import CPPNWrapper
 from adtool.wrappers.mutators import add_gaussian_noise
 from adtool.utils.leaf.Leaf import Leaf

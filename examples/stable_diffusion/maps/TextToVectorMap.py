@@ -9,29 +9,38 @@ from adtool.utils.expose_config.expose_config import expose
 from adtool.utils.leaf.locators.locators import BlobLocator
 from transformers import CLIPTextModel, CLIPTokenizer
 
+from transformers import AutoTokenizer
+
+from transformers import CLIPTextModel
+
+
 TORCH_DEVICE = "mps"
 TORCH_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-torch.set_default_dtype(torch.float32)
+#torch.set_default_dtype(torch.float32)
 
+from diffusers import DiffusionPipeline
 
 
 from pydantic import BaseModel, Field
 
 class PromptParams(BaseModel):
     seed_prompt: str = Field("a photo of a dog on the beach")
-    perturbation_scale: float = Field(0.001, ge=0.00001, le=0.1)
+    perturbation_scale: float = Field(0.00001, ge=0.000001, le=0.1)
 
-@expose
+
 class TextToVectorMap(Map):
 
-    config=PromptParams
 
     def __init__(
         self,
+        system: Any = None,
         premap_key: str = "prompt",
         postmap_key: str = "params",
         seed_prompt="a photo of a dog on the beach",
-        perturbation_scale=0.001,
+        tokenizer=AutoTokenizer.from_pretrained("segmind/tiny-sd", subfolder="tokenizer"),
+        text_encoder=CLIPTextModel.from_pretrained("segmind/tiny-sd", subfolder="text_encoder"),
+        perturbation_scale=0.00001,
+        *args, **kwargs
     ) -> None:
         super().__init__()
         self.premap_key = premap_key
@@ -41,12 +50,8 @@ class TextToVectorMap(Map):
         self.seed_prompt = seed_prompt
         self.perturbation_scale = perturbation_scale
 
-        self.tokenizer = CLIPTokenizer.from_pretrained(
-            "segmind/tiny-sd", subfolder="tokenizer"
-        )
-        self.text_encoder = CLIPTextModel.from_pretrained(
-            "segmind/tiny-sd", subfolder="text_encoder"
-        )
+        self.tokenizer = tokenizer
+        self.text_encoder  = text_encoder
         self.text_encoder.to(TORCH_DEVICE)
 
         self.uncond_vector, self.seed_vector = self._transform_text_to_vector(
@@ -116,6 +121,9 @@ class TextToVectorMap(Map):
         # TODO: add support/error handling for multiple prompts
         prompt = [text]
         batch_size = len(prompt)
+
+
+
 
         # generate embedding of the text prompt
         text_input = self.tokenizer(

@@ -1,23 +1,117 @@
 import torch
 from adtool.maps.IdentityBehaviorMap import IdentityBehaviorMap
-from examples.stable_baseline.maps.TextToVectorMap import TextToVectorMap
-from examples.stable_baseline.systems.StableDiffusionPropagator import StableDiffusionPropagator
+from adtool.maps.UniformParameterMap import UniformParameterMap
+from examples.stable_diffusion.maps.TextToVectorMap import TextToVectorMap
+from examples.stable_diffusion.systems.StableDiffusionPropagator import StableDiffusionPropagator
+
+from diffusers import DiffusionPipeline
+from peft import PeftModel
+from diffusers import LCMScheduler, AutoPipelineForText2Image
+
+from diffusers import StableDiffusionPipeline, EulerDiscreteScheduler
+
+from transformers import CLIPTextModel, CLIPTokenizer
+
+from transformers import AutoTokenizer
+
+from transformers import CLIPTextModel
+
+from diffusers import UNet2DConditionModel
+
+from diffusers import AutoencoderKL
+
+
+
+import pickle
+
+#SET seed
+import torch
+torch.manual_seed(0)
+torch.backends.cudnn.deterministic = True
+
+def default_unet():
+    from peft import PeftModel
+    unet=UNet2DConditionModel.from_pretrained("segmind/tiny-sd", subfolder="unet")
+    PeftModel.from_pretrained(unet, "akameswa/lcm-lora-tiny-sd")
+    
+    return unet
+
+model_id = "segmind/tiny-sd"
+adapter_id = "akameswa/lcm-lora-tiny-sd"
+
+pipe = StableDiffusionPipeline.from_pretrained(model_id)
+pipe.scheduler=LCMScheduler.from_config(pipe.scheduler.config)
+
+PeftModel.from_pretrained(pipe.unet, adapter_id)
+pipe.fuse_lora()
+
+def default_scheduler():
+    scheduler= LCMScheduler.from_pretrained("segmind/tiny-sd", subfolder="scheduler")
+    scheduler=LCMScheduler.from_config(pipe.scheduler.config)
+    return scheduler
+
+
+model_id = "segmind/tiny-sd"
+adapter_id = "akameswa/lcm-lora-tiny-sd"
+
+class FakePipe:
+    def __init__(self):
+        self.tokenizer = AutoTokenizer.from_pretrained("segmind/tiny-sd", subfolder="tokenizer")
+        self.text_encoder = CLIPTextModel.from_pretrained("segmind/tiny-sd", subfolder="text_encoder")
+        self.vae = AutoencoderKL.from_pretrained("segmind/tiny-sd", subfolder="vae")
+        self.unet = default_unet()
+        self.scheduler = default_scheduler()
+
+
+class FakePipe2:
+    def __init__(self):
+        self.tokenizer = pipe.tokenizer
+        self.text_encoder = pipe.text_encoder
+        self.vae = pipe.vae
+        self.unet = pipe.unet
+        self.scheduler = pipe.scheduler
+
+
+pipe = FakePipe2()
+
+pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+
+
+PeftModel.from_pretrained(pipe.unet, adapter_id)
 
 
 def test():
-    txt_embedder = TextToVectorMap(seed_prompt="a realistic photograph of Bordeaux, FR")
-    sd = StableDiffusionPropagator(num_inference_steps=16,height=512,width=512)
+    hf_pipeline=pipe
+    #DiffusionPipeline.from_pretrained(model_name)
+    txt_embedder = TextToVectorMap(seed_prompt="a realistic purple cat",tokenizer=pipe.tokenizer,text_encoder=pipe.text_encoder)
+    sd = StableDiffusionPropagator(height=512,width=512,num_inference_steps=2, guidance_scale=1,vae=pipe.vae,unet=pipe.unet, scheduler=pipe.scheduler)
     id = IdentityBehaviorMap()
+   # id=UniformParameterMap(tensor_low=[-1.0], tensor_high=[1.0], tensor_bound_low=[-1.0], tensor_bound_high=[1.0])
 
     # get initial seed image
     data = txt_embedder.map({}, use_seed_vector=True)
-    print(f"size: {data['params'].size()}")
+    #save as pickle
+    # with open('txt_seed.pkl', 'wb+') as f:
+    #     pickle.dump(data['params'], f)
+    # with open('truetxtseed.pkl', 'rb') as f:
+    #     data['params'] = pickle.load(f)
     data = sd.map(data)
     data = id.map(data)
+    #save as pickle
+    # with open('output.pkl', 'wb+') as f:
+    #     pickle.dump(data['output'], f)
     img = sd._decode_image(data["output"])
     img.save(f"out_seed.png")
 
-    # generate random samples
+    data = sd.map(data)
+    #save as pickle
+    # with open('output.pkl', 'wb+') as f:
+    #     pickle.dump(data['output'], f)
+    img = sd._decode_image(data["output"])
+
+    img.save(f"out_1.png")
+
+    # # generate random samples
     for i in range(10):
         # this first step will sample around the seed_prompt
         data = txt_embedder.map(data)
@@ -29,7 +123,7 @@ def test():
         with open(f"outvid_{i}.mp4", "wb") as f:
             f.write(byte_vid)
 
-        # does , because there is no IMGEP
+        # does nothing, because there is no IMGEP
         data = id.map(data)
 
         img = sd._decode_image(data["output"])

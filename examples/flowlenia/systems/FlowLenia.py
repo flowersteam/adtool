@@ -42,6 +42,9 @@ from adtool.systems.System import System
 from examples.flowlenia.systems.ReintegrationTracking import ReintegrationTracking
 from examples.flowlenia.systems.Utils import conn_from_matrix, growth, ker_f, sigmoid, sobel
 
+
+torch.set_default_dtype(torch.float32)
+
 class FlowLenia(System):
 
 
@@ -389,7 +392,7 @@ class TorchFlowLenia(torch.nn.Module):
         #-------------------------------FLOW------------------------------------------
         nabla_U = sobel(U) #(x, y, 2, c)   
 
-        nabla_A = sobel(A.sum(axis = -1, keepdims = True).double()) #(x, y, 2, 1)
+        nabla_A = sobel(A.sum(axis = -1, keepdims = True)) #(x, y, 2, 1)
 
         alpha = torch.clip((A[:, :, None, :]/self.theta_A)**self.n, .0, 1.)
 
