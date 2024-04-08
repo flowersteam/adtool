@@ -32,14 +32,8 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 from adtool.systems.System import System
 
-from diffusers import DiffusionPipeline
 
-class GenerationParams(BaseModel):
-    height: int = Field(512, ge=64, le=1024)
-    width: int = Field(512, ge=64, le=1024)
-    num_inference_steps: int = Field(3, ge=0, le=50)
-    guidance_scale: float = Field(7.5, ge=0, le=20.0)
-    initial_condition_seed: int = Field(0, ge=0, le=999999)
+
 
 
 def default_unet():
@@ -196,6 +190,12 @@ class StableDiffusion(System):
         return byte_img.getvalue()
 
 
+class GenerationParams(BaseModel):
+    height: int = Field(512, ge=64, le=1024)
+    width: int = Field(512, ge=64, le=1024)
+    num_inference_steps: int = Field(3, ge=0, le=50)
+    guidance_scale: float = Field(7.5, ge=0, le=20.0)
+    initial_condition_seed: int = Field(0, ge=0, le=999999)
 
 @expose
 class StableDiffusionPropagator(StableDiffusion):
@@ -207,5 +207,4 @@ class StableDiffusionPropagator(StableDiffusion):
          *args, **kwargs
 
     ) -> None:
-        print("StableDiffusionPropagator", args, kwargs)
         super().__init__( *args, **kwargs)

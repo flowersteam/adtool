@@ -20,11 +20,6 @@ from diffusers import UNet2DConditionModel
 
 from diffusers import AutoencoderKL
 
-
-
-import pickle
-
-#SET seed
 import torch
 torch.manual_seed(0)
 torch.backends.cudnn.deterministic = True
@@ -81,7 +76,6 @@ PeftModel.from_pretrained(pipe.unet, adapter_id)
 
 
 def test():
-    hf_pipeline=pipe
     #DiffusionPipeline.from_pretrained(model_name)
     txt_embedder = TextToVectorMap(seed_prompt="a realistic purple cat",tokenizer=pipe.tokenizer,text_encoder=pipe.text_encoder)
     sd = StableDiffusionPropagator(height=512,width=512,num_inference_steps=2, guidance_scale=1,vae=pipe.vae,unet=pipe.unet, scheduler=pipe.scheduler)

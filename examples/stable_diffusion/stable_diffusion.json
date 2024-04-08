@@ -9,7 +9,7 @@
             "path": "examples.stable_diffusion.systems.StableDiffusionPropagator.StableDiffusionPropagator",
             "config": {
                 "guidance_scale":1,
-                "num_inference_steps":3
+                "num_inference_steps":2
             }
         },
         "explorer": {
@@ -22,7 +22,7 @@
                 "mutator_config": {},
                 "behavior_map_config": {},
                 "parameter_map_config": {
-                    "seed_prompt":"A realistic yellow cat"
+                    "seed_prompt":"A realistic pink cat"
                 }
             }
         },
