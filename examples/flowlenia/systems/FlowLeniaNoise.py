@@ -22,7 +22,7 @@ class FlowLeniaNoiseConfig(BaseModel):
     SX: int = Field(256, ge=1)
     SY: int = Field(256, ge=1)
     final_step: int = Field(200, ge=1, le=1000)
-    scale_init_state: int = Field(1, ge=1)
+    scale_init_state: float = Field(1, ge=1)
     C: int  = Field(1, ge=1, le=5)
 
 @expose
@@ -42,7 +42,10 @@ class FlowLeniaNoise(FlowLenia):
         # as CPPNWrapper is a wrapper, it operates on the lowest level
      #   intermed_dict["params"] = self.cppn.map(intermed_dict["params"])
         #random tensor of size (SY//scale_init_state, SX//scale_init_state, C)
-        intermed_dict['params']["init_state"] = torch.rand((self.SY//self.scale_init_state, self.SX//self.scale_init_state, self.C))
+        intermed_dict['params']["init_state"] = torch.rand((
+            int(self.SY/self.scale_init_state),
+             int(self.SX/self.scale_init_state)
+             , self.C))
         
         # pass params to Lenia
         intermed_dict = super().map(intermed_dict)

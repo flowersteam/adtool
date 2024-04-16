@@ -26,7 +26,7 @@ class LeniaCPPNConfig(BaseModel):
     SX: int = Field(256, ge=1)
     SY: int = Field(256, ge=1)
     final_step: int = Field(200, ge=1, le=1000)
-    scale_init_state: int = Field(1, ge=1)
+    scale_init_state: float = Field(1, ge=1)
     cppn_n_passes: int = Field(2, ge=1)
 
 @expose

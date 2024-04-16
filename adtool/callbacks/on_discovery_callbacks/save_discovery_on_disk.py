@@ -56,7 +56,7 @@ class SaveDiscoveryOnDisk(SaveDiscovery):
 
     @classmethod
     def _save_binary_callback(cls: Type, binary: bytes, save_dir: str) -> str:
-        file_name = sha1(binary).hexdigest()
+        file_name = sha1(binary).hexdigest()+".discovery"
         file_path = os.path.join(save_dir, file_name)
         with open(file_path, "wb") as f:
             f.write(binary)

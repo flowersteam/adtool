@@ -6,10 +6,14 @@
             }
         },
         "system": {
-            "path": "examples.stable_diffusion.systems.StableDiffusionPropagator.StableDiffusionPropagator",
+            "path": "examples.flowlenia.systems.FlowLeniaNoise.FlowLeniaNoise",
             "config": {
-                "guidance_scale":1,
-                "num_inference_steps":2
+                "SX": 32,
+                "SY": 32,
+                "final_step": 100,
+                "scale_init_state": 2,
+                "C":1,
+                "nb_k":2
             }
         },
         "explorer": {
@@ -17,12 +21,11 @@
             "config": {
                 "mutator": "specific",
                 "equil_time": 1,
-                "behavior_map": "examples.stable_diffusion.maps.SDStatistics.SDStatistics",
-                "parameter_map": "examples.stable_diffusion.maps.TextToVectorMap.TextToVectorMap",
+                "behavior_map": "examples.flowlenia.maps.FlowLeniaStatistics.FlowLeniaStatistics",
+                "parameter_map": "examples.flowlenia.maps.FlowLeniaParameterMap.FlowLeniaParameterMap",
                 "mutator_config": {},
                 "behavior_map_config": {},
                 "parameter_map_config": {
-                    "seed_prompt":"A yellow cat"
                 }
             }
         },

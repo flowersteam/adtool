@@ -12,8 +12,6 @@ from examples.lenia.systems.Lenia import Lenia
 from examples.stable_diffusion.systems.StableDiffusionPropagator import StableDiffusionPropagator
 
 EPS = 0.0001
-DISTANCE_WEIGHT = 2  # 1=linear, 2=quadratic, ...
-
 
 
 class SDStatistics(Leaf):

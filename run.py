@@ -182,7 +182,7 @@ if __name__ == "__main__":
     parser.add_argument("--config_file", type=str, required=True)
     parser.add_argument("--experiment_id", type=int, required=False, default= 0)
     parser.add_argument("--seed", type=int, required=False, default=42)
-    parser.add_argument("--nb_iterations", type=int, required=False, default=30)
+    parser.add_argument("--nb_iterations", type=int, required=False, default=40)
                         
     args = parser.parse_args()
 

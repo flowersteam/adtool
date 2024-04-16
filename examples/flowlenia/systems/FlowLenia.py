@@ -199,8 +199,8 @@ class FlowLenia(System):
             requires_grad=False,
         )
 
-        scaled_SY = self.SY // self.scale_init_state
-        scaled_SX = self.SX // self.scale_init_state
+        scaled_SY = int(self.SY / self.scale_init_state)
+        scaled_SX = int( self.SX / self.scale_init_state)
 
 
 
