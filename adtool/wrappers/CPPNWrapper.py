@@ -32,7 +32,6 @@ class CPPNWrapper(Leaf):
 
     def map(self, input: Dict) -> Dict:
 
-        print(input.keys())
         
         intermed_dict = deepcopy(input)
 

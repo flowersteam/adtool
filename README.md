@@ -72,12 +72,37 @@ to add custom systems and (optionally) search algorithms.
 ### Installation
 
 ```bash
-git clone https://github.com/flowersteam/adtool.git --branch prod
+git clone https://github.com/flowersteam/adtool
+cd adtool
+conda create -n adtool python=3.11 -y
+conda activate adtool
+pip install .
 ```
 
+### Examples
+Various examples are provided in the `examples/` directory. To run the example, install the necessary dependencies and run an example:
+```bash
+pip install .[examples]
+python3 run.py --config_file examples/flowlenia/flow_lenia_cppn.json
+``` 
+Available examples are:
+- `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN
+- `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
+- `examples/flowlenia/flow_lenia_noise.json` - Discovering flowlenia patterns initialized with noise
+- `examples/flowlenia/flow_lenia_random.json` - Discovering flowlenia patterns initialized with random values
+- `examples/lenia/lenia.json` - Discovering lenia patterns
+- `examples/stable_diffusion/stable_diffusion.json` - Discovering variations around a stable diffusion inference
 
-### Basic Usage
 
+
+
+### Visualization
+The tool provides a web interface to visualize the progression of the exploration. To start the web interface, run the following command:
+```bash
+cd examples/visu
+python3 server.py --discoveries PATH_TO_DISCOVERIES
+```
+The web interface can be accessed at `http://127.0.0.1:8765/`.
 
 
 ### Developer's Documentation

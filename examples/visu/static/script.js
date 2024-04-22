@@ -299,6 +299,7 @@ function connect() {
   };
   ws.onmessage = function(event) {
     ws.close();
+    ws = null;
     window.location.reload();
   };
 }

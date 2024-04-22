@@ -84,9 +84,9 @@ async def time(websocket):
                     print("New coordinates file")
                     try:
                         await websocket.send("refresh")
+                        break
                     except (websockets.exceptions.ConnectionClosedError,websockets.exceptions.ConnectionClosedOK):
                         break
-                    break
                 
 
 compute_coordinates( discovery_files   )    

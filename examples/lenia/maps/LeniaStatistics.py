@@ -306,8 +306,6 @@ class LeniaStatistics(Leaf):
         self.premap_key = premap_key
         self.postmap_key = postmap_key
 
-        print("####### LeniaStatistics init",system.SX)
-
         self.SX = system.SX
         self.SY = system.SY
 

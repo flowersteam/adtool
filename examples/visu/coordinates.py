@@ -21,6 +21,8 @@ def list_discoveries(path):
                 discovery_details = json.load(f)
             
             discovery_embedding=discovery_details['output']
+
+
             
             #list all files ending with .json
             for file in os.listdir(os.path.join(root, name)):
@@ -61,7 +63,14 @@ from sklearn.decomposition import PCA
 
 def compute_coordinates(path):
     discoveries = list_discoveries(path)
-    X = np.array([discovery['embedding'] for discovery in discoveries])
+    X = np.array([discovery['embedding'] for discovery in discoveries
+                  
+                  
+                  ])
+    
+    #replace all nan with the mean of the column
+
+
 
     pca = PCA(n_components=2)
     pca.fit(X)
