@@ -1,4 +1,10 @@
 // Create the scene and a camera to view it
+
+//now import https://unpkg.com/three@0.163.0/build/three.module.min.js
+
+
+// THREE.Cache.enabled = true;
+
 var scene = new THREE.Scene();
 
 scene.background = new THREE.Color( 0xffffff );
@@ -10,7 +16,6 @@ scene.background = new THREE.Color( 0xffffff );
 **/
 
 var refresh=false;
-var askrefresh=false;
 
 
 // Specify the portion of the scene visiable at any time (in degrees)
@@ -39,8 +44,7 @@ camera.position.x = 0;
 // Create the canvas with a renderer
 var renderer = new THREE.WebGLRenderer({ antialias: true });
 
-// Add support for retina displays
-renderer.setPixelRatio( window.devicePixelRatio );
+
 
 // Specify the size of the canvas
 renderer.setSize( window.innerWidth, window.innerHeight );
@@ -64,8 +68,9 @@ var imagePositions = null;
 // Create a store for each of the 5 image atlas files
 // The keys will represent the index position of the atlas file,
 // and the values will contain the material itself
-var materials = {};
-
+var nb_videos=0;
+var videos_loaded=0;
+var all_init=false;
 function init() {
 
 
@@ -74,6 +79,11 @@ loader.load('discoveries.json', function(data) {
   imagePositions = JSON.parse(data);
 
   camera.position.z = Math.sqrt(imagePositions.length)*1000;
+  for (var i=0; i<imagePositions.length; i++) {
+    if (imagePositions[i].mimetype.includes('video')) {
+      nb_videos++;
+    }
+  }
 
   //iterate over the imagePositions and create a new geometry for each
   for (var i=0; i<imagePositions.length; i++) {
@@ -85,17 +95,30 @@ loader.load('discoveries.json', function(data) {
 
 
     if (imagePositions[i].mimetype.includes('video')) {
-    
 
+     
+    
 
      
         
       var video = document.createElement('video');
-      video.src = visual;
-      video.autoplay = true;
+     video.src = visual;
+     video.autoplay = true;
       video.loop = true;
-      video.muted = true;
+       video.muted = true;
       video.play();
+      video.addEventListener('loadeddata', function() {
+      videos_loaded++;
+      
+      console.log("visual loaded ");
+
+      var video = this;
+
+
+       launch_animation();
+
+
+    }, true);
 
       
 
@@ -113,7 +136,7 @@ loader.load('discoveries.json', function(data) {
 
     if (material!=null) {
 
-      var geometry = new THREE.Geometry();
+      var geometry = new THREE.BufferGeometry();
       // Retrieve the x, y, z coords for this subimage
       var coords = getCoords(i);
       // Add the vertices for the image
@@ -128,9 +151,7 @@ loader.load('discoveries.json', function(data) {
 
       mesh.position.set(coords.x, coords.y, coords.z);
       // Add the mesh to the scene
-        
-      
-      
+
 
    
         
@@ -149,6 +170,11 @@ loader.load('discoveries.json', function(data) {
  }
 
 
+ all_init=true;
+ launch_animation();
+
+
+
 
  })
 
@@ -161,10 +187,22 @@ loader.load('discoveries.json', function(data) {
 
 }
 
+
+
 init();
 
 
 
+function launch_animation() { 
+  if ( all_init &&
+    videos_loaded==nb_videos) {
+
+      console.log("all videos loaded "+videos_loaded);
+      animate();
+
+
+  }
+}
 
 
 /**
@@ -217,10 +255,10 @@ scene.add(light)
 * Add Controls
 **/
 
-var controls = new THREE.TrackballControls(camera, renderer.domElement);
+//var controls = new THREE.TrackballControls(camera, renderer.domElement);
 
 //disable rotation
-controls.noRotate = true;
+//controls.noRotate = true;
 
 /**
 * Handle window resizes
@@ -233,7 +271,7 @@ window.addEventListener('resize', function() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize( window.innerWidth, window.innerHeight );
-  controls.handleResize();
+ // controls.handleResize();
 });
 
 /**
@@ -241,10 +279,10 @@ window.addEventListener('resize', function() {
 **/
 
 
-var raycaster = new THREE.Raycaster(); 
-var mouse = new THREE.Vector3(); 
+// var raycaster = new THREE.Raycaster(); 
+// var mouse = new THREE.Vector3(); 
 
-var selected=null;
+//var selected=null;
 
 function onMouseClick( event ) { 
   // calculate mouse position in normalized device coordinates 
@@ -254,29 +292,29 @@ function onMouseClick( event ) {
     return;
   }
 
-   mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1; 
-   mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1; 
+  //  mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1; 
+  //  mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1; 
 
-   raycaster.setFromCamera( mouse, camera ); 
+  //  raycaster.setFromCamera( mouse, camera ); 
 
-   var intersects = raycaster.intersectObjects( scene.children );
+  //  var intersects = raycaster.intersectObjects( scene.children );
 
-  if (intersects.length > 0) {
-    if (selected!=null) {
-      selected.material.color.set(0xffffff);
+  // if (intersects.length > 0) {
+  //   if (selected!=null) {
+  //     selected.material.color.set(0xffffff);
 
-    }
-    if (selected==intersects[0].object) {
-      selected=null;
-      return;
-    }
+  //   }
+  //   if (selected==intersects[0].object) {
+  //     selected=null;
+  //     return;
+  //   }
 
-    intersects[0].object.material.color.set(
-      0x7DFF7D
+  //   intersects[0].object.material.color.set(
+  //     0x7DFF7D
       
-      );
-    selected = intersects[0].object;
-  }
+  //     );
+  //   selected = intersects[0].object;
+  // }
 
 
   //get intersected objects
@@ -290,21 +328,25 @@ window.addEventListener( 'click', onMouseClick, false );
 //infinite loop to try to reconnect if the connection is closed
 
 
-function connect() {
-  ws = new WebSocket("ws://127.0.0.1:8765/");
-  ws.onclose = function() {
-    setTimeout(function() {
-      connect();
-    }, 1000);
-  };
-  ws.onmessage = function(event) {
-    ws.close();
-    ws = null;
-    window.location.reload();
-  };
-}
+// function connect() {
+//   ws = new WebSocket("ws://127.0.0.1:8765/");
+//   ws.onclose = function() {
+//     setTimeout(function() {
+//       connect();
+//     }, 1000);
+//   };
+//   ws.onmessage = function(event) {
 
-connect();
+//     //clean three.js scene
+// refresh=true;
+    
+    
+
+    
+//   };
+// }
+
+//connect();
 
 
 
@@ -313,21 +355,25 @@ connect();
 
 // The main animation function that re-renders the scene each animation frame
 function animate() {
+  if (refresh) {
+    while(scene.children.length > 0){ 
+      scene.remove(scene.children[0]); 
+  }
+  //restart the tab without reloading
+  //close the websocket
+  ws.close();
 
+  window.location.replace(window.location.pathname + window.location.search + window.location.hash);
 
-
-
+    return;
+  }
   requestAnimationFrame( animate );
-
-
   renderer.render( scene, camera );
-  controls.update();
-  console.log("refresh", refresh)
+//  controls.update();
+  console.log("refreshing");
   }
 
 
 
  
 
-
-animate();

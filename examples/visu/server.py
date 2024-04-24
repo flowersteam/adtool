@@ -65,18 +65,16 @@ async def process_request( path, request_headers):
 
 async def watch_discoveries():
     async for changes in awatch(discovery_files, recursive=True):
-        new_discovery=False
-        for change in changes:
-            if change[0] in  (  Change.added  , Change.modified)    and change[1].endswith(".discovery"):
-                new_discovery=True
-                break
-        if new_discovery:
-            print("New discovery file")
+        for _ in changes:
+            
+            print("Change in discoveries")
             compute_coordinates(discovery_files)
+            break
 
 
 
-async def time(websocket):
+
+async def watch_coordinates(websocket):
     while True:
         async for changes in awatch(f"{static_files}/discoveries.json"):
             for change in changes:
@@ -86,7 +84,7 @@ async def time(websocket):
                         await websocket.send("refresh")
                         break
                     except (websockets.exceptions.ConnectionClosedError,websockets.exceptions.ConnectionClosedOK):
-                        break
+                        return
                 
 
 compute_coordinates( discovery_files   )    
@@ -98,7 +96,7 @@ if __name__ == "__main__":
     try:
         # set first argument for the handler to current working directory
         handler = functools.partial(process_request)
-        start_server = websockets.serve(time, '127.0.0.1', 8765,
+        start_server = websockets.serve(watch_coordinates, '127.0.0.1', 8765,
                                         process_request=handler)
 
         loop = asyncio.get_event_loop()
