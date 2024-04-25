@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
@@ -49,7 +49,7 @@ class System(Leaf, metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def render(self, data_dict: dict) -> bytes:
+    def render(self, data_dict: dict) -> Tuple[bytes, str]:
         """Render system output as an image or video.
 
         A `System` should be able to render useful information about its

@@ -4,6 +4,9 @@ import os
 import json
 import magic
 
+import numpy as np
+from sklearn.decomposition import PCA
+
 from PIL import Image
 import cv2
 #from pydub import AudioSegment
@@ -17,6 +20,11 @@ def list_discoveries(path):
             discovery={}
 
             #load discovery.json file
+
+            #check if discovery.json exists
+            if not os.path.exists(os.path.join(root, name, 'discovery.json')):
+                continue
+
             with open(os.path.join(root, name, 'discovery.json')) as f:
                 discovery_details = json.load(f)
             
@@ -26,30 +34,19 @@ def list_discoveries(path):
             
             #list all files ending with .json
             for file in os.listdir(os.path.join(root, name)):
-                if file.endswith(".discovery"):
+           #     mime = magic.Magic(mime=True)
+                path=os.path.join(root, name, file)
+            #    mimetype = mime.from_file(path)
 
-                            
-
-                    discovery['visual']=os.path.join(root, name, file)
-                    mime = magic.Magic(mime=True)
-                    mimetype = mime.from_file(discovery['visual'])
-
-                    #if image is detected
-                    if 'image' in mimetype:
-                        #get img size
-                        img = Image.open(discovery['visual'])
-                        img_size = img.size
-                        discovery['sx']=img_size[0]
-                        discovery['sy']=img_size[1]
-                    elif 'video' in mimetype:
-                        #get video size
-                        video = cv2.VideoCapture(discovery['visual'])
-                        video_size = int(video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                        discovery['sx']=video_size[0]
-                        discovery['sy']=video_size[1]
-
-
-                    discovery['mimetype']=mimetype    
+                if file.endswith('.mp4'):
+                    #get dimensions of video
+                    cap = cv2.VideoCapture(path)
+                    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    cap.release()
+                    discovery['width']=width
+                    discovery['height']=height
+                    discovery['visual']=path
                     discovery['embedding']=discovery_embedding
                     discoveries.append(discovery)
 
@@ -57,20 +54,87 @@ def list_discoveries(path):
     return discoveries
 
 
+import cv2
 
+
+import cv2
 import numpy as np
-from sklearn.decomposition import PCA
+
+def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
+    videos = [cv2.VideoCapture(discovery['visual']) for discovery in discoveries]
+
+    # Check if any video failed to open
+    for i, video in enumerate(videos):
+        if not video.isOpened():
+            print(f"Error: Video {i + 1} failed to open")
+            print(f"Info: Video path: {discoveries[i]['visual']}")
+            return
+
+    # Get the width and height of the first video
+    width = int(videos[0].get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(videos[0].get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # Calculate the total width of the output video
+    total_width = width * len(videos)
+
+    # Create a black frame with the same size as the video frame
+    black_frame = np.zeros((height, width, 3), dtype=np.uint8)
+
+    # Get the number of frames in each video
+    frame_counts = [int(video.get(cv2.CAP_PROP_FRAME_COUNT)) for video in videos]
+
+    # Create a VideoWriter object with the output file name, fourcc code, frames per second, and frame size
+    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'VP90'), 30, (total_width, height))
+
+    # Initialize frame positions
+    frame_positions = [0] * len(videos)
+
+    while True:
+        frames = []
+
+        # Read frames from all videos
+        for i, video in enumerate(videos):
+            # Set the frame position
+            video.set(cv2.CAP_PROP_POS_FRAMES, frame_positions[i])
+
+            ret, frame = video.read()
+
+            # Use the black frame if the video is finished
+            if frame_positions[i] >= frame_counts[i]:
+                frame = black_frame
+
+            frames.append(frame)
+
+        # Break the loop if all videos are finished
+        if all(frame_positions[i] >= frame_counts[i] for i in range(len(videos))):
+            print("Info: All videos have been processed")
+            break
+
+        # Concatenate the frames horizontally
+        concatenated_frame = cv2.hconcat(frames)
+
+        # Write the concatenated frame to the output video
+        out.write(concatenated_frame)
+
+        # Increment frame positions
+        for i in range(len(videos)):
+            frame_positions[i] += 1
+
+    # Release the VideoCapture and VideoWriter objects
+    for video in videos:
+        video.release()
+    out.release()
+
+    cv2.destroyAllWindows()
+
 
 def compute_coordinates(path):
     discoveries = list_discoveries(path)
-    X = np.array([discovery['embedding'] for discovery in discoveries
-                  
-                  
-                  ])
+    concatenate_videos(discoveries)
+    print("videos concatenated")
+    X = np.array([discovery['embedding'] for discovery in discoveries  ])
     
     #replace all nan with the mean of the column
-
-
 
     pca = PCA(n_components=2)
     pca.fit(X)

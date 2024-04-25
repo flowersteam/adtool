@@ -33,6 +33,6 @@ def test_render():
     )
     output_dict = system.map(input_dict)
 
-    byte_img = system.render(output_dict)
+    byte_img,ext = system.render(output_dict)
 
     assert isinstance(byte_img, bytes)

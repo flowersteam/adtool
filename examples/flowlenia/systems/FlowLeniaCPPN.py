@@ -6,7 +6,7 @@ from adtool.wrappers.CPPNWrapper import CPPNWrapper
 from adtool.utils.leaf.locators.locators import BlobLocator
 
 
-from typing import Dict
+from typing import Dict, Tuple
 
 from typing import Optional
 
@@ -49,5 +49,5 @@ class FlowLeniaCPPN(FlowLenia):
         return intermed_dict
     
     
-    def render(self, data_dict, mode: str = "PIL_image") -> Optional[bytes]:
+    def render(self, data_dict, mode: str = "PIL_image") -> Tuple[bytes, str]:
         return super().render(data_dict, mode=mode)

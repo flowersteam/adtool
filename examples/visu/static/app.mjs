@@ -62,12 +62,20 @@ window.addEventListener('mousemove', function(event) {
 });
 
 
+//background: "#1099bb"
 const app = new PIXI.Application();
 app
-  .init({ background: "#1099bb", resizeTo: window, hello: true })
+  .init({ 
+    backgroundColor: 0xffffff,
+    resizeTo: window})
   .then(async () => {
 
-    document.body.appendChild(app.canvas);
+
+
+    document.getElementById('canvas-container').appendChild(app.canvas);
+
+    var overlayText=document.getElementById('overlay-text');
+
 
     //load json file
     // const json = await fetch('/discoveries.json')
@@ -75,7 +83,10 @@ app
 
     coordinates= await PIXI.Assets.load('/discoveries.json')
 
-    console.log(coordinates);
+    let concatenatedVisuals = await PIXI.Assets.load('concatenated.webm');
+
+    
+
 
 
     // var texture = await PIXI.Assets.load(
@@ -83,25 +94,38 @@ app
     //     loader: 'loadTextures',
     //     });
 
-    texture.baseTexture.resource.loop=true;
+    
+
+    var shift_x = 0;
+
 
     for (let i = 0; i < coordinates.length; i++) {
 
-        var texture = await PIXI.Assets.load(
-            {src: coordinates[i].visual,
-            loader: 'loadTextures',
-            });
+        var subTexture = new PIXI.Texture({
+            source: concatenatedVisuals.source,
+            frame: new PIXI.Rectangle( shift_x, 0, coordinates[i].width, coordinates[i].height),
+        })
+        shift_x += coordinates[i].width;
 
-        var sprite = PIXI.Sprite.from(texture);
-        sprite.texture.source.scaleMode = "nearest";
+        subTexture.baseTexture.resource.loop=true;
+
+
+        var sprite = PIXI.Sprite.from(subTexture);
+    //    sprite.texture.source.scaleMode = "nearest";
+
+        sprite.interactive = true;
+        sprite.on('mouseover', function() {
+            // Display the name of the visual
+            overlayText.innerHTML=coordinates[i].visual;
+        });
         
         sprite.anchor.set(0.5);
         sprites.push(sprite);
+        app.stage.addChild(sprite);
+
     }
 
-    for (let sprite of sprites) {
-        app.stage.addChild(sprite);
-    }
+
     computeCoordinates();
 
 
@@ -124,6 +148,23 @@ app
 
   });
 
+
+let ws;
+
+function connect() {
+  ws = new WebSocket("ws://127.0.0.1:8765/");
+  ws.onclose = function() {
+    setTimeout(function() {
+      connect();
+    }, 1000);
+  };
+  ws.onmessage = function(event) {
+    //clean three.js scene
+refresh=true;   
+  };
+}
+
+connect();
 
   
 

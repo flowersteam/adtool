@@ -113,7 +113,7 @@ def test():
         # reverse diffuse here
         data = sd.map(data, fix_seed=False)
         # save the video
-        byte_vid = sd.render({})
+        byte_vid,ext = sd.render({})
         with open(f"outvid_{i}.mp4", "wb") as f:
             f.write(byte_vid)
 

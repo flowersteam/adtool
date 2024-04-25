@@ -121,7 +121,7 @@ class Lenia(System):
 
         return output_dict
 
-    def render(self, data_dict, mode: str = "PIL_image") -> Optional[bytes]:
+    def render(self, data_dict, mode: str = "PIL_image") -> Tuple[bytes,str]:
         # ignores data_dict, as the render is based on self.orbit
         # in which only the last state is stored in data_dict["output"]
 
@@ -166,7 +166,7 @@ class Lenia(System):
             imageio.mimwrite(
                 byte_img, im_array, "mp4", fps=1, output_params=["-f", "mp4"]
             )
-            return byte_img.getvalue()
+            return byte_img.getvalue(), "mp4"
         else:
             raise NotImplementedError
 

@@ -56,5 +56,5 @@ def test_map():
     assert "neat_config" in out["params"]
 
     # eyeball test the render
-    imagebytes = system.render(out)
+    imagebytes , ext= system.render(out)
     assert is_mp4(imagebytes)

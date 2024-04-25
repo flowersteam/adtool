@@ -54,7 +54,7 @@ class ExponentialMixture(System):
 
         return intermed_dict
 
-    def render(self, input_dict: Dict) -> bytes:
+    def render(self, input_dict: Dict) ->  Tuple[bytes, str]:
         """
         Renders an image given a dict with the `output` key and relevant config
         """
@@ -68,7 +68,7 @@ class ExponentialMixture(System):
         plt.savefig(output_binary)
         plt.clf()
 
-        return output_binary.getvalue()
+        return output_binary.getvalue(), "png"
 
     def _process_dict(self, input_dict: Dict) -> torch.Tensor:
         # extract param tensor

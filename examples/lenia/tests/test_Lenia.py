@@ -160,5 +160,5 @@ def test_Lenia_render():
 
     out_dict = system.map(dummy_input)
 
-    imagebytes = system.render(out_dict)
+    imagebytes,ext = system.render(out_dict)
     assert is_mp4(imagebytes)

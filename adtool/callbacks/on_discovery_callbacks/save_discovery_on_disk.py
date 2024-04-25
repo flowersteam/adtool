@@ -21,7 +21,20 @@ class SaveDiscoveryOnDisk(SaveDiscovery):
         run_idx: int,
         seed: int,
         discovery: Dict[str, Any],
+        rendered_output=None,
+        rendered_output_extension=None,
     ) -> None:
+        #save binary file
+        dir_path = self._initialize_save_path(
+            resource_uri, experiment_id, run_idx, seed
+        )
+        if rendered_output is not None:
+            rendered_output_name = self._save_binary_callback(
+                rendered_output, dir_path, rendered_output_extension
+            )
+            #save binary file to disk
+
+            discovery["rendered_output"] = rendered_output_name
         return super().__call__(resource_uri, experiment_id, run_idx, seed, discovery)
 
     @staticmethod
@@ -54,9 +67,8 @@ class SaveDiscoveryOnDisk(SaveDiscovery):
 
         return dir_path
 
-    @classmethod
-    def _save_binary_callback(cls: Type, binary: bytes, save_dir: str) -> str:
-        file_name = sha1(binary).hexdigest()+".discovery"
+    def _save_binary_callback(cls: Type, binary: bytes, save_dir: str, extension:str) -> str:
+        file_name = sha1(binary).hexdigest()+f".{extension}"
         file_path = os.path.join(save_dir, file_name)
         with open(file_path, "wb") as f:
             f.write(binary)

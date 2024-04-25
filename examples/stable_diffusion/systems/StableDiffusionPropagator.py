@@ -4,7 +4,7 @@ import pickle
 import random
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Tuple
 
 import imageio
 import numpy
@@ -176,7 +176,7 @@ class StableDiffusion(System):
         image = (image * 255).round().astype("uint8")
         return Image.fromarray(image)
 
-    def render(self, data_dict: dict) -> bytes:
+    def render(self, data_dict: dict) -> Tuple[bytes, str]:
         # ignores data_dict, as the render is based on self.latents_over_t
         # in which only the last state is stored in data_dict["output"]
         imgs = []
@@ -187,7 +187,7 @@ class StableDiffusion(System):
         imgs = imgs + [final_result] * 50
         byte_img = io.BytesIO()
         imageio.mimwrite(byte_img, imgs, "mp4", fps=5, output_params=["-f", "mp4"])
-        return byte_img.getvalue()
+        return byte_img.getvalue(), "mp4"
 
 
 class GenerationParams(BaseModel):

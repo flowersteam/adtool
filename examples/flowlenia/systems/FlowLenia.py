@@ -3,7 +3,7 @@ import io
 import math
 from copy import deepcopy
 from dataclasses import asdict, dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import imageio
 import matplotlib
@@ -122,7 +122,7 @@ class FlowLenia(System):
     
 
 
-    def render(self, data_dict, mode: str = "PIL_image") -> Optional[bytes]:
+    def render(self, data_dict, mode: str = "PIL_image") -> Tuple[bytes, str]:
         # ignores data_dict, as the render is based on self.orbit
         # in which only the last state is stored in data_dict["output"]
 
@@ -153,7 +153,7 @@ class FlowLenia(System):
             imageio.mimwrite(
                 byte_img, im_array, "mp4", fps=10, output_params=["-f", "mp4"]
             )
-            return byte_img.getvalue()
+            return byte_img.getvalue(), "mp4"
         else:
             raise NotImplementedError
 

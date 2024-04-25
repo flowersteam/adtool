@@ -158,7 +158,7 @@ class ExperimentPipeline(Leaf):
                 data_dict = self._system.map(data_dict)
 
                 # render system output
-                rendered_output = self._system.render(data_dict)
+                rendered_output,ext = self._system.render(data_dict)
 
                 # exploration phase : emits new trial parameters for next loop
                 data_dict = self._explorer.map(data_dict)
@@ -177,7 +177,7 @@ class ExperimentPipeline(Leaf):
                             del discovery_to_save[key]
 
                 # TODO: pass the rendered output more easily
-                discovery_to_save["rendered_output"] = rendered_output
+            #    discovery_to_save["rendered_output"] = rendered_output
 
                 self._raise_callbacks(
                     self._on_discovery_callbacks,
@@ -185,7 +185,10 @@ class ExperimentPipeline(Leaf):
                     run_idx=self.run_idx,
                     experiment_id=self.experiment_id,
                     seed=self.seed,
-                    discovery=discovery_to_save
+                    discovery=discovery_to_save,
+                    rendered_output=rendered_output,
+                    rendered_output_extension=ext,
+
                     # run_parameters=discovery[self._explorer.postmap_key],
                     # output=discovery[self._explorer.premap_key],
                     # raw_output=discovery["raw_" + self._explorer.premap_key],

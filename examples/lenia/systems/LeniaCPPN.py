@@ -1,6 +1,6 @@
 from copy import deepcopy
 from dataclasses import asdict, dataclass
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Tuple, Union
 
 import torch
 from examples.lenia.systems.Lenia import Lenia
@@ -60,7 +60,7 @@ class LeniaCPPN(Lenia):
         # pass params to Lenia
         intermed_dict = super().map(intermed_dict)
         return intermed_dict
-    def render(self, data_dict, mode: str = "PIL_image") -> Optional[bytes]:
+    def render(self, data_dict, mode: str = "PIL_image") -> Tuple[bytes, str]:
         return super().render(data_dict, mode=mode)
 
 

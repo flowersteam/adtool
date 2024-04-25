@@ -13,7 +13,9 @@ from watchfiles import awatch, Change
 MIME_TYPES = {
     "html": "text/html",
     "js": "text/javascript",
-    "css": "text/css"
+    "css": "text/css",
+    "mjs": "text/javascript",
+    "json": "application/json",
 }
 
 static_files="static"
@@ -43,6 +45,9 @@ async def process_request( path, request_headers):
         ('Connection', 'close'),
     ]
 
+    print("HTTP GET", path)
+
+
     if path.startswith("/discoveries/"):
         path=os.path.join(discovery_files, path[ len("/discoveries/") :])
     else:
@@ -55,6 +60,7 @@ async def process_request( path, request_headers):
 
     # Read the whole file into memory and send it out
     #if not exist return 404
+    
     if not os.path.exists(path):
         return HTTPStatus.NOT_FOUND, response_headers, b"404 Not Found"
     body = open(path, 'rb').read()

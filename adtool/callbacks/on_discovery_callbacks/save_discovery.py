@@ -8,11 +8,13 @@ from adtool.utils.leaf.Leaf import Leaf
 
 
 class _JSONEncoderFactory:
-    def __call__(self, dir_path: str, custom_callback: Callable):
+    def __call__(self, dir_path: str, 
+             #    custom_callback: Callable
+                 ):
         # return _CustomJSONENcoder but with a class attr dir_path
         cls = _CustomJSONEncoder
         cls._dir_path = dir_path
-        cls._custom_callback = custom_callback
+      #  cls._custom_callback = custom_callback
 
         return cls
 
@@ -26,8 +28,8 @@ class _CustomJSONEncoder(json.JSONEncoder):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         # catch bytes
-        if isinstance(obj, bytes):
-            return self._custom_callback(obj, self._dir_path)
+        # if isinstance(obj, bytes):
+        #     return self._custom_callback(obj, self._dir_path)
         # catch Leaf objects
         if isinstance(obj, Leaf):
             uid = obj.save_leaf(self._dir_path)
@@ -38,8 +40,11 @@ class _CustomJSONEncoder(json.JSONEncoder):
         try:
             json.JSONEncoder.default(self, obj)
         except TypeError:
-            bin = pickle.dumps(obj)
-            return self._custom_callback(bin, self._dir_path)
+            raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+            # bin = pickle.dumps(obj)
+            # #current key
+            # print("current key", bin)
+            # return self._custom_callback(bin, self._dir_path)
 
         # pass to usual encoder
         return json.JSONEncoder.default(self, obj)
@@ -64,9 +69,12 @@ class SaveDiscovery:
             resource_uri, experiment_id, run_idx, seed
         )
 
+     #   raise NotImplementedError
+
         # create JSON encoder
         json_encoder = _JSONEncoderFactory()(
-            dir_path=dir_path, custom_callback=self._save_binary_callback
+            dir_path=dir_path, 
+            # custom_callback=self._save_binary_callback
         )
 
         # save dict_data
