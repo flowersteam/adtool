@@ -105,5 +105,5 @@ python3 server.py --discoveries PATH_TO_DISCOVERIES
 The web interface can be accessed at `http://127.0.0.1:8765/`.
 
 
-### Developer's Documentation
-
+### Demo file demo.mp4 insered
+![Short demo](demo.mp4)

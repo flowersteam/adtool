@@ -115,6 +115,7 @@ if __name__ == "__main__":
         loop.run_forever()
     except KeyboardInterrupt:
         # delete static/discoveires.json
-        os.remove(f"{static_files}/discoveries.json")
+        if os.path.exists(f"{static_files}/discoveries.json"):
+            os.remove(f"{static_files}/discoveries.json")
 
         os._exit(0)

@@ -135,7 +135,6 @@ app
 
     const animate = () => {
       requestAnimationFrame(animate);
-      console.log(zoomLevel);
       app.renderer.render(app.stage);
     };
 
@@ -160,7 +159,10 @@ function connect() {
   };
   ws.onmessage = function(event) {
     //clean three.js scene
-refresh=true;   
+//reload the page
+//exit the websocket
+    ws.close();
+    location.reload(); 
   };
 }
 

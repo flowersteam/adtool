@@ -55,74 +55,72 @@ def list_discoveries(path):
 
 
 import cv2
-
-
-import cv2
 import numpy as np
+from multiprocessing import Pool
+
+def process_frame(args):
+    i, video_path, frame_positions, frame_counts, black_frame = args
+    video = cv2.VideoCapture(video_path)
+    video.set(cv2.CAP_PROP_POS_FRAMES, frame_positions[i])
+    ret, frame = video.read()
+    video.release()
+    if frame_positions[i] >= frame_counts[i]:
+        frame = black_frame
+    return i, frame
 
 def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
-    videos = [cv2.VideoCapture(discovery['visual']) for discovery in discoveries]
-
-    # Check if any video failed to open
-    for i, video in enumerate(videos):
-        if not video.isOpened():
-            print(f"Error: Video {i + 1} failed to open")
-            print(f"Info: Video path: {discoveries[i]['visual']}")
-            return
+    video_paths = [discovery['visual'] for discovery in discoveries]
 
     # Get the width and height of the first video
-    width = int(videos[0].get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(videos[0].get(cv2.CAP_PROP_FRAME_HEIGHT))
+    video = cv2.VideoCapture(video_paths[0])
+    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    video.release()
 
     # Calculate the total width of the output video
-    total_width = width * len(videos)
+    total_width = width * len(video_paths)
 
     # Create a black frame with the same size as the video frame
     black_frame = np.zeros((height, width, 3), dtype=np.uint8)
 
     # Get the number of frames in each video
-    frame_counts = [int(video.get(cv2.CAP_PROP_FRAME_COUNT)) for video in videos]
+    frame_counts = [int(cv2.VideoCapture(video_path).get(cv2.CAP_PROP_FRAME_COUNT)) for video_path in video_paths]
 
     # Create a VideoWriter object with the output file name, fourcc code, frames per second, and frame size
-    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'VP90'), 30, (total_width, height))
+    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'VP90'), 5, (total_width, height))
 
     # Initialize frame positions
-    frame_positions = [0] * len(videos)
+    frame_positions = [0] * len(video_paths)
 
-    while True:
-        frames = []
+    with Pool() as p:
+        while True:
+            # Prepare arguments for process_frame function
+            args = [(i, video_path, frame_positions, frame_counts, black_frame) for i, video_path in enumerate(video_paths)]
 
-        # Read frames from all videos
-        for i, video in enumerate(videos):
-            # Set the frame position
-            video.set(cv2.CAP_PROP_POS_FRAMES, frame_positions[i])
+            # Process frames in parallel
+            results = p.map(process_frame, args)
 
-            ret, frame = video.read()
+            # Break the loop if all videos are finished
+            if all(frame_positions[i] >= frame_counts[i] for i in range(len(video_paths))):
+                print("Info: All videos have been processed")
+                break
 
-            # Use the black frame if the video is finished
-            if frame_positions[i] >= frame_counts[i]:
-                frame = black_frame
+            # Sort the results by video index
+            results.sort(key=lambda x: x[0])
 
-            frames.append(frame)
+            # Extract the frames
+            frames = [result[1] for result in results]
 
-        # Break the loop if all videos are finished
-        if all(frame_positions[i] >= frame_counts[i] for i in range(len(videos))):
-            print("Info: All videos have been processed")
-            break
+            # Concatenate the frames horizontally
+            concatenated_frame = cv2.hconcat(frames)
 
-        # Concatenate the frames horizontally
-        concatenated_frame = cv2.hconcat(frames)
+            # Write the concatenated frame to the output video
+            out.write(concatenated_frame)
 
-        # Write the concatenated frame to the output video
-        out.write(concatenated_frame)
+            # Increment frame positions
+            for i in range(len(video_paths)):
+                frame_positions[i] += 3
 
-        # Increment frame positions
-        for i in range(len(videos)):
-            frame_positions[i] += 1
-
-    # Release the VideoCapture and VideoWriter objects
-    for video in videos:
-        video.release()
     out.release()
 
     cv2.destroyAllWindows()
@@ -130,11 +128,26 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
 
 def compute_coordinates(path):
     discoveries = list_discoveries(path)
+    if len(discoveries) == 0:
+        #touch discoveries.json
+        with open('static/discoveries.json', 'w') as f:
+            f.write('[]')
+            # touch static/concatenated.webm
+        with open('static/concatenated.webm', 'w') as f:
+            f.write('')
+
+        return
+    
     concatenate_videos(discoveries)
     print("videos concatenated")
+    # if less than 2 discoveries, return
+    if len(discoveries) < 2:
+        return
     X = np.array([discovery['embedding'] for discovery in discoveries  ])
     
     #replace all nan with the mean of the column
+
+
 
     pca = PCA(n_components=2)
     pca.fit(X)
