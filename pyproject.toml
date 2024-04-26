@@ -54,6 +54,15 @@ sd = [
     "accelerate"
 ]
 
+visu = [
+    "websockets",
+    "watchfiles",
+    "sklearn",
+    "opencv-python"
+
+
+]
+
 
 [tool.setuptools.packages.find]
 where = ["."]

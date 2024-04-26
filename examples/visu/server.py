@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import asyncio
-import datetime
 import functools
 import websockets
 from http import HTTPStatus

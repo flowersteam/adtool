@@ -2,13 +2,10 @@
 
 import os
 import json
-import magic
-
 import numpy as np
 from sklearn.decomposition import PCA
-
-from PIL import Image
 import cv2
+
 #from pydub import AudioSegment
 
 
