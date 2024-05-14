@@ -109,9 +109,6 @@ class IMGEPExplorerInstance(Leaf):
         trial_data_reset = self._history_saver.map( new_trial_data )
 
 
-        #history size
-        print(len(self._history_saver.buffer))
-
         # TODO: check gradients here
         if self.timestep < self.equil_time:
             # sets "params" key
