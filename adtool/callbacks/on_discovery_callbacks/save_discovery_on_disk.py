@@ -16,6 +16,7 @@ from adtool.utils.leaf.Leaf import Leaf
 class SaveDiscoveryOnDisk(SaveDiscovery):
     def __call__(
         self,
+        config: Dict[str, Any],
         resource_uri: str,
         experiment_id: int,
         run_idx: int,
@@ -34,7 +35,15 @@ class SaveDiscoveryOnDisk(SaveDiscovery):
             )
             #save binary file to disk
 
+            print("Rendered output saved to disk")
+
             discovery["rendered_output"] = rendered_output_name
+        #save config in config.json in the directory
+        config_path = os.path.join(dir_path, "config.json")
+        with open(config_path, "w") as f:
+            json.dump(config, f, indent=4)
+
+
         return super().__call__(resource_uri, experiment_id, run_idx, seed, discovery)
 
     @staticmethod

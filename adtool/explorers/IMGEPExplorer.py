@@ -9,12 +9,12 @@ from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.mutators import add_gaussian_noise, call_mutate_method
 from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.expose_config.expose_config import expose
-
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 from pydantic import Field
-
 from pydoc import locate
+from typing import Dict
+from pydantic import BaseModel
 
 
 from enum import Enum
@@ -25,11 +25,6 @@ class MutatorEnum(Enum):
 
 
 
-
-
-from typing import Dict
-
-from pydantic import BaseModel
 
 
 
@@ -82,6 +77,8 @@ class IMGEPExplorerInstance(Leaf):
         params_init = self.parameter_map.sample()
         data_dict[self.postmap_key] = params_init
 
+        print("data_dict.keys())",data_dict['params'])
+
         # first timestep recorded
         # NOTE: therefore, regardless of self.equil_time, 1 equil step
         # will always happen
@@ -107,8 +104,13 @@ class IMGEPExplorerInstance(Leaf):
         # and adding new "output" key which is the result of the behavior map
         new_trial_data = self.observe_results(system_output)
 
+
         # save results
-        trial_data_reset = self._history_saver.map(new_trial_data)
+        trial_data_reset = self._history_saver.map( new_trial_data )
+
+
+        #history size
+        print(len(self._history_saver.buffer))
 
         # TODO: check gradients here
         if self.timestep < self.equil_time:

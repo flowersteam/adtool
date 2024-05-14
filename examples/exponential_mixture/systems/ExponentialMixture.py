@@ -19,7 +19,7 @@ from pydantic.fields import Field
 
 
 class SystemParams(BaseModel):
-    sequence_max: float = Field(100.0, ge=0.0, le=1000.0)
+    sequence_max: int = Field(100, ge=0, le=1000)
     sequence_density: int = Field(100, ge=1, le=1000)
 
 
@@ -28,15 +28,21 @@ class SystemParams(BaseModel):
 
 print("SystemParams", SystemParams, file=sys.stderr)
 
-@SystemParams.expose_config()
+from adtool.utils.expose_config.expose_config import expose
+
+class ExponentialMixtureConfig(BaseModel):
+    sequence_max: int = Field(190, ge=1)
+    sequence_density: int = Field(100, ge=1)
+
+@expose
 class ExponentialMixture(System):
-    def __init__(self, sequence_max=100.0, sequence_density=100):
-        print("ExponentialMixture.__init__", 
-              sequence_max, type(sequence_max),
-              file=sys.stderr)
-        super().__init__()
-        self.sequence_max = sequence_max
-        self.sequence_density = sequence_density
+
+    config=ExponentialMixtureConfig
+
+    def __init__(self, *args, **kwargs):    
+        super().__init__( *args, **kwargs)
+        self.sequence_max = self.config.sequence_max
+        self.sequence_density = self.config.sequence_density
 
         # this module is stateless
         self.locator = BlobLocator()

@@ -5,6 +5,10 @@ from typing import Callable, List
 from adtool.utils.leaf.Leaf import Leaf, prune_state
 from adtool.utils.leaf.locators.locators import BlobLocator
 
+from os import listdir
+from os.path import isfile, join
+import json
+
 
 class CancellationToken:
     """
@@ -52,6 +56,7 @@ class ExperimentPipeline(Leaf):
 
     def __init__(
         self,
+        config: dict={},
         experiment_id: int = 0,
         seed: int = 0,
         system=None,
@@ -85,6 +90,7 @@ class ExperimentPipeline(Leaf):
         - **on_error_callbacks**: Called when an error is raised
         """
         super().__init__()
+        self.config = config
         self.locator = BlobLocator()
         self.locator.resource_uri = resource_uri
         self.cancellation_token = CancellationToken()
@@ -144,7 +150,22 @@ class ExperimentPipeline(Leaf):
         - **LeafUID**: returns the UID associated to the experiment
         """
         try:
-            data_dict = self._explorer.bootstrap()
+            data_dict = self._explorer.bootstrap(
+            )
+
+            #list all discovery.json files in subdirectories  self.config['experiment']['config']['save_location']
+
+            mypath = self.config['experiment']['config']['save_location']
+            json_discoveries = [f for f in listdir(mypath) if isfile(join(mypath, f)) and f == 'discovery.json']
+            for json_discovery in json_discoveries:
+                with open(join(mypath, json_discovery)) as f:
+                    new_trial_data = json.load(f)
+                    self._explorer._history_saver.map( new_trial_data )
+            self.logger.info(
+                "[LOADED] - Loaded previous discoveries from experiment"
+                f"{self.experiment_id} with seed {self.seed}"
+            )
+            
 
 
 
@@ -161,9 +182,7 @@ class ExperimentPipeline(Leaf):
                 rendered_output,ext = self._system.render(data_dict)
 
                 # exploration phase : emits new trial parameters for next loop
-                data_dict = self._explorer.map(data_dict)
-
-                
+                data_dict = self._explorer.map(data_dict)                
 
                 discovery = self._explorer.read_last_discovery()
 
@@ -181,6 +200,7 @@ class ExperimentPipeline(Leaf):
 
                 self._raise_callbacks(
                     self._on_discovery_callbacks,
+                    config=self.config,
                     resource_uri=self.resource_uri,
                     run_idx=self.run_idx,
                     experiment_id=self.experiment_id,

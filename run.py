@@ -129,6 +129,7 @@ def create(
 
     # Create experiment pipeline
     experiment = ExperimentPipeline(
+        config=parameters,
         experiment_id=experiment_id,
         seed=seed,
         save_frequency=parameters["experiment"]["config"]["save_frequency"],
