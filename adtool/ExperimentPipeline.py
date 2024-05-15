@@ -173,7 +173,7 @@ class ExperimentPipeline(Leaf):
                     def replace_lists_with_tensor(d):
                         # if we found a list of floats, convert it to a tensor, then if we found list of tensors, convert it to a tensor etc from bottom-up
                         if isinstance(d, list) and all(isinstance(i, float) for i in d):
-                            return torch.tensor(d)
+                            return torch.tensor(d).squeeze()
                         elif isinstance(d, list):
                             return [replace_lists_with_tensor(i) for i in d]
                         elif isinstance(d, dict):
@@ -181,10 +181,10 @@ class ExperimentPipeline(Leaf):
                         else:
                             return d
                     new_trial_data = replace_lists_with_tensor(new_trial_data)
-                    
 
 
-                    print(new_trial_data)
+
+                  #  print(new_trial_data)
 
                     
                     self._explorer._history_saver.map( new_trial_data )
