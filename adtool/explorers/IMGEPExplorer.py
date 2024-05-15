@@ -77,7 +77,6 @@ class IMGEPExplorerInstance(Leaf):
         params_init = self.parameter_map.sample()
         data_dict[self.postmap_key] = params_init
 
-        print("data_dict.keys())",data_dict['params'])
 
         # first timestep recorded
         # NOTE: therefore, regardless of self.equil_time, 1 equil step

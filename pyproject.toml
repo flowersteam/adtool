@@ -31,7 +31,11 @@ dependencies = [
     "torch>=1.7.1",
     "urllib3==2.2.1",
     "watchdog>=4.0.0",
-    "annotated-types==0.6.0"
+    "annotated-types==0.6.0",
+
+    "pydantic==2.7.1",
+    "moviepy==1.0.3",
+    "ipython==8.24.0",
 ]
 
 [project.optional-dependencies]
@@ -57,10 +61,8 @@ sd = [
 visu = [
     "websockets",
     "watchfiles",
-    "sklearn",
+    "scikit-learn",
     "opencv-python"
-
-
 ]
 
 

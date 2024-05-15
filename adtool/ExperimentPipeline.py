@@ -9,6 +9,7 @@ from os import listdir
 from os.path import isfile, join
 import json
 
+import torch
 
 class CancellationToken:
     """
@@ -153,13 +154,39 @@ class ExperimentPipeline(Leaf):
             data_dict = self._explorer.bootstrap(
             )
 
-            #list all discovery.json files in subdirectories  self.config['experiment']['config']['save_location']
+            
 
-            mypath = self.config['experiment']['config']['save_location']
-            json_discoveries = [f for f in listdir(mypath) if isfile(join(mypath, f)) and f == 'discovery.json']
+            mypath = self.config['experiment']['config']['save_location']+"discoveries/"
+            #list all discovery.json files in subdirectories  
+            discoveries_folders = [f for f in listdir(mypath) if not isfile(join(mypath, f))]
+            #get discovery.json files in discoveries folders
+            json_discoveries = [ 
+                folder for folder in discoveries_folders for f in listdir(join(mypath, folder))
+                if isfile(join(mypath, folder, f)) and
+                   f=="discovery.json"
+            ]
+            
             for json_discovery in json_discoveries:
-                with open(join(mypath, json_discovery)) as f:
+                with open(join(mypath, json_discovery,"discovery.json")) as f:
                     new_trial_data = json.load(f)
+                    #replace each list of list of floats with a tensor, recursively but bottom-up
+                    def replace_lists_with_tensor(d):
+                        # if we found a list of floats, convert it to a tensor, then if we found list of tensors, convert it to a tensor etc from bottom-up
+                        if isinstance(d, list) and all(isinstance(i, float) for i in d):
+                            return torch.tensor(d)
+                        elif isinstance(d, list):
+                            return [replace_lists_with_tensor(i) for i in d]
+                        elif isinstance(d, dict):
+                            return {k:replace_lists_with_tensor(v) for k,v in d.items()}
+                        else:
+                            return d
+                    new_trial_data = replace_lists_with_tensor(new_trial_data)
+                    
+
+
+                    print(new_trial_data)
+
+                    
                     self._explorer._history_saver.map( new_trial_data )
             self.logger.info(
                 "[LOADED] - Loaded previous discoveries from experiment"

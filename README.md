@@ -99,6 +99,7 @@ Available examples are:
 ### Visualization
 The tool provides a web interface to visualize the progression of the exploration. To start the web interface, run the following command:
 ```bash
+pip install .[visu]
 cd examples/visu
 python3 server.py --discoveries PATH_TO_DISCOVERIES
 ```
