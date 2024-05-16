@@ -1,5 +1,8 @@
 # adtool: Assisted and Automated Discovery for Complex Systems
 
+# Join the Discord server
+[![Discord](https://img.shields.io/discord/898978609686315530?label=Discord)](https://discord.gg/B7a43wP3zQ)
+
 We're pleased to introduce adtool (formerly, Automated Discovery Tool), a
 package assisted and automated discovery of patterns in the exploration of
 complex systems.

@@ -6,6 +6,7 @@ from adtool.utils.leaf.Leaf import Leaf, prune_state
 from adtool.utils.leaf.locators.locators import BlobLocator
 
 from os import listdir
+import os
 from os.path import isfile, join
 import json
 
@@ -158,6 +159,10 @@ class ExperimentPipeline(Leaf):
 
             mypath = self.config['experiment']['config']['save_location']+"discoveries/"
             #list all discovery.json files in subdirectories  
+            #check if mypath exists and is a folder
+            if not os.path.exists(mypath):
+                os.makedirs(mypath)
+
             discoveries_folders = [f for f in listdir(mypath) if not isfile(join(mypath, f))]
             #get discovery.json files in discoveries folders
             json_discoveries = [ 
