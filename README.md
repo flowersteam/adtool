@@ -98,7 +98,6 @@ Available examples are:
 
 
 
-
 ### Visualization
 The tool provides a web interface to visualize the progression of the exploration. To start the web interface, run the following command:
 ```bash
@@ -111,3 +110,10 @@ The web interface can be accessed at `http://127.0.0.1:8765/`.
 
 ### Demo file demo.mp4 insered
 ![Short demo](demo.mp4)
+
+
+## TODO
+- [ ] Integrate feedbacks during the exploration to bias the search
+- [ ] Add an example with a 'non Python' system 
+- [ ] Improve UI to select and export discoveries easily
+- [ ] Integrate your feedbacks and suggestions!

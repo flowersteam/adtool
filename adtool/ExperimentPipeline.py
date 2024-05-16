@@ -168,10 +168,16 @@ class ExperimentPipeline(Leaf):
             json_discoveries = [ 
                 folder for folder in discoveries_folders for f in listdir(join(mypath, folder))
                 if isfile(join(mypath, folder, f)) and
-                   f=="discovery.json"
-            ]
+                   f=="discovery.json" ]
             
             for json_discovery in json_discoveries:
+                # check if config.json is the same
+                
+                # with open(join(mypath, json_discovery,"config.json")) as f:
+                #     discovery_config=json.load(f)
+                #     if discovery_config!=self.config:
+                #         #TODO: check que les entrées sorties + warning sur les différences
+                #         raise Exception("The discovery config is not the same as the current config")
                 with open(join(mypath, json_discovery,"discovery.json")) as f:
                     new_trial_data = json.load(f)
                     #replace each list of list of floats with a tensor, recursively but bottom-up
