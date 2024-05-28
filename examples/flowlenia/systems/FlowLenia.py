@@ -55,8 +55,6 @@ class FlowLenia(System):
                  sigma=.65,
                  final_step=200,
                  scale_init_state=1,
-
-
                      nb_k: int = 10,
     C: int = 1,
     n: int = 2, #exponent for alpha

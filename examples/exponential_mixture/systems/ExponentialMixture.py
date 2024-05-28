@@ -18,16 +18,6 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 
 
-class SystemParams(BaseModel):
-    sequence_max: int = Field(100, ge=0, le=1000)
-    sequence_density: int = Field(100, ge=1, le=1000)
-
-
-
-
-
-print("SystemParams", SystemParams, file=sys.stderr)
-
 from adtool.utils.expose_config.expose_config import expose
 
 class ExponentialMixtureConfig(BaseModel):

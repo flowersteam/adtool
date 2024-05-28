@@ -301,7 +301,6 @@ class LeniaStatistics(Leaf):
         postmap_key: str = "output",
     ):
         super().__init__()
-        self.locator = BlobLocator()
 
         self.premap_key = premap_key
         self.postmap_key = postmap_key

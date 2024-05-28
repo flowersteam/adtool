@@ -112,6 +112,8 @@ def create(
         raise ValueError(
             f"Could not retrieve class from path: {parameters['system']['path']}."
         )
+    
+    print(system_class)
     system = system_class(**parameters["system"]["config"])
 
     # Get explorer factory and generate explorer
