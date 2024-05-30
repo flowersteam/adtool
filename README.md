@@ -99,7 +99,7 @@ Available examples are:
 
 
 ### Visualization
-The tool provides a web interface to visualize the progression of the exploration. To start the web interface, run the following command:
+The tool provides a web interface to visualize the progression of the exploration. To start the web interface, run the following commands:
 ```bash
 pip install .[visu]
 cd examples/visu

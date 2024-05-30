@@ -12,6 +12,8 @@ from adtool.wrappers.mutators import add_gaussian_noise
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 
+from examples.grayscott.systems.GrayScott import GrayScott  
+
 
 @dataclass
 class GrayScottParams:
@@ -31,6 +33,7 @@ class GrayScottParams:
 class GrayScottParameterMap(Leaf):
     def __init__(
         self,
+        system: GrayScott,
         premap_key: str = "params",
         param_obj: GrayScottParams = None,
         **config_decorator_kwargs,
@@ -48,16 +51,17 @@ class GrayScottParameterMap(Leaf):
 
         self.uniform = UniformParameterMap(
             premap_key=f"tensor_{self.premap_key}",
-            tensor_low=torch.tensor([0.0, 0.0, 0.0, 0.0]),
-            tensor_high=torch.tensor([1.0, 1.0, 1.0, 1.0]),
-            tensor_bound_low=torch.tensor([0.0, 0.0, 0.0, 0.0]),
-            tensor_bound_high=torch.tensor([0.1, 0.1, 1.0, 1.0]),
+            # F k Du Dv
+            tensor_low=torch.tensor([0.01, 0.01, 0.01, 0.01], dtype=torch.float32),
+            tensor_high=torch.tensor([0.1, 0.1, 0.1, 0.1], dtype=torch.float32), 
         )
 
         self.uniform_mutator = partial(
             add_gaussian_noise,
             mean=param_obj.to_tensor(),
-            std=torch.tensor([0.01, 0.01, 0.01, 0.01], dtype=torch.float32)
+            std=torch.tensor([0.1, 0.1, 0.1, 0.1],
+                             
+                              dtype=torch.float32)
         )
 
     def map(self, input: Dict, override_existing: bool = True) -> Dict:

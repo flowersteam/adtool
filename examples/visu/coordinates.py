@@ -46,8 +46,16 @@ def list_discoveries(path):
                     discovery['visual']=path
                     discovery['embedding']=discovery_embedding
                     discoveries.append(discovery)
-
                     break
+
+                # if file.endswith('.png'):
+                #     discovery['width']=discovery_details['width']
+                #     discovery['height']=discovery_details['height']
+                #     discovery['visual']=path
+                #     discovery['embedding']=discovery_embedding
+                #     discoveries.append(discovery)
+                #     break
+
     return discoveries
 
 
@@ -64,6 +72,13 @@ def process_frame(args):
     if frame_positions[i] >= frame_counts[i]:
         frame = black_frame
     return i, frame
+
+def concatenate_photos(discoveries, output_file='static/concatenated.png'):
+    #make a single photo from all photos
+    photos = [cv2.imread(discovery['visual']) for discovery in discoveries]
+    concatenated_photo = cv2.hconcat(photos)
+    cv2.imwrite(output_file, concatenated_photo)
+
 
 def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
     video_paths = [discovery['visual'] for discovery in discoveries]
@@ -129,9 +144,9 @@ def compute_coordinates(path):
         #touch discoveries.json
         with open('static/discoveries.json', 'w') as f:
             f.write('[]')
-            # touch static/concatenated.webm
-        with open('static/concatenated.webm', 'w') as f:
-            f.write('')
+            # rm static/concatenated.webm if exists
+        if os.path.exists('static/concatenated.webm'):
+            os.remove('static/concatenated.webm')
 
         return
     
