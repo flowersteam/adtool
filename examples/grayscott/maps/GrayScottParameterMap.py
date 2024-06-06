@@ -63,9 +63,9 @@ class GrayScottParameterMap(Leaf):
             premap_key=f"tensor_{self.premap_key}",
             # F k Du Dv
             tensor_low=torch.tensor([0.02, 0.03], dtype=torch.float32),
-            tensor_bound_low=torch.tensor([0.0, 0.02], dtype=torch.float32),
+         #   tensor_bound_low=torch.tensor([0.0, 0.02], dtype=torch.float32),
             tensor_high=torch.tensor([0.05, 0.058], dtype=torch.float32), 
-            tensor_bound_high=torch.tensor([0.07, 0.068], dtype=torch.float32),
+        #    tensor_bound_high=torch.tensor([0.07, 0.068], dtype=torch.float32),
         )
 
         self.uniform_mutator = partial(

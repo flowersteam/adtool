@@ -58,6 +58,9 @@ class BoxProjector(Leaf):
 
         output[self.premap_key] = tensor_data
 
+     #   print("tensor_data", tensor_data)   
+
+
         return output
 
     def sample(self) -> torch.Tensor:
@@ -67,6 +70,7 @@ class BoxProjector(Leaf):
         dim_lengths = self.high - self.low
         sample = rand_nums * dim_lengths + self.low
 
+
         return sample
 
     def _clamp_and_truncate(self, data: torch.Tensor) -> torch.Tensor:
@@ -74,6 +78,7 @@ class BoxProjector(Leaf):
         # but in our version, torch.clamp doesn't support tensors
         clamped_data = torch.min(torch.max(data, self.bound_lower), self.bound_upper)
         # TODO: truncate dimensions
+
         return clamped_data
 
     def _update_low_high(self, data: torch.Tensor) -> None:

@@ -9,63 +9,79 @@ import cv2
 #from pydub import AudioSegment
 
 
+loaded_json={
+
+}
+
+
+import os
+import json
+import numpy as np
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+def process_discovery(root, name, loaded_json):
+    discovery = {}
+
+    discovery_path = os.path.join(root, name, 'discovery.json')
+
+    if not os.path.exists(discovery_path):
+        return None
+
+    if discovery_path in loaded_json:
+        return loaded_json[discovery_path]
+
+    with open(discovery_path) as f:
+        print("loading discovery.json")
+        discovery_details = json.load(f)
+
+    discovery_embedding = discovery_details['output']
+
+    if np.isnan(discovery_embedding).any():
+        print("nan found")
+        return None
+
+    for file in os.listdir(os.path.join(root, name)):
+        path = os.path.join(root, name, file)
+        if file.endswith('.mp4'):
+            discovery['visual'] = path
+            discovery['embedding'] = discovery_embedding
+            loaded_json[discovery_path] = discovery
+            return discovery
+
+    return None
+
 def list_discoveries(path):
     discoveries = []
-    #list all directories in path
-    for root, dirs, files in os.walk(path):
-        for name in dirs:
-            discovery={}
+    loaded_json = {}
+    tasks = []
 
-            #load discovery.json file
+    with ThreadPoolExecutor() as executor:
+        for root, dirs, _ in os.walk(path):
+            for name in dirs:
+                tasks.append(executor.submit(process_discovery, root, name, loaded_json))
 
-            #check if discovery.json exists
-            if not os.path.exists(os.path.join(root, name, 'discovery.json')):
-                continue
-
-            with open(os.path.join(root, name, 'discovery.json')) as f:
-                discovery_details = json.load(f)
-            
-            discovery_embedding=discovery_details['output']
-            #if contains nan, continue
-            if np.isnan(discovery_embedding).any():
-                print("nan found")
-                continue
-
-
-            
-            #list all files ending with .json
-            for file in os.listdir(os.path.join(root, name)):
-           #     mime = magic.Magic(mime=True)
-                path=os.path.join(root, name, file)
-            #    mimetype = mime.from_file(path)
-
-                if file.endswith('.mp4'):
-                    #get dimensions of video
-                    cap = cv2.VideoCapture(path)
-                    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                    cap.release()
-                    discovery['width']=width
-                    discovery['height']=height
-                    discovery['visual']=path
-                    discovery['embedding']=discovery_embedding
-                    discoveries.append(discovery)
-                    break
-
-                # if file.endswith('.png'):
-                #     discovery['width']=discovery_details['width']
-                #     discovery['height']=discovery_details['height']
-                #     discovery['visual']=path
-                #     discovery['embedding']=discovery_embedding
-                #     discoveries.append(discovery)
-                #     break
+        for future in as_completed(tasks):
+            result = future.result()
+            if result:
+                discoveries.append(result)
 
     return discoveries
+
+import cv2
+import numpy as np
+from multiprocessing import Pool
+
+def concatenate_photos(discoveries, output_file='static/concatenated.webm'):
+    #make a single photo from all photos
+    photos = [cv2.imread(discovery['visual']) for discovery in discoveries]
+    concatenated_photo = cv2.hconcat(photos)
+    cv2.imwrite(output_file, concatenated_photo)
 
 
 import cv2
 import numpy as np
 from multiprocessing import Pool
+import math
 
 def process_frame(args):
     i, video_path, frame_positions, frame_counts, black_frame = args
@@ -77,15 +93,7 @@ def process_frame(args):
         frame = black_frame
     return i, frame
 
-def concatenate_photos(discoveries, output_file='static/concatenated.png'):
-    #make a single photo from all photos
-    photos = [cv2.imread(discovery['visual']) for discovery in discoveries]
-    concatenated_photo = cv2.hconcat(photos)
-    cv2.imwrite(output_file, concatenated_photo)
-
-
 def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
-    discoveries=discoveries[:100]
     video_paths = [discovery['visual'] for discovery in discoveries]
 
     # Get the width and height of the first video
@@ -94,20 +102,25 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
     height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
     video.release()
 
-    # Calculate the total width of the output video
-    total_width = width * len(video_paths)
+    # Calculate the number of frames in each video
+    frame_counts = [int(cv2.VideoCapture(video_path).get(cv2.CAP_PROP_FRAME_COUNT)) for video_path in video_paths]
+    max_frame_count = max(frame_counts)
+
+    # Calculate the number of rows and columns needed to form a grid
+    num_videos = len(video_paths)
+    rows = math.ceil(math.sqrt(num_videos))
+    cols = math.ceil(num_videos / rows)
 
     # Create a black frame with the same size as the video frame
     black_frame = np.zeros((height, width, 3), dtype=np.uint8)
 
-    # Get the number of frames in each video
-    frame_counts = [int(cv2.VideoCapture(video_path).get(cv2.CAP_PROP_FRAME_COUNT)) for video_path in video_paths]
-
     # Create a VideoWriter object with the output file name, fourcc code, frames per second, and frame size
-    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'VP90'), 5, (total_width, height))
+    total_width = width * cols
+    total_height = height * rows
+    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'VP90'), 20, (total_width, total_height))
 
     # Initialize frame positions
-    frame_positions = [0] * len(video_paths)
+    frame_positions = [0] * num_videos
 
     with Pool() as p:
         while True:
@@ -118,7 +131,7 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
             results = p.map(process_frame, args)
 
             # Break the loop if all videos are finished
-            if all(frame_positions[i] >= frame_counts[i] for i in range(len(video_paths))):
+            if all(frame_positions[i] >= frame_counts[i] for i in range(num_videos)):
                 print("Info: All videos have been processed")
                 break
 
@@ -128,19 +141,28 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
             # Extract the frames
             frames = [result[1] for result in results]
 
-            # Concatenate the frames horizontally
-            concatenated_frame = cv2.hconcat(frames)
+            # Create an empty frame for the grid
+            grid_frame = np.zeros((total_height, total_width, 3), dtype=np.uint8)
 
-            # Write the concatenated frame to the output video
-            out.write(concatenated_frame)
+            # Place each frame in the correct position in the grid
+            for idx, frame in enumerate(frames):
+                row = idx // cols
+                col = idx % cols
+                y_offset = row * height
+                x_offset = col * width
+                grid_frame[y_offset:y_offset + height, x_offset:x_offset + width] = frame
+
+            # Write the grid frame to the output video
+            out.write(grid_frame)
 
             # Increment frame positions
-            for i in range(len(video_paths)):
-                frame_positions[i] += 3
+            for i in range(num_videos):
+                frame_positions[i] += max_frame_count // 25
 
     out.release()
-
     cv2.destroyAllWindows()
+
+    return width, height
 
 
 def compute_coordinates(path):
@@ -155,7 +177,7 @@ def compute_coordinates(path):
 
         return
     
-    concatenate_videos(discoveries)
+    width, height=concatenate_videos(discoveries)
     print("videos concatenated")
     # if less than 2 discoveries, return
     if len(discoveries) < 2:
@@ -190,6 +212,8 @@ def compute_coordinates(path):
     #remove path from visual
     for discovery in discoveries:
         discovery['visual'] = discovery['visual'][ len(path):]
+        discovery['width'] = width
+        discovery['height'] = height
 
     with open('static/discoveries.json', 'w') as f:
         json.dump(discoveries, f)
