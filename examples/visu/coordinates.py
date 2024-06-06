@@ -5,6 +5,7 @@ import json
 import numpy as np
 from sklearn.decomposition import PCA
 import cv2
+from sklearn.cluster import KMeans
 
 #from pydub import AudioSegment
 
@@ -117,7 +118,7 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
     # Create a VideoWriter object with the output file name, fourcc code, frames per second, and frame size
     total_width = width * cols
     total_height = height * rows
-    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'VP90'), 20, (total_width, total_height))
+    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'VP90'), 5, (total_width, total_height))
 
     # Initialize frame positions
     frame_positions = [0] * num_videos
@@ -157,7 +158,7 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
 
             # Increment frame positions
             for i in range(num_videos):
-                frame_positions[i] += max_frame_count // 25
+                frame_positions[i] += max_frame_count // 20
 
     out.release()
     cv2.destroyAllWindows()
@@ -177,14 +178,21 @@ def compute_coordinates(path):
 
         return
     
-    width, height=concatenate_videos(discoveries)
-    print("videos concatenated")
+
     # if less than 2 discoveries, return
     if len(discoveries) < 2:
         return
     X = np.array([discovery['embedding'] for discovery in discoveries  ])
+
+    print(X.shape)
     
-    #replace all nan with the mean of the column
+
+    #use a clustering algorithm to only keep the 100 most interesting discoveries with kmeans
+    kmeans = KMeans(n_clusters=100, random_state=0).fit(X)
+    # take one representative from each cluster
+    discoveries = [discoveries[i] for i in np.unique(kmeans.labels_, return_index=True)[1]]
+
+    X = np.array([discovery['embedding'] for discovery in discoveries])
 
 
 
@@ -199,6 +207,9 @@ def compute_coordinates(path):
         discovery['y'] = embedding[i][1].item()
 
 
+
+
+
     min_x = min(discovery['x'] for discovery in discoveries)
     max_x = max(discovery['x'] for discovery in discoveries)
     min_y = min(discovery['y'] for discovery in discoveries)
@@ -208,6 +219,9 @@ def compute_coordinates(path):
         discovery['x'] = (discovery['x'] - min_x) / (max_x - min_x) - 0.5
         discovery['y'] = (discovery['y'] - min_y) / (max_y - min_y) - 0.5
 
+
+    width, height=concatenate_videos(discoveries)
+    print("videos concatenated")
 
     #remove path from visual
     for discovery in discoveries:

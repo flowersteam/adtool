@@ -127,7 +127,6 @@ class GrayScottSimulation:
 
         # self.params.F=0.039
         # self.params.k=0.058
-        print(self.params.F, self.params.k)
 
         if fix_seed:
             np.random.seed(self.initial_condition_seed)
