@@ -10,7 +10,7 @@
             "config": {
                 "height": 128,
                 "width": 128,
-                "num_inference_steps": 10000
+                "num_inference_steps": 1000
             }
         },
         "explorer": {

@@ -26,6 +26,10 @@ def list_discoveries(path):
                 discovery_details = json.load(f)
             
             discovery_embedding=discovery_details['output']
+            #if contains nan, continue
+            if np.isnan(discovery_embedding).any():
+                print("nan found")
+                continue
 
 
             
@@ -81,6 +85,7 @@ def concatenate_photos(discoveries, output_file='static/concatenated.png'):
 
 
 def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
+    discoveries=discoveries[:100]
     video_paths = [discovery['visual'] for discovery in discoveries]
 
     # Get the width and height of the first video

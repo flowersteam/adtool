@@ -19,16 +19,26 @@ from examples.grayscott.systems.GrayScott import GrayScott
 class GrayScottParams:
     F: float  # Feed rate
     k: float  # Kill rate
-    Du: float  # Diffusion rate of U
-    Dv: float  # Diffusion rate of V
+    # Du: float  # Diffusion rate of U
+    # Dv: float  # Diffusion rate of V
 
     def to_tensor(self):
-        return torch.tensor([self.F, self.k, self.Du, self.Dv], dtype=torch.float32)
+        return torch.tensor([self.F, self.k], dtype=torch.float32)
 
     @classmethod
     def from_tensor(cls, tensor):
-        return cls(F=tensor[0].item(), k=tensor[1].item(), Du=tensor[2].item(), Dv=tensor[3].item())
+        return cls(F=tensor[0].item(), k=tensor[1].item())
 
+        # self.params.F = 0.035
+        # self.params.k = 0.065
+        # self.params.Du = 0.14
+        # self.params.Dv = 0.06
+
+        # Du, Dv, F, K = 0.16, 0.08, 0.060, 0.062 
+        # self.params.Du = 0.16
+        # self.params.Dv = 0.08
+        # self.params.F = 0.060
+        # self.params.k = 0.062
 
 class GrayScottParameterMap(Leaf):
     def __init__(
@@ -41,7 +51,7 @@ class GrayScottParameterMap(Leaf):
         super().__init__()
 
         if param_obj is None:
-            param_obj = GrayScottParams(F=0.04, k=0.06, Du=0.16, Dv=0.08)
+            param_obj = GrayScottParams(F=0.0, k=0)
 
         self.locator = BlobLocator()
         if len(config_decorator_kwargs) > 0:
@@ -52,14 +62,16 @@ class GrayScottParameterMap(Leaf):
         self.uniform = UniformParameterMap(
             premap_key=f"tensor_{self.premap_key}",
             # F k Du Dv
-            tensor_low=torch.tensor([0.01, 0.01, 0.01, 0.01], dtype=torch.float32),
-            tensor_high=torch.tensor([0.1, 0.1, 0.1, 0.1], dtype=torch.float32), 
+            tensor_low=torch.tensor([0.02, 0.03], dtype=torch.float32),
+            tensor_bound_low=torch.tensor([0.0, 0.02], dtype=torch.float32),
+            tensor_high=torch.tensor([0.05, 0.058], dtype=torch.float32), 
+            tensor_bound_high=torch.tensor([0.07, 0.068], dtype=torch.float32),
         )
 
         self.uniform_mutator = partial(
             add_gaussian_noise,
             mean=param_obj.to_tensor(),
-            std=torch.tensor([0.1, 0.1, 0.1, 0.1],
+            std=torch.tensor([0.01, 0.02],
                              
                               dtype=torch.float32)
         )

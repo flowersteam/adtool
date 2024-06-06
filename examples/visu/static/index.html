@@ -8,26 +8,81 @@
         }
 
         #canvas-container {
-    position: relative;
-}
+            position: relative;
+        }
 
+        #overlay-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            color: #ff1010;
+            font-family: Arial;
+            font-size: 20px;
+            word-break: break-all;
+            padding: 10px;
+        }
 
+        #sidebar {
+            position: absolute;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            width: 200px;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        }
 
-#overlay-text {
-    position: absolute;
-    top: 0;
-    left: 0;
-    color: #ff1010;
-    font-family: Arial;
-    font-size: 20px;
-    word-break: break-all;
-    padding: 10px;
-}
+        #canvas-container {
+            margin-left: 200px; /* Add margin to make space for the sidebar */
+        }
 
+        .sprite-item {
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            border: 1px solid #ddd;
+        }
+
+        .sprite-item:hover {
+            background-color: #ddd;
+        }
+
+        #export-button {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        #export-button:hover {
+            background-color: #0056b3;
+        }
+
+        h3 {
+            margin: 0;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            font-family: Arial;
+            font-size: 20px;
+            text-align: center;
+        }
 
     </style>
 </head>
 <body>
+    <div id="sidebar">
+        <h3>Selected Discoveries</h3>
+        <div id="selected-sprites"></div>
+        <button id="export-button">Export</button>
+    </div>
     <div id="canvas-container">
         <div id="overlay-text"></div>
     </div>

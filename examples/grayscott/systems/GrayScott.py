@@ -34,8 +34,8 @@ from tqdm import tqdm
 class GrayScottParams:
     F: float  # Feed rate
     k: float  # Kill rate
-    Du: float  # Diffusion rate of U
-    Dv: float  # Diffusion rate of V
+    # Du: float  # Diffusion rate of U
+    # Dv: float  # Diffusion rate of V
 
 class GrayScottSimulation:
     def __init__(
@@ -96,8 +96,13 @@ class GrayScottSimulation:
 
             # Capture frame
             self.frames.append(self._decode_image().cpu().numpy().astype(np.uint8))
+            # if the last two frames are the same, break
+            if len(self.frames) > 1 and np.all(self.frames[-1] == self.frames[-2]):
+                break
+
 
     def _decode_image(self):
+        # just use self.u as the grayscale image
         image = torch.stack([self.u, self.u, torch.zeros_like(self.u)], dim=2)
         image = (image / image.max() * 255).clamp(0, 255)
         return image
@@ -108,18 +113,21 @@ class GrayScottSimulation:
 
         # input {'params': {'dynamic_params': {'F': 0.8822692632675171, 'k': 0.9150039553642273, 'Du': 0.38286375999450684, 'Dv': 0.9593056440353394}}, 'equil': 1}
         self.params = GrayScottParams(**input["params"]["dynamic_params"])
-        # force to ue DU DV F K = 0.14, 0.06, 0.035, 0.065
+
         # self.params.F = 0.035
         # self.params.k = 0.065
-        # self.params.Du = 0.14
-        # self.params.Dv = 0.06
+        self.params.Du = 0.14
+        self.params.Dv = 0.06
 
-        # Du, Dv, F, K = 0.16, 0.08, 0.060, 0.062 
+
         # self.params.Du = 0.16
         # self.params.Dv = 0.08
         # self.params.F = 0.060
         # self.params.k = 0.062
 
+        # self.params.F=0.039
+        # self.params.k=0.058
+        print(self.params.F, self.params.k)
 
         if fix_seed:
             np.random.seed(self.initial_condition_seed)
@@ -132,7 +140,7 @@ class GrayScottSimulation:
         im_array = [frame for frame in self.frames]
         
         byte_img = io.BytesIO()
-        imageio.mimwrite(byte_img, im_array, format='mp4', fps=1000)
+        imageio.mimwrite(byte_img, im_array, format='mp4', fps=self.num_inference_steps/10)
         byte_img.seek(0)
         return byte_img.getvalue(), "mp4"
 
