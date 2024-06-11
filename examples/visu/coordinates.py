@@ -167,6 +167,7 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
 
 
 def compute_coordinates(path):
+    print("computing coordinates", path)
     discoveries = list_discoveries(path)
     if len(discoveries) == 0:
         #touch discoveries.json
@@ -188,11 +189,12 @@ def compute_coordinates(path):
     
 
     #use a clustering algorithm to only keep the 100 most interesting discoveries with kmeans
-    kmeans = KMeans(n_clusters=100, random_state=0).fit(X)
-    # take one representative from each cluster
-    discoveries = [discoveries[i] for i in np.unique(kmeans.labels_, return_index=True)[1]]
+    if len(discoveries) > 100:
+        kmeans = KMeans(n_clusters=100, random_state=0).fit(X)
+        # take one representative from each cluster
+        discoveries = [discoveries[i] for i in np.unique(kmeans.labels_, return_index=True)[1]]
 
-    X = np.array([discovery['embedding'] for discovery in discoveries])
+        X = np.array([discovery['embedding'] for discovery in discoveries])
 
 
 
