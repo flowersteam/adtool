@@ -10,9 +10,11 @@ from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
 import websockets
 from pathlib import Path
+import json
 
 from datetime import datetime
 
+current_pca=None
 
 MIME_TYPES = {
     "html": "text/html",
@@ -35,22 +37,27 @@ discovery_files=args.discoveries
 
 
 async def watch_discoveries():
+    global current_pca
     print("Watching discoveries")
     async for changes in awatch(discovery_files, recursive=True):
+        # if it's target.json, skip
+        if any("target.json" in change[1] for change in changes):
+            continue
         for _ in changes:
             print("Change in discoveries")
-            compute_coordinates(discovery_files)
+            current_pca =  compute_coordinates(discovery_files)
             break
 
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global current_pca
     # Ensure directories exist
     os.makedirs(static_files, exist_ok=True)
     os.makedirs(discovery_files, exist_ok=True)
     
-    compute_coordinates(discovery_files)
+    current_pca=compute_coordinates(discovery_files)
     task = asyncio.create_task(watch_discoveries())
     yield
     task.cancel()
@@ -91,6 +98,26 @@ async def serve_discoveries(file_path: str):
 
     return FileResponse(full_path, media_type=mime_type)
 
+
+@app.get("/disable_target")
+async def disable_target():
+    #delete static/target.json
+    if os.path.exists(f"{discovery_files}/target.json"):
+        os.remove(f"{discovery_files}/target.json")
+    return {"status": "ok"}
+
+@app.post("/update_target")
+async def update_target(target: dict):
+    # transform x and y to float and get the reverse pca
+    x, y = target['x'], target['y']
+    x, y = float(x), float(y)
+    target_embedding = current_pca.inverse_transform([[x, y]])
+    target['target'] = target_embedding[0].tolist()
+    with open(f"{discovery_files}/target.json", "w") as f:
+        json.dump(target, f)
+
+    
+    return {"status": "ok"}
 
 
 @app.websocket("/ws")

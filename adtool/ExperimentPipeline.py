@@ -12,34 +12,17 @@ import json
 
 import torch
 
-class CancellationToken:
-    """
-    Manages the cancellation token which allows you to stop an
-    experiment in progress
-    """
 
-    def __init__(self) -> None:
-        """
-        Init the cancellation token to false
-        """
-        self._token = False
-
-    def get(self) -> bool:
-        """
-        Give access to the cancellation token
-
-        #### Returns:
-        - **token**: a boolean indicating if the current experiment
-        must be cancelled
-        """
-        return self._token
-
-    def trigger(self) -> None:
-        """
-        Sets the cancellation token to true
-        (the experiment must be cancelled)
-        """
-        self._token = True
+def replace_lists_with_tensor(d):
+    # if we found a list of floats, convert it to a tensor, then if we found list of tensors, convert it to a tensor etc from bottom-up
+    if isinstance(d, list) and all(isinstance(i, float) for i in d):
+        return torch.tensor(d).squeeze()
+    elif isinstance(d, list):
+        return [replace_lists_with_tensor(i) for i in d]
+    elif isinstance(d, dict):
+        return {k:replace_lists_with_tensor(v) for k,v in d.items()}
+    else:
+        return d
 
 
 class ExperimentPipeline(Leaf):
@@ -95,7 +78,6 @@ class ExperimentPipeline(Leaf):
         self.config = config
         self.locator = BlobLocator()
         self.locator.resource_uri = resource_uri
-        self.cancellation_token = CancellationToken()
 
         # METADATA
         self.run_idx = 0
@@ -182,16 +164,7 @@ class ExperimentPipeline(Leaf):
                 with open(join(mypath, json_discovery,"discovery.json")) as f:
                     new_trial_data = json.load(f)
                     #replace each list of list of floats with a tensor, recursively but bottom-up
-                    def replace_lists_with_tensor(d):
-                        # if we found a list of floats, convert it to a tensor, then if we found list of tensors, convert it to a tensor etc from bottom-up
-                        if isinstance(d, list) and all(isinstance(i, float) for i in d):
-                            return torch.tensor(d).squeeze()
-                        elif isinstance(d, list):
-                            return [replace_lists_with_tensor(i) for i in d]
-                        elif isinstance(d, dict):
-                            return {k:replace_lists_with_tensor(v) for k,v in d.items()}
-                        else:
-                            return d
+
                     new_trial_data = replace_lists_with_tensor(new_trial_data)
 
 
@@ -210,9 +183,13 @@ class ExperimentPipeline(Leaf):
 
 
             while self.run_idx < n_exploration_runs:
-                # check for termination
-                if self.cancellation_token.get():
-                    break
+                # check  if target.json exists
+                if os.path.exists(f"{mypath}/target.json"):
+                    with open(f"{mypath}/target.json") as f:
+                        target=json.load(f)
+                        #replace each list of list of floats with a tensor, recursively but bottom-up
+                        target = replace_lists_with_tensor(target)
+                        data_dict['target']=target['target']
 
                 # pass trial parameters through system
                 data_dict = self._system.map(data_dict)
@@ -291,33 +268,19 @@ class ExperimentPipeline(Leaf):
 
         # CLEANUP
 
-        # log termination of experiment
-        if self.cancellation_token.get():
-            self.logger.info(
-                "[CANCELLED] - experiment {} with seed {} cancelled".format(
-                    self.experiment_id, self.seed
-                )
-            )
 
-            self._raise_callbacks(
-                self._on_cancelled_callbacks,
-                run_idx=self.run_idx,
-                seed=self.seed,
-                experiment_id=self.experiment_id,
+        self.logger.info(
+            "[FINISHED] - experiment {} with seed {} finished".format(
+                self.experiment_id, self.seed
             )
-        else:
-            self.logger.info(
-                "[FINISHED] - experiment {} with seed {} finished".format(
-                    self.experiment_id, self.seed
-                )
-            )
+        )
 
-            self._raise_callbacks(
-                self._on_finished_callbacks,
-                run_idx=self.run_idx,
-                seed=self.seed,
-                experiment_id=self.experiment_id,
-            )
+        self._raise_callbacks(
+            self._on_finished_callbacks,
+            run_idx=self.run_idx,
+            seed=self.seed,
+            experiment_id=self.experiment_id,
+        )
         return
 
     def save(self, resource_uri: str):

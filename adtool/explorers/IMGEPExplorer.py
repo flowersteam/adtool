@@ -1,6 +1,8 @@
 """The simplest possible algorithm of Intrinsically Motivated Goal Exploration Processes
 """
 from functools import partial
+import json
+import os
 from typing import Any, Dict, List
 
 import torch
@@ -110,6 +112,8 @@ class IMGEPExplorerInstance(Leaf):
 
         # TODO: check gradients here
         if self.timestep < self.equil_time:
+
+
             # sets "params" key
             trial_data_reset = self.parameter_map.map(
                 trial_data_reset, override_existing=True
@@ -119,7 +123,9 @@ class IMGEPExplorerInstance(Leaf):
             trial_data_reset["equil"] = 1
         else:
             # suggest_trial reads history
-            params_trial = self.suggest_trial()
+            params_trial = self.suggest_trial(
+                goal=system_output['target'] if 'target' in system_output else None
+            )
 
             # assemble dict and update parameter_map state
             # NOTE: that this pass through parameter_map should not modify
@@ -137,7 +143,10 @@ class IMGEPExplorerInstance(Leaf):
 
         return trial_data_reset
 
-    def suggest_trial(self, lookback_length: int = -1) -> torch.Tensor:
+    def suggest_trial(self, lookback_length: int = -1,
+                      goal: torch.Tensor = None
+                      
+                      ) -> torch.Tensor:
         """Sample according to the policy a new trial of parameters for the
         system.
 
@@ -152,7 +161,8 @@ class IMGEPExplorerInstance(Leaf):
         Returns:
             A `torch.Tensor` containing the parameters to try.
         """
-        goal = self.behavior_map.sample()
+        if goal is None:
+            goal = self.behavior_map.sample()
 
         source_policy = self._vector_search_for_goal(goal, lookback_length)
 

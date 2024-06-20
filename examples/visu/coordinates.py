@@ -167,6 +167,7 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
 
 
 def compute_coordinates(path):
+    global pca
     print("computing coordinates", path)
     discoveries = list_discoveries(path)
     if len(discoveries) == 0:
@@ -179,28 +180,42 @@ def compute_coordinates(path):
 
         return
     
+    print("len(discoveries)", len(discoveries))
 
     # if less than 2 discoveries, return
     if len(discoveries) < 2:
         return
     X = np.array([discovery['embedding'] for discovery in discoveries  ])
 
-    print(X.shape)
-    
 
-    #use a clustering algorithm to only keep the 100 most interesting discoveries with kmeans
+
     if len(discoveries) > 100:
-        kmeans = KMeans(n_clusters=100, random_state=0).fit(X)
-        # take one representative from each cluster
-        discoveries = [discoveries[i] for i in np.unique(kmeans.labels_, return_index=True)[1]]
+        # keep only the top 100 most disctinct  discoveries 
+        kmeans = KMeans(n_clusters=100, random_state=0)
+        kmeans.fit(X)
+        centers = kmeans.cluster_centers_
+        top_discoveries=[]
+        for center in centers:
+            min_distance=float('inf')
+            top_discovery=None
+            for discovery in discoveries:
+                distance=np.linalg.norm(discovery['embedding']-center)
+                if distance<min_distance and discovery not in top_discoveries:
+                    min_distance=distance
+                    top_discovery=discovery
+            top_discoveries.append(top_discovery)
 
-        X = np.array([discovery['embedding'] for discovery in discoveries])
+        discoveries=top_discoveries
+
+
+
 
 
 
     pca = PCA(n_components=2)
     pca.fit(X)
     embedding = pca.transform(X)
+
 
 
     for i, discovery in enumerate(discoveries):
@@ -221,7 +236,23 @@ def compute_coordinates(path):
         discovery['x'] = (discovery['x'] - min_x) / (max_x - min_x) - 0.5
         discovery['y'] = (discovery['y'] - min_y) / (max_y - min_y) - 0.5
 
+    # same for target
+    if os.path.exists(f'{path}/target.json'):
+        with open(f'{path}/target.json') as f:
+            target = json.load(f)
 
+        target_embedding = pca.transform([target['target']])
+        target['x'] = target_embedding[0][0].item()
+        target['y'] = target_embedding[0][1].item()
+
+        target['x'] = (target['x'] - min_x) / (max_x - min_x) - 0.5
+        target['y'] = (target['y'] - min_y) / (max_y - min_y) - 0.5
+
+        # rewrite target.json
+        with open(f"{path}/target.json", "w") as f:
+            json.dump(target, f)
+
+    print("len(discoveries)", len(discoveries))
     width, height=concatenate_videos(discoveries)
     print("videos concatenated")
 
@@ -233,3 +264,5 @@ def compute_coordinates(path):
 
     with open('static/discoveries.json', 'w') as f:
         json.dump(discoveries, f)
+
+    return pca
