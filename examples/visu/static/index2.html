@@ -26,6 +26,61 @@
             cursor: pointer;
             display: none;
         }
+        #selectedEntries {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border-radius: 5px;
+            max-width: 300px;
+            overflow: auto;
+        }
+        #selectedEntries ul {
+            list-style: none;
+            padding: 0;
+        }
+        #selectedEntries li {
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        #exportButton {
+            display: block;
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #controlsMenu {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 5px;
+            max-width: 300px;
+        }
+        #controlsMenu h3 {
+            margin-top: 0;
+        }
+        #controlsMenu ul {
+            list-style: none;
+            padding: 0;
+        }
+        #controlsMenu ul li {
+            margin: 5px 0;
+        }
+        #controlsToggle {
+            cursor: pointer;
+            padding: 5px;
+            background-color: #4caf50;
+            border-radius: 5px;
+        }
     </style>
     <script type="importmap">
         {
@@ -41,6 +96,24 @@
 <body>
     <video id="hoverVideo" loop></video>
     <button id="iframeButton" onclick="buttonAction()">Fullscreen</button>
+    <div id="selectedEntries">
+        <strong>Selected Entries:</strong>
+        <ul id="entriesList"></ul>
+        <button id="exportButton" onclick="exportEntries()">Export</button>
+    </div>
+    <div id="controlsMenu">
+        <div id="controlsToggle" onclick="toggleControls()">Controls ▼</div>
+        <div id="controlsContent" style="display: none;">
+            <h3>Controls</h3>
+            <ul>
+                <li><strong>Hover:</strong> Play video</li>
+                <li><strong>Double-click:</strong> Set/Unset target</li>
+
+                <li><strong>Click:</strong> Select entry</li>
+                <li><strong>Export:</strong> Export selected entries</li>
+            </ul>
+        </div>
+    </div>
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -74,6 +147,8 @@
         const targetCoordinates = { x: 0, y: 0 };
 
         let videoOpen = false;
+        const selectedEntries = new Set();
+        const entriesList = document.getElementById('entriesList');
 
         async function loadTargetSprite() {
             const textureLoader = new THREE.TextureLoader();
@@ -166,46 +241,41 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-// Remove the 'contextmenu' event listener and add a 'mousemove' listener
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-window.addEventListener('mousemove', (event) => {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            videoElement.style.left = `${event.clientX + 20}px`;
+            videoElement.style.top = `${event.clientY + 20}px`;
 
-    videoElement.style.left = `${event.clientX + 20}px`;
-    videoElement.style.top = `${event.clientY + 20}px`;
+            raycaster.setFromCamera(mouse, camera);
 
-    raycaster.setFromCamera(mouse, camera);
-
-    // Check if hovering over an image plane
-    const imageIntersects = raycaster.intersectObjects(planes);
-    if (imageIntersects.length > 0) {
-        const intersectedPlane = imageIntersects[0].object;
-        if (!videoOpen || videoElement.src !== intersectedPlane.userData.videoSrc) {
-            videoElement.src = intersectedPlane.userData.videoSrc;
-            videoElement.style.display = 'block';
-            videoElement.onloadeddata = () => {
-                videoElement.classList.add('video-border');
-                videoElement.play();
-            };
-            videoOpen = true;
-        }
-    } else if (videoOpen) {
-        videoElement.classList.remove('video-border');
-        videoElement.style.display = 'none';
-        videoElement.pause();
-        videoOpen = false;
-    }
-});
-
-// Remove the existing 'contextmenu' event listener
+            // Check if hovering over an image plane
+            const imageIntersects = raycaster.intersectObjects(planes);
+            if (imageIntersects.length > 0) {
+                const intersectedPlane = imageIntersects[0].object;
+                if (!videoOpen || videoElement.src !== intersectedPlane.userData.videoSrc) {
+                    videoElement.src = intersectedPlane.userData.videoSrc;
+                    videoElement.style.display = 'block';
+                    videoElement.onloadeddata = () => {
+                        videoElement.classList.add('video-border');
+                        videoElement.play();
+                    };
+                    videoOpen = true;
+                }
+            } else if (videoOpen) {
+                videoElement.classList.remove('video-border');
+                videoElement.style.display = 'none';
+                videoElement.pause();
+                videoOpen = false;
+            }
+        });
 
         window.addEventListener('contextmenu', (event) => {
             event.preventDefault();
 
             raycaster.setFromCamera(mouse, camera);
 
-            // Check if right-clicked on an image plane
             const imageIntersects = raycaster.intersectObjects(planes);
             if (imageIntersects.length > 0) {
                 const intersectedPlane = imageIntersects[0].object;
@@ -220,7 +290,6 @@ window.addEventListener('mousemove', (event) => {
             }
 
             if (videoOpen) {
-                // If video is open, close it on the first right-click
                 videoElement.classList.remove('video-border');
                 videoElement.style.display = 'none';
                 videoElement.pause();
@@ -272,6 +341,44 @@ window.addEventListener('mousemove', (event) => {
             return worldPosition;
         }
 
+        window.addEventListener('click', () => {
+            raycaster.setFromCamera(mouse, camera);
+
+            // Check if clicked on an image plane
+            const imageIntersects = raycaster.intersectObjects(planes);
+            if (imageIntersects.length > 0) {
+                const intersectedPlane = imageIntersects[0].object;
+                const videoSrc = intersectedPlane.userData.videoSrc;
+                const folder = videoSrc.split('/')[2];
+                if (!selectedEntries.has(videoSrc)) {
+                    selectedEntries.add(videoSrc);
+                    const li = document.createElement('li');
+                    li.textContent = folder;
+                    li.onclick = () => {
+                        selectedEntries.delete(videoSrc);
+                        entriesList.removeChild(li);
+                    };
+                    entriesList.appendChild(li);
+                } else {
+					selectedEntries.delete(videoSrc);
+					const li = Array.from(entriesList.children).find((li) => li.textContent === folder);
+					entriesList.removeChild(li);
+				
+				}
+            }
+        });
+
+        function exportEntries() {
+            const data = Array.from(selectedEntries).map(entry => entry.split('/').pop()).join('\n');
+            const blob = new Blob([data], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'selected_entries.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
         if (window.self !== window.top) {
             document.getElementById('iframeButton').style.display = 'block';
         }
@@ -293,6 +400,17 @@ window.addEventListener('mousemove', (event) => {
 
         window.buttonAction = function buttonAction() {
             window.top.location.href = window.location.href;
+        }
+
+        window.toggleControls = function toggleControls() {
+            const controlsContent = document.getElementById('controlsContent');
+            if (controlsContent.style.display === 'none') {
+                controlsContent.style.display = 'block';
+                document.getElementById('controlsToggle').textContent = 'Controls ▲';
+            } else {
+                controlsContent.style.display = 'none';
+                document.getElementById('controlsToggle').textContent = 'Controls ▼';
+            }
         }
     </script>
 </body>
