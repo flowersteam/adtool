@@ -9,12 +9,12 @@ from adtool.utils.leaf.Leaf import Leaf
 
 class _JSONEncoderFactory:
     def __call__(self, dir_path: str, 
-             #    custom_callback: Callable
+                 custom_callback: Callable
                  ):
         # return _CustomJSONENcoder but with a class attr dir_path
         cls = _CustomJSONEncoder
         cls._dir_path = dir_path
-      #  cls._custom_callback = custom_callback
+        cls._custom_callback = custom_callback
 
         return cls
 
@@ -40,11 +40,13 @@ class _CustomJSONEncoder(json.JSONEncoder):
         try:
             json.JSONEncoder.default(self, obj)
         except TypeError:
-            raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
-            # bin = pickle.dumps(obj)
-            # #current key
-            # print("current key", bin)
-            # return self._custom_callback(bin, self._dir_path)
+        #    return  
+    #      raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+            bin = pickle.dumps(obj)
+            #current key
+            return self._custom_callback(bin, self._dir_path,
+                                         "pickle"
+                                         )
 
         # pass to usual encoder
         return json.JSONEncoder.default(self, obj)
@@ -74,8 +76,9 @@ class SaveDiscovery:
         # create JSON encoder
         json_encoder = _JSONEncoderFactory()(
             dir_path=dir_path, 
-            # custom_callback=self._save_binary_callback
+             custom_callback=self._save_binary_callback
         )
+
 
         # save dict_data
         self._dump_json(
