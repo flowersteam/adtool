@@ -166,19 +166,47 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        window.addEventListener('mousemove', (event) => {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+// Remove the 'contextmenu' event listener and add a 'mousemove' listener
 
-            videoElement.style.left = `${event.clientX + 20}px`;
-            videoElement.style.top = `${event.clientY + 20}px`;
-        });
+window.addEventListener('mousemove', (event) => {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-        window.addEventListener('dblclick', () => {
+    videoElement.style.left = `${event.clientX + 20}px`;
+    videoElement.style.top = `${event.clientY + 20}px`;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    // Check if hovering over an image plane
+    const imageIntersects = raycaster.intersectObjects(planes);
+    if (imageIntersects.length > 0) {
+        const intersectedPlane = imageIntersects[0].object;
+        if (!videoOpen || videoElement.src !== intersectedPlane.userData.videoSrc) {
+            videoElement.src = intersectedPlane.userData.videoSrc;
+            videoElement.style.display = 'block';
+            videoElement.onloadeddata = () => {
+                videoElement.classList.add('video-border');
+                videoElement.play();
+            };
+            videoOpen = true;
+        }
+    } else if (videoOpen) {
+        videoElement.classList.remove('video-border');
+        videoElement.style.display = 'none';
+        videoElement.pause();
+        videoOpen = false;
+    }
+});
+
+// Remove the existing 'contextmenu' event listener
+
+        window.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+
             raycaster.setFromCamera(mouse, camera);
 
-			            // Check if double-clicked on an image plane
-			const imageIntersects = raycaster.intersectObjects(planes);
+            // Check if right-clicked on an image plane
+            const imageIntersects = raycaster.intersectObjects(planes);
             if (imageIntersects.length > 0) {
                 const intersectedPlane = imageIntersects[0].object;
                 videoElement.src = intersectedPlane.userData.videoSrc;
@@ -192,13 +220,16 @@
             }
 
             if (videoOpen) {
-                // If video is open, close it on the first double-click
+                // If video is open, close it on the first right-click
                 videoElement.classList.remove('video-border');
                 videoElement.style.display = 'none';
                 videoElement.pause();
                 videoOpen = false;
-                return;
             }
+        });
+
+        window.addEventListener('dblclick', () => {
+            raycaster.setFromCamera(mouse, camera);
 
             // Check if double-clicked on the target
             const targetIntersects = raycaster.intersectObject(targetSprite);
@@ -211,8 +242,6 @@
                 });
                 return;
             }
-
-
 
             // Move target to the new location if double-clicked elsewhere
             const worldPosition = getMouseWorldPosition();
@@ -242,7 +271,6 @@
             const worldPosition = camera.position.clone().add(dir.multiplyScalar(distance));
             return worldPosition;
         }
-
 
         if (window.self !== window.top) {
             document.getElementById('iframeButton').style.display = 'block';
