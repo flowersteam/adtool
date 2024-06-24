@@ -53,8 +53,8 @@ def process_discovery(root, name, loaded_json):
 
 def list_discoveries(path):
     discoveries = []
-    loaded_json = {}
     tasks = []
+    global loaded_json
 
     with ThreadPoolExecutor() as executor:
         for root, dirs, _ in os.walk(path):
@@ -166,6 +166,24 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
     return width, height
 
 
+def export_last_frame(discoveries):
+    # extract last frame of each video and save them in respective folder
+    for discovery in discoveries:
+        if not os.path.exists(discovery['visual']):
+            continue
+
+        img_path = f"{discovery['visual'][:-4]}.png"
+        if os.path.exists(img_path):
+            continue
+        video = cv2.VideoCapture(discovery['visual'])
+        frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+        video.set(cv2.CAP_PROP_POS_FRAMES, frame_count - 1)
+        ret, frame = video.read()
+        video.release()
+
+        # replace .mp4 with .jpg
+        cv2.imwrite(img_path, frame)
+
 def compute_coordinates(path):
     global pca
     print("computing coordinates", path)
@@ -179,8 +197,6 @@ def compute_coordinates(path):
             os.remove('static/concatenated.webm')
 
         return
-    
-    print("len(discoveries)", len(discoveries))
 
     # if less than 2 discoveries, return
     if len(discoveries) < 2:
@@ -189,23 +205,23 @@ def compute_coordinates(path):
 
 
 
-    if len(discoveries) > 100:
-        # keep only the top 100 most disctinct  discoveries 
-        kmeans = KMeans(n_clusters=100, random_state=0)
-        kmeans.fit(X)
-        centers = kmeans.cluster_centers_
-        top_discoveries=[]
-        for center in centers:
-            min_distance=float('inf')
-            top_discovery=None
-            for discovery in discoveries:
-                distance=np.linalg.norm(discovery['embedding']-center)
-                if distance<min_distance and discovery not in top_discoveries:
-                    min_distance=distance
-                    top_discovery=discovery
-            top_discoveries.append(top_discovery)
+    # if len(discoveries) > 100:
+    #     # keep only the top 100 most disctinct  discoveries 
+    #     kmeans = KMeans(n_clusters=100, random_state=0)
+    #     kmeans.fit(X)
+    #     centers = kmeans.cluster_centers_
+    #     top_discoveries=[]
+    #     for center in centers:
+    #         min_distance=float('inf')
+    #         top_discovery=None
+    #         for discovery in discoveries:
+    #             distance=np.linalg.norm(discovery['embedding']-center)
+    #             if distance<min_distance and discovery not in top_discoveries:
+    #                 min_distance=distance
+    #                 top_discovery=discovery
+    #         top_discoveries.append(top_discovery)
 
-        discoveries=top_discoveries
+    #     discoveries=top_discoveries
 
 
 
@@ -252,15 +268,15 @@ def compute_coordinates(path):
         with open(f"{path}/target.json", "w") as f:
             json.dump(target, f)
 
-    print("len(discoveries)", len(discoveries))
-    width, height=concatenate_videos(discoveries)
+   # width, height=concatenate_videos(discoveries)
+    export_last_frame(discoveries)
     print("videos concatenated")
 
     #remove path from visual
     for discovery in discoveries:
         discovery['visual'] = discovery['visual'][ len(path):]
-        discovery['width'] = width
-        discovery['height'] = height
+        # discovery['width'] = width
+        # discovery['height'] = height
 
     with open('static/discoveries.json', 'w') as f:
         json.dump(discoveries, f)
