@@ -1,106 +1,417 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>adtool - Visualisation</title>
+    <meta charset="utf-8">
+    <title>AURORA Population</title>
+    <link rel="icon" href="/static/images/favicon.png">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-        }
-
-        #canvas-container {
-            position: relative;
-        }
-
-        #overlay-text {
+        body { margin: 0; overflow: hidden; }
+        video {
+            display: none;
             position: absolute;
-            top: 0;
-            left: 0;
-            color: #ff1010;
-            font-family: Arial;
-            font-size: 20px;
-            word-break: break-all;
-            padding: 10px;
+            width: 256px;
+            height: 256px;
+            pointer-events: none;
         }
-
-        #sidebar {
+        .video-border { border: 1px solid white; }
+        #iframeButton {
             position: absolute;
-            z-index: 1;
-            top: 0;
-            left: 0;
-            width: 200px;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.8);
-            overflow-y: auto;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
-        }
-
-        #canvas-container {
-            margin-left: 200px; /* Add margin to make space for the sidebar */
-        }
-
-        .sprite-item {
-            margin-bottom: 10px;
-            padding: 5px;
-            background-color: #f0f0f0;
-            cursor: pointer;
-            border: 1px solid #ddd;
-        }
-
-        .sprite-item:hover {
-            background-color: #ddd;
-        }
-
-        #export-button {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #007bff;
-            color: #fff;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: white;
             border: none;
-            cursor: pointer;
-            width: 100%;
             border-radius: 5px;
+            cursor: pointer;
+            display: none;
         }
-
-        #export-button:hover {
-            background-color: #0056b3;
-        }
-
-        h3 {
-            margin: 0;
+        #selectedEntries {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
             padding: 10px;
-            background-color: #007bff;
-            color: #fff;
-            font-family: Arial;
-            font-size: 20px;
-            text-align: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border-radius: 5px;
+            max-width: 300px;
+            overflow: auto;
         }
-
-        .remove-button {
-            margin-left: 10px;
-            background-color: #ff4040;
-            color: #fff;
+        #selectedEntries ul {
+            list-style: none;
+            padding: 0;
+        }
+        #selectedEntries li {
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        #exportButton {
+            display: block;
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #2196f3;
+            color: white;
             border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #controlsMenu {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 5px;
+            max-width: 300px;
+        }
+        #controlsMenu h3 {
+            margin-top: 0;
+        }
+        #controlsMenu ul {
+            list-style: none;
+            padding: 0;
+        }
+        #controlsMenu ul li {
+            margin: 5px 0;
+        }
+        #controlsToggle {
             cursor: pointer;
             padding: 5px;
+            background-color: #4caf50;
             border-radius: 5px;
         }
-
-        .remove-button:hover {
-            background-color: #b32d2d;
-        }
-
     </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.150.0/build/three.module.js",
+                "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.150.0/examples/jsm/controls/OrbitControls.js"
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip-utils/0.1.0/jszip-utils.min.js"></script>
 </head>
 <body>
-    <div id="sidebar">
-        <h3>Selected Discoveries</h3>
-        <div id="selected-sprites"></div>
-        <button id="export-button">Export</button>
+    <video id="hoverVideo" loop></video>
+    <button id="iframeButton" onclick="buttonAction()">Fullscreen</button>
+    <div id="selectedEntries">
+        <strong>Selected Entries:</strong>
+        <ul id="entriesList"></ul>
+        <button id="exportButton" onclick="exportEntries()">Export</button>
     </div>
-    <div id="canvas-container">
-        <div id="overlay-text"></div>
+    <div id="controlsMenu">
+        <div id="controlsToggle" onclick="toggleControls()">Controls ▼</div>
+        <div id="controlsContent" style="display: none;">
+            <h3>Controls</h3>
+            <ul>
+                <li><strong>Hover:</strong> Play video</li>
+                <li><strong>Double-click:</strong> Set/Unset target</li>
+
+                <li><strong>Click:</strong> Select entry</li>
+                <li><strong>Export:</strong> Export selected entries</li>
+            </ul>
+        </div>
     </div>
-    <script type="module" src="./app.mjs"></script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.1;
+        controls.rotateSpeed = 0.25;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.8;
+        controls.enableRotate = false;
+        controls.screenSpacePanning = true;
+        controls.maxPolarAngle = Math.PI / 2;
+        controls.minPolarAngle = Math.PI / 2;
+
+        const planes = [];
+        const videoElement = document.getElementById('hoverVideo');
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        let targetTexture, targetSprite;
+        let targetVisible = false;
+        const targetCoordinates = { x: 0, y: 0 };
+
+        let videoOpen = false;
+        const selectedEntries = new Set();
+        const entriesList = document.getElementById('entriesList');
+
+        async function loadTargetSprite() {
+            const textureLoader = new THREE.TextureLoader();
+            targetTexture = await textureLoader.loadAsync('/static/target.png');
+            const material = new THREE.SpriteMaterial({ map: targetTexture });
+            targetSprite = new THREE.Sprite(material);
+            targetSprite.scale.set(0.1, 0.1, 1);
+            targetSprite.visible = false;
+            scene.add(targetSprite);
+
+            const response = await fetch('/discoveries/target.json');
+            const targetJson = await response.json();
+            if (targetJson.detail !== "File not found") {
+                targetCoordinates.x = targetJson.x;
+                targetCoordinates.y = targetJson.y;
+                targetSprite.position.set(targetJson.x, targetJson.y, 0);
+                targetSprite.visible = true;
+                targetVisible = true;
+            }
+        }
+
+        loadTargetSprite();
+
+        function createPlane(texture, position, videoSrc) {
+            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+            const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.1), material);
+            plane.position.set(position[0], position[1], 0);
+            plane.userData.videoSrc = videoSrc;
+            return plane;
+        }
+
+        async function loadPoints() {
+            const response = await fetch('/static/discoveries.json');
+            const pointsData = await response.json();
+
+            const texturePromises = pointsData.map((point) => {
+                const imageName = point.visual.replace('.mp4', '.png');
+                return fetch(`/discoveries/${imageName}`).then((response) => response.blob()).then((blob) => {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.src = URL.createObjectURL(blob);
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            context.drawImage(img, 0, 0);
+
+                            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                            const data = imageData.data;
+
+                            for (let j = 0; j < data.length; j += 4) {
+                                if (data[j] < 50 && data[j + 1] < 50 && data[j + 2] < 50) {
+                                    data[j + 3] = 0;
+                                }
+                            }
+
+                            context.putImageData(imageData, 0, 0);
+                            const processedTexture = new THREE.CanvasTexture(canvas);
+                            resolve(processedTexture);
+                        };
+                    });
+                });
+            });
+
+            Promise.all(texturePromises).then((textures) => {
+                textures.forEach((texture, i) => {
+                    const plane = createPlane(texture, [pointsData[i].x, pointsData[i].y], `/discoveries/${pointsData[i].visual}`);
+                    planes.push(plane);
+                    scene.add(plane);
+                });
+            });
+        }
+
+        loadPoints();
+
+        camera.position.set(0, 0, 1);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            videoElement.style.left = `${event.clientX + 20}px`;
+            videoElement.style.top = `${event.clientY + 20}px`;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            // Check if hovering over an image plane
+            const imageIntersects = raycaster.intersectObjects(planes);
+            if (imageIntersects.length > 0) {
+                const intersectedPlane = imageIntersects[0].object;
+                if (!videoOpen || videoElement.src !== intersectedPlane.userData.videoSrc) {
+                    videoElement.src = intersectedPlane.userData.videoSrc;
+                    videoElement.style.display = 'block';
+                    videoElement.onloadeddata = () => {
+                        videoElement.classList.add('video-border');
+                        videoElement.play();
+                    };
+                    videoOpen = true;
+                }
+            } else if (videoOpen) {
+                videoElement.classList.remove('video-border');
+                videoElement.style.display = 'none';
+                videoElement.pause();
+                videoOpen = false;
+            }
+        });
+
+        window.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+
+            raycaster.setFromCamera(mouse, camera);
+
+            const imageIntersects = raycaster.intersectObjects(planes);
+            if (imageIntersects.length > 0) {
+                const intersectedPlane = imageIntersects[0].object;
+                videoElement.src = intersectedPlane.userData.videoSrc;
+                videoElement.style.display = 'block';
+                videoElement.onloadeddata = () => {
+                    videoElement.classList.add('video-border');
+                    videoElement.play();
+                };
+                videoOpen = true;
+                return;
+            }
+
+            if (videoOpen) {
+                videoElement.classList.remove('video-border');
+                videoElement.style.display = 'none';
+                videoElement.pause();
+                videoOpen = false;
+            }
+        });
+
+        window.addEventListener('dblclick', () => {
+            raycaster.setFromCamera(mouse, camera);
+
+            // Check if double-clicked on the target
+            const targetIntersects = raycaster.intersectObject(targetSprite);
+            if (targetIntersects.length > 0 && targetVisible) {
+                targetSprite.visible = false;
+                targetVisible = false;
+
+                fetch('/disable_target', {
+                    method: 'GET',
+                });
+                return;
+            }
+
+            // Move target to the new location if double-clicked elsewhere
+            const worldPosition = getMouseWorldPosition();
+            targetCoordinates.x = worldPosition.x;
+            targetCoordinates.y = worldPosition.y;
+            targetSprite.position.set(worldPosition.x, worldPosition.y, 0);
+            targetSprite.visible = true;
+            targetVisible = true;
+
+            fetch('/update_target', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    x: targetCoordinates.x,
+                    y: targetCoordinates.y,
+                }),
+            });
+        });
+
+        function getMouseWorldPosition() {
+            const mouseVector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+            mouseVector.unproject(camera);
+            const dir = mouseVector.sub(camera.position).normalize();
+            const distance = -camera.position.z / dir.z;
+            const worldPosition = camera.position.clone().add(dir.multiplyScalar(distance));
+            return worldPosition;
+        }
+
+        window.addEventListener('click', () => {
+            raycaster.setFromCamera(mouse, camera);
+
+            // Check if clicked on an image plane
+            const imageIntersects = raycaster.intersectObjects(planes);
+            if (imageIntersects.length > 0) {
+                const intersectedPlane = imageIntersects[0].object;
+                const videoSrc = intersectedPlane.userData.videoSrc;
+                const folder = videoSrc.split('/')[2];
+                if (!selectedEntries.has(videoSrc)) {
+                    selectedEntries.add(videoSrc);
+                    const li = document.createElement('li');
+                    li.textContent = folder;
+                    li.onclick = () => {
+                        selectedEntries.delete(videoSrc);
+                        entriesList.removeChild(li);
+                    };
+                    entriesList.appendChild(li);
+                } else {
+					selectedEntries.delete(videoSrc);
+					const li = Array.from(entriesList.children).find((li) => li.textContent === folder);
+					entriesList.removeChild(li);
+				
+				}
+            }
+        });
+
+        function exportEntries() {
+            const data = Array.from(selectedEntries).map(entry => entry.split('/').pop()).join('\n');
+            const blob = new Blob([data], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'selected_entries.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        if (window.self !== window.top) {
+            document.getElementById('iframeButton').style.display = 'block';
+        }
+
+        let ws;
+
+        function connect() {
+            ws = new WebSocket("ws://127.0.0.1:8765/ws");
+            ws.onclose = function() {
+                setTimeout(connect, 1000);
+            };
+            ws.onmessage = function() {
+                ws.close();
+                location.reload();
+            };
+        }
+
+        connect();
+
+        window.buttonAction = function buttonAction() {
+            window.top.location.href = window.location.href;
+        }
+
+        window.toggleControls = function toggleControls() {
+            const controlsContent = document.getElementById('controlsContent');
+            if (controlsContent.style.display === 'none') {
+                controlsContent.style.display = 'block';
+                document.getElementById('controlsToggle').textContent = 'Controls ▲';
+            } else {
+                controlsContent.style.display = 'none';
+                document.getElementById('controlsToggle').textContent = 'Controls ▼';
+            }
+        }
+    </script>
 </body>
 </html>

@@ -88,8 +88,7 @@ app.mount("/static", StaticFiles(directory=static_files,html = True), name="stat
 @app.get("/discoveries/{file_path:path}")
 async def serve_discoveries(file_path: str):
     full_path = os.path.join(discovery_files, file_path)
-    
-    print(full_path)
+
     if not os.path.exists(full_path):
         raise HTTPException(status_code=404, detail="File not found")
 
