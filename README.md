@@ -114,7 +114,7 @@ The web interface can be accessed at `http://127.0.0.1:8765/`.
 
 
 
-### Demo file demo.mp4 insered
+### Short demo
 ![Short demo](demo.mp4)
 
 
