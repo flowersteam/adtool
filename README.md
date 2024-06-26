@@ -83,10 +83,9 @@ pip install .
 ```
 
 ### Examples
-Various examples are provided in the `examples/` directory. To run the example, install the necessary dependencies and run an example:
+Various examples are provided in the `examples/` directory.
 ```bash
-pip install .[examples]
-python3 run.py --config_file examples/flowlenia/flow_lenia_cppn.json
+python3 adtool/run.py --config_file examples/flowlenia/flow_lenia_cppn.json
 ``` 
 Available examples are:
 - `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN
@@ -96,10 +95,13 @@ Available examples are:
 - `examples/lenia/lenia.json` - Discovering lenia patterns
 - `examples/stable_diffusion/stable_diffusion.json` - Discovering variations around a stable diffusion inference
 
+To execute stable_diffusion example, you need to install required dependencies:
+```bash
+pip install .[sd]
+```
 
 ### Reloading
-To reload a previous exploration, simply run your 
-```bash
+To reload a previous exploration, simply run the same previous commands but from an existing discoveries directory. Previous discoveries must be generated with the same system and maps.
 
 
 ### Visualization
