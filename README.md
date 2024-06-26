@@ -1,7 +1,5 @@
 # adtool: Assisted and Automated Discovery for Complex Systems
 
-# Join the Discord server
-[![Discord](https://img.shields.io/discord/898978609686315530?label=Discord)](https://discord.gg/B7a43wP3zQ)
 
 We're pleased to introduce adtool (formerly, Automated Discovery Tool), a
 package assisted and automated discovery of patterns in the exploration of
@@ -118,6 +116,13 @@ The web interface can be accessed at `http://127.0.0.1:8765/`.
 
 ### Demo file demo.mp4 insered
 ![Short demo](demo.mp4)
+
+
+### Use ADtool as a package
+```bash
+pip install git+https://github.com/flowersteam/adtool
+```
+
 
 
 ## TODO
