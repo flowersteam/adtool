@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "autodisc-server-libs"
+name = "adtool"
 version = "0.1.0"
 description = "Libraries needed to run the autodisc-server computational container."
 authors = [
@@ -39,19 +39,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = [
-    "coverage>=7.2.7",
-    "pytest>=7.3.1",
-    "pytest-mock>=3.10.0",
-]
-dev = [
-    "black>=23.3.0",
-    "debugpy>=1.6.7",
-    "isort>=5.12.0",
-]
-docs = [
-    "pdoc>=13.1.1",
-]
+
 sd = [
     "transformers",
     "diffusers",
