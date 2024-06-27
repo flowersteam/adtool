@@ -1,13 +1,13 @@
 from copy import deepcopy
 from typing import Dict, Tuple
 
-import torch
 from adtool.maps.Map import Map
 from adtool.wrappers.BoxProjector import BoxProjector
 from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 
+import numpy as np
 
 class MeanBehaviorMap(Map):
     """
@@ -33,7 +33,7 @@ class MeanBehaviorMap(Map):
         intermed_dict = deepcopy(input)
 
         # store raw output
-        tensor = intermed_dict[self.premap_key].detach().clone()
+        tensor = intermed_dict[self.premap_key].copy()
         raw_output_key = "raw_" + self.premap_key
         intermed_dict[raw_output_key] = tensor
         # remove original output item
@@ -43,7 +43,8 @@ class MeanBehaviorMap(Map):
         tensor_flat = tensor.view(-1)
 
         # unsqueeze to ensure tensor rank is not 0
-        mean = torch.mean(tensor_flat, dim=0).unsqueeze(-1)
+        #mean = torch.mean(tensor_flat, dim=0).unsqueeze(-1)
+        mean=np.mean(tensor_flat.cpu().numpy())
         intermed_dict[self.postmap_key] = mean
 
         behavior_dict = self.projector.map(intermed_dict)
@@ -51,7 +52,7 @@ class MeanBehaviorMap(Map):
 
         return behavior_dict
 
-    def sample(self) -> torch.Tensor:
+    def sample(self) :
         return self.projector.sample()
 
     # def get_tensor_history(self):

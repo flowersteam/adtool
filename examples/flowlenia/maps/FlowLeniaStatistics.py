@@ -350,14 +350,18 @@ class FlowLeniaStatistics(Leaf):
         intermed_dict = deepcopy(input)
 
         # store raw output
-        tensor = intermed_dict[self.premap_key].detach().clone()
+        tensor = intermed_dict[self.premap_key].copy()
         raw_output_key = "raw_" + self.premap_key
         intermed_dict[raw_output_key] = tensor
         del intermed_dict[self.premap_key]
 
         embedding = self._calc_static_statistics(tensor)
 
-        intermed_dict[self.postmap_key] = embedding
+        intermed_dict[self.postmap_key] = embedding.numpy()
+        print("intermed_dict",intermed_dict)
+
+
+        
         intermed_dict = self.projector.map(intermed_dict)
 
         return intermed_dict
@@ -377,6 +381,9 @@ class FlowLeniaStatistics(Leaf):
 
     def _calc_static_statistics(self, final_obs: torch.Tensor) -> torch.Tensor:
         """Calculates the final statistics for lenia last observation"""
+
+        final_obs= torch.tensor(final_obs)
+        print("final_obs",final_obs)
 
         # sum the last dimension
         final_obs = torch.sum(final_obs, dim=-1).squeeze()
@@ -491,5 +498,7 @@ class FlowLeniaStatistics(Leaf):
         activation_flusser13_data = activation_moments.flusser13
         feature_vector[cur_idx] = activation_flusser13_data
         cur_idx += 1
+
+        print("feature_vector",feature_vector)  
 
         return feature_vector

@@ -114,7 +114,7 @@ class FlowLenia(System):
         # must detach here as gradients are not used
         # and this also leads to a deepcopy error downstream
         # also, squeezing leading dimensions for convenience
-        output_dict["output"] = self.orbit[-1].detach().clone()
+        output_dict["output"] = self.orbit[-1].detach().clone().numpy()
 
         return output_dict
     
@@ -366,6 +366,8 @@ class TorchFlowLenia(torch.nn.Module):
         self.fK=fK
         self.K=K
         self.nK=nK
+
+        print("self.kernelgrowths",[k.m for k in self.kernelgrowths])
 
         self.m = torch.tensor([k.m for k in self.kernelgrowths], device=self.device)
         self.s = torch.tensor([k.s for k in self.kernelgrowths], device=self.device)

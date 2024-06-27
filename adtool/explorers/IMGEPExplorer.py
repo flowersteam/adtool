@@ -5,7 +5,6 @@ import json
 import os
 from typing import Any, Dict, List
 
-import torch
 from adtool.systems import System
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.mutators import add_gaussian_noise, call_mutate_method
@@ -18,6 +17,7 @@ from pydoc import locate
 from typing import Dict
 from pydantic import BaseModel
 
+import numpy as np
 
 from enum import Enum
 
@@ -55,7 +55,7 @@ class IMGEPExplorerInstance(Leaf):
         postmap_key: str = "params",
         parameter_map: Leaf = IdentityWrapper(),
         behavior_map: Leaf = IdentityWrapper(),
-        mutator: Leaf = torch.nn.Identity(),
+        mutator: Leaf = Leaf(),
         equil_time: int = 0,
     ) -> None:
         super().__init__()
@@ -77,6 +77,8 @@ class IMGEPExplorerInstance(Leaf):
         data_dict = {}
         # initialize sample
         params_init = self.parameter_map.sample()
+
+
         data_dict[self.postmap_key] = params_init
 
 
@@ -105,7 +107,7 @@ class IMGEPExplorerInstance(Leaf):
         # and adding new "output" key which is the result of the behavior map
         new_trial_data = self.observe_results(system_output)
 
-
+        print("system_output",system_output)
         # save results
         trial_data_reset = self._history_saver.map( new_trial_data )
 
@@ -144,9 +146,9 @@ class IMGEPExplorerInstance(Leaf):
         return trial_data_reset
 
     def suggest_trial(self, lookback_length: int = -1,
-                      goal: torch.Tensor = None
+                      goal: np.ndarray = None
                       
-                      ) -> torch.Tensor:
+                      ):
         """Sample according to the policy a new trial of parameters for the
         system.
 
@@ -211,22 +213,27 @@ class IMGEPExplorerInstance(Leaf):
 
     def _extract_tensor_history(
         self, dict_history: List[Dict], key: str
-    ) -> torch.Tensor:
+    ) :
         """Extract tensor history from an array of dicts with labelled data,
         with the tensor being labelled by key.
         """
         # append history of tensors along a new dimension at index 0
-        tensor_history = dict_history[0][key].unsqueeze(0)
+        tensor_history = np.array([dict_history[0][key]])
         for dict in dict_history[1:]:
-            tensor_history = torch.cat((tensor_history, dict[key].unsqueeze(0)), dim=0)
+          #  tensor_history = torch.cat((tensor_history, dict[key].unsqueeze(0)), dim=0)
+            tensor_history = np.concatenate((tensor_history, [dict[key]]), axis=0)
 
         return tensor_history
 
-    def _find_closest(self, goal: torch.Tensor, goal_history: torch.Tensor):
+    def _find_closest(self, goal: np.ndarray,
+                       goal_history: np.ndarray):
         # TODO: simple L2 distance right now
-        return torch.argmin((goal_history - goal).pow(2).sum(-1))
-
-    def _vector_search_for_goal(self, goal: torch.Tensor, lookback_length: int) -> Dict:
+        print(goal_history.shape, goal.shape)
+        # (200,17) , (17,)
+        # return the argmin of the L2 distance with numpy
+        return np.argmin(np.linalg.norm(goal_history - goal, axis=1))
+    
+    def _vector_search_for_goal(self, goal: np.ndarray, lookback_length: int) -> Dict:
         history_buffer = self._history_saver.get_history(
             lookback_length=lookback_length
         )
@@ -287,7 +294,7 @@ class IMGEPExplorer():
                 add_gaussian_noise, std=self.config.mutator_config["std"]
             )
         else:
-            mutator = torch.nn.Identity()
+            mutator =  None
 
         return mutator
     

@@ -2,12 +2,10 @@
 from copy import deepcopy
 from typing import Dict
 
-import torch
 from adtool.maps.Map import Map
 from adtool.wrappers.BoxProjector import BoxProjector
 from adtool.utils.leaf.locators.locators import BlobLocator
 
-torch.set_default_dtype(torch.float32)
 
 
 class IdentityBehaviorMap(Map):
@@ -27,5 +25,5 @@ class IdentityBehaviorMap(Map):
     def map(self, input: Dict, override_existing: bool = True) -> Dict:
         return self.projector.map(input)
 
-    def sample(self) -> torch.Tensor:
+    def sample(self):
         return self.projector.sample()

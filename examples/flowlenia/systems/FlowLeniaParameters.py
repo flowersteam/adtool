@@ -39,6 +39,15 @@ class FlowLeniaKernelGrowthDynamicalParameters:
 
     def __post_init__(self):
 
+        # check if vectors are numpy arrays
+        if isinstance(self.b, np.ndarray):
+            self.b = torch.from_numpy(self.b)
+        if isinstance(self.w, np.ndarray):
+            self.w = torch.from_numpy(self.w)
+        if isinstance(self.a, np.ndarray):
+            self.a = torch.from_numpy(self.a)
+            
+
         self.r = min(1.0, max(0.2, self.r))
         self.b = torch.clamp(self.b, min=0.001, max=1.0)
         self.w = torch.clamp(self.w, min=0.01, max=0.5)
@@ -46,6 +55,7 @@ class FlowLeniaKernelGrowthDynamicalParameters:
         self.m = min(0.5, max(0.05, self.m))
         self.s = min(0.18, max(0.001, self.s))
         self.h = min(1.0, max(0.01, self.h))
+        
 
         if self.b.size() != (3,):
             raise ValueError("b must be a 3-vector.")
@@ -121,12 +131,25 @@ class FlowLeniaDynamicalParameters:
         KernelGrowths = []
         i = 1
         while i < tensor.size()[0]:
-            KernelGrowths.append(FlowLeniaKernelGrowthDynamicalParameters(r=tensor[i], b=tensor[i+1:i+4], w=tensor[i+4:i+7], a=tensor[i+7:i+10], h=tensor[i+10], m=tensor[i+11], s=tensor[i+12]))
+            KernelGrowths.append(FlowLeniaKernelGrowthDynamicalParameters(r=tensor[i],
+                                b=tensor[i+1:i+4],
+                                    w=tensor[i+4:i+7], 
+                                    a=tensor[i+7:i+10],
+                                    h=tensor[i+10],
+                                        m=tensor[i+11],
+                                        s=tensor[i+12]
+                                        )
+                                                                                   
+                                                                                   )
             i += 13
         
         if i != tensor.size()[0]:
             raise ValueError("tensor size mismatch")
         return cls( R=R, KernelGrowths=KernelGrowths)
+    
+    @classmethod
+    def from_numpy(cls, np_array: ndarray):
+        return cls.from_tensor(torch.from_numpy(np_array))
 
 
 @dataclass

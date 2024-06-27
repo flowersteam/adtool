@@ -15,8 +15,35 @@ from adtool.wrappers.mutators import add_gaussian_noise
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 import sys
+torch
 
 
+def replace_lists_with_tensor(d):
+    # if we found a list of floats, convert it to a tensor, then if we found list of tensors, convert it to a tensor etc from bottom-up
+    if isinstance(d, list) and all(isinstance(i, float) for i in d):
+        return torch.tensor(d).squeeze()
+    elif isinstance(d, list):
+        return [replace_lists_with_tensor(i) for i in d]
+    elif isinstance(d, dict):
+        return {k:replace_lists_with_tensor(v) for k,v in d.items()}
+    else:
+        return d
+
+
+def replace_torch_with_numpy(d):
+    # if we found a list of floats, convert it to a tensor, then if we found list of tensors, convert it to a tensor etc from bottom-up
+    if isinstance(d, torch.Tensor):
+        # check is it a scalar
+        if d.size() == torch.Size([]):
+            return d.item()
+        else:
+            return d.numpy()
+    elif isinstance(d, list):
+        return [replace_torch_with_numpy(i) for i in d]
+    elif isinstance(d, dict):
+        return {k:replace_torch_with_numpy(v) for k,v in d.items()}
+    else:
+        return d
 
 
 
@@ -48,10 +75,10 @@ class FlowLeniaParameterMap(Leaf):
 
         self.uniform = UniformParameterMap(
             premap_key=f"tensor_{self.premap_key}",
-            tensor_low=param_obj.tensor_low,
-            tensor_high=param_obj.tensor_high,
-            tensor_bound_low=param_obj.tensor_bound_low,
-            tensor_bound_high=param_obj.tensor_bound_high,
+            tensor_low=param_obj.tensor_low.numpy() ,
+            tensor_high=param_obj.tensor_high.numpy(),
+            tensor_bound_low=param_obj.tensor_bound_low.numpy(),
+            tensor_bound_high=param_obj.tensor_bound_high.numpy(),
         )
 
 
@@ -125,12 +152,20 @@ class FlowLeniaParameterMap(Leaf):
 
 
 
-
         # convert to parameter objects
-        dp = FlowLeniaDynamicalParameters().from_tensor(p_dyn_tensor)
+        dp = FlowLeniaDynamicalParameters().from_numpy(p_dyn_tensor)
+
+        print("dp",dp)
+
+
         p_dict = {
-            "dynamic_params": asdict(dp),
+            "dynamic_params": replace_torch_with_numpy(asdict(dp)),
         }
+
+
+        print("p_dict",p_dict)
+
+
         return p_dict
 
     def mutate(self, parameter_dict: Dict) -> Dict:

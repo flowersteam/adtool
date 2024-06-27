@@ -18,14 +18,10 @@ class UniformParameterMap(Map):
     def __init__(
         self,
         premap_key: str = "params",
-        tensor_low: Union[torch.Tensor, List[float]] = torch.tensor([0.0]),
-        tensor_high: Union[torch.Tensor, List[float]] = torch.tensor([0.0]),
-        tensor_bound_low: Union[torch.Tensor, List[float]] = torch.tensor(
-            [float("-inf")]
-        ),
-        tensor_bound_high: Union[torch.Tensor, List[float]] = torch.tensor(
-            [float("inf")]
-        ),
+        tensor_low: List[float] = [0.0],
+        tensor_high:  List[float] = [0.0],
+        tensor_bound_low: List[float] =[float("-inf")],
+        tensor_bound_high:  List[float] = [float("inf")],
         override_existing: bool = True,
     ):
         # TODO: put indication that tensor_low and high must be set
@@ -34,33 +30,38 @@ class UniformParameterMap(Map):
         self.premap_key = premap_key
         
 
-        # convert all Union types to tensors
-        if not isinstance(tensor_low, torch.Tensor):
-            tensor_low = torch.tensor(tensor_low)
-        if not isinstance(tensor_high, torch.Tensor):
-            tensor_high = torch.tensor(tensor_high)
-        if not isinstance(tensor_bound_low, torch.Tensor):
-            tensor_bound_low = torch.tensor(tensor_bound_low)
-        if not isinstance(tensor_bound_high, torch.Tensor):
-            tensor_bound_high = torch.tensor(tensor_bound_high)
+
 
         # ensure no tensor is of size 0 by unsqueezing
-        if tensor_low.size() == torch.Size([]):
-            tensor_low = tensor_low.unsqueeze(0)
-        if tensor_high.size() == torch.Size([]):
-            tensor_high = tensor_high.unsqueeze(0)
-        if tensor_bound_low.size() == torch.Size([]):
-            tensor_bound_low = tensor_bound_low.unsqueeze(0)
-        if tensor_bound_high.size() == torch.Size([]):
-            tensor_bound_high = tensor_bound_high.unsqueeze(0)
+        # if tensor_low.size() == torch.Size([]):
+        #     tensor_low = tensor_low.unsqueeze(0)
+        # if tensor_high.size() == torch.Size([]):
+        #     tensor_high = tensor_high.unsqueeze(0)
+        # if tensor_bound_low.size() == torch.Size([]):
+        #     tensor_bound_low = tensor_bound_low.unsqueeze(0)
+        # if tensor_bound_high.size() == torch.Size([]):
+        #     tensor_bound_high = tensor_bound_high.unsqueeze(0)
 
-        if tensor_low.size() != tensor_high.size():
+        # same but now it's numpy
+        if tensor_low.shape == ():
+            tensor_low = tensor_low.reshape(1)
+        if tensor_high.shape == ():
+            tensor_high = tensor_high.reshape(1)
+        if tensor_bound_low.shape == ():
+            tensor_bound_low = tensor_bound_low.reshape(1)
+        if tensor_bound_high.shape == ():
+            tensor_bound_high = tensor_bound_high.reshape(1)
+
+
+     #   if tensor_low.size() != tensor_high.size():
+        if tensor_low.shape != tensor_high.shape:
             raise ValueError("tensor_low and tensor_high must be same shape.")
-        if tensor_bound_low.size() != tensor_bound_high.size():
+      #  if tensor_bound_low.size() != tensor_bound_high.size():
+        if tensor_bound_low.shape != tensor_bound_high.shape:
             raise ValueError(
                 "tensor_bound_low and tensor_bound_high must be same shape."
             )
-        self.postmap_shape = tensor_low.size()
+        self.postmap_shape = tensor_low.shape
         # self.history_saver = SaveWrapper()
 
         self.projector = BoxProjector(
@@ -93,7 +94,7 @@ class UniformParameterMap(Map):
 
         return param_dict
 
-    def sample(self) -> torch.Tensor:
+    def sample(self) :
         data_shape = self.postmap_shape
         dimensions_to_keep = data_shape[0]
         sample = self.projector.sample()
