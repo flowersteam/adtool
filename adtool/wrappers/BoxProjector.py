@@ -20,7 +20,7 @@ class BoxProjector(Leaf):
         self,
         premap_key: str,
         bound_upper: np.ndarray = np.array([float("inf")]),
-        bound_lower:     np.ndarray = np.array([float("inf")]),
+        bound_lower:     np.ndarray = np.array([float("-inf")]),
         init_low: Optional[np.ndarray] = None,
         init_high: Optional[np.ndarray] = None,
         tensor_shape: Optional[Tuple] = None,
@@ -90,16 +90,11 @@ class BoxProjector(Leaf):
         """
 
         
-        print(f"Converted data type: {type(data)}")  # Should print <class 'numpy.ndarray'>
-        print(f"data shape: {data.shape}")
-        
+
         if self.low is None:
             self.low = np.zeros_like(data)
         if self.high is None:
             self.high = np.zeros_like(data)
-
-        print(f"self.low shape: {self.low.shape}")
-        print(f"self.high shape: {self.high.shape}")
 
         # Convert types to ensure compatibility
         self.low = self.low.astype(np.float32)
@@ -109,18 +104,13 @@ class BoxProjector(Leaf):
         low_mask = np.less(data, self.low)
         high_mask = np.greater(data, self.high)
 
-        print(f"low_mask shape: {low_mask.shape}")
-        print(f"high_mask shape: {high_mask.shape}")
+
 
         # Check shapes before assignment to avoid shape mismatch error
         if data[low_mask].shape != self.low[low_mask].shape:
-            print(f"data[low_mask].shape: {data[low_mask].shape}")
-            print(f"self.low[low_mask].shape: {self.low[low_mask].shape}")
             raise ValueError("Shape mismatch in low mask assignment")
         
         if data[high_mask].shape != self.high[high_mask].shape:
-            print(f"data[high_mask].shape: {data[high_mask].shape}")
-            print(f"self.high[high_mask].shape: {self.high[high_mask].shape}")
             raise ValueError("Shape mismatch in high mask assignment")
 
         self.low[low_mask] = data[low_mask]

@@ -197,8 +197,6 @@ class ExperimentPipeline(Leaf):
                 # render system output
                 rendered_output,ext = self._system.render(data_dict)
 
-                print("data_dict3",data_dict)
-
                 # exploration phase : emits new trial parameters for next loop
                 data_dict = self._explorer.map(data_dict)    
         

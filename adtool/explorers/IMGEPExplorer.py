@@ -107,7 +107,6 @@ class IMGEPExplorerInstance(Leaf):
         # and adding new "output" key which is the result of the behavior map
         new_trial_data = self.observe_results(system_output)
 
-        print("system_output",system_output)
         # save results
         trial_data_reset = self._history_saver.map( new_trial_data )
 

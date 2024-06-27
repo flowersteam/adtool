@@ -155,15 +155,11 @@ class FlowLeniaParameterMap(Leaf):
         # convert to parameter objects
         dp = FlowLeniaDynamicalParameters().from_numpy(p_dyn_tensor)
 
-        print("dp",dp)
-
 
         p_dict = {
             "dynamic_params": replace_torch_with_numpy(asdict(dp)),
         }
 
-
-        print("p_dict",p_dict)
 
 
         return p_dict

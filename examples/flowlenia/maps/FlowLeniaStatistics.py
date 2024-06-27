@@ -358,11 +358,12 @@ class FlowLeniaStatistics(Leaf):
         embedding = self._calc_static_statistics(tensor)
 
         intermed_dict[self.postmap_key] = embedding.numpy()
-        print("intermed_dict",intermed_dict)
+        
 
 
         
         intermed_dict = self.projector.map(intermed_dict)
+
 
         return intermed_dict
 
@@ -383,7 +384,6 @@ class FlowLeniaStatistics(Leaf):
         """Calculates the final statistics for lenia last observation"""
 
         final_obs= torch.tensor(final_obs)
-        print("final_obs",final_obs)
 
         # sum the last dimension
         final_obs = torch.sum(final_obs, dim=-1).squeeze()
@@ -499,6 +499,5 @@ class FlowLeniaStatistics(Leaf):
         feature_vector[cur_idx] = activation_flusser13_data
         cur_idx += 1
 
-        print("feature_vector",feature_vector)  
 
         return feature_vector
