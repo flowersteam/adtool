@@ -356,7 +356,8 @@ class GrayScottStatistics(Leaf):
 
         embedding = self._calc_static_statistics(tensor)
 
-        intermed_dict[self.postmap_key] = embedding
+        # it must be a numpy array!
+        intermed_dict[self.postmap_key] = embedding.numpy()
         intermed_dict = self.projector.map(intermed_dict)
 
         return intermed_dict

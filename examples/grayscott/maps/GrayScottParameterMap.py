@@ -62,18 +62,18 @@ class GrayScottParameterMap(Leaf):
         self.uniform = UniformParameterMap(
             premap_key=f"tensor_{self.premap_key}",
             # F k Du Dv
-            tensor_low=torch.tensor([0.02, 0.03], dtype=torch.float32),
+            tensor_low=torch.tensor([0.02, 0.03], dtype=torch.float32).numpy(),
          #   tensor_bound_low=torch.tensor([0.0, 0.02], dtype=torch.float32),
-            tensor_high=torch.tensor([0.05, 0.058], dtype=torch.float32), 
+            tensor_high=torch.tensor([0.05, 0.058], dtype=torch.float32).numpy(), 
         #    tensor_bound_high=torch.tensor([0.07, 0.068], dtype=torch.float32),
         )
 
         self.uniform_mutator = partial(
             add_gaussian_noise,
-            mean=param_obj.to_tensor(),
+            mean=param_obj.to_tensor().numpy(),
             std=torch.tensor([0.01, 0.02],
                              
-                              dtype=torch.float32)
+                              dtype=torch.float32).numpy(),
         )
 
     def map(self, input: Dict, override_existing: bool = True) -> Dict:

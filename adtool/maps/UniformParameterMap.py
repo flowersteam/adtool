@@ -8,6 +8,7 @@ from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 
+import numpy as np
 
 class UniformParameterMap(Map):
     """
@@ -15,15 +16,19 @@ class UniformParameterMap(Map):
     distribution over a box.
     """
 
+
     def __init__(
         self,
         premap_key: str = "params",
-        tensor_low: List[float] = [0.0],
-        tensor_high:  List[float] = [0.0],
-        tensor_bound_low: List[float] =[float("-inf")],
-        tensor_bound_high:  List[float] = [float("inf")],
+        tensor_low: np.ndarray = np.array([0.0]),
+        tensor_high: np.ndarray = np.array([0.0]),
+        tensor_bound_low: np.ndarray = np.array([float("-inf")]),
+        tensor_bound_high: np.ndarray = np.array([float("inf")]),
         override_existing: bool = True,
     ):
+
+        
+
         # TODO: put indication that tensor_low and high must be set
         super().__init__()
         self.locator = BlobLocator()

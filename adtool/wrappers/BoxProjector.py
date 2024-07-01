@@ -59,8 +59,6 @@ class BoxProjector(Leaf):
 
         tensor_data = self._clamp_and_truncate(tensor_data)
 
-        print("tensor_data", tensor_data)
-
         self._update_low_high(tensor_data)
 
         output[self.premap_key] = tensor_data
