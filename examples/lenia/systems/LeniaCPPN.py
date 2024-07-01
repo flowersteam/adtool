@@ -57,7 +57,11 @@ class LeniaCPPN(Lenia):
         # turns genome into init_state
         # as CPPNWrapper is a wrapper, it operates on the lowest level
         intermed_dict["params"] = self.cppn.map(intermed_dict["params"])
+        
         # pass params to Lenia
+
+        print("ccpn intermed_dict",intermed_dict)
+
         intermed_dict = super().map(intermed_dict)
         return intermed_dict
     def render(self, data_dict, mode: str = "PIL_image") -> Tuple[bytes, str]:

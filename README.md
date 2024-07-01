@@ -89,7 +89,6 @@ Available examples are:
 - `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN
 - `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
 - `examples/flowlenia/flow_lenia_noise.json` - Discovering flowlenia patterns initialized with noise
-- `examples/flowlenia/flow_lenia_random.json` - Discovering flowlenia patterns initialized with random values
 - `examples/lenia/lenia.json` - Discovering lenia patterns
 - `examples/stable_diffusion/stable_diffusion.json` - Discovering variations around a stable diffusion inference
 

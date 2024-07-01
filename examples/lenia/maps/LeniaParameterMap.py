@@ -6,6 +6,7 @@ from io import StringIO
 from typing import Dict, Optional, Tuple
 
 import torch
+from adtool.utils.misc.torch_utils import replace_torch_with_numpy
 from examples.lenia.systems.Lenia import Lenia
 from examples.lenia.systems.LeniaParameters import LeniaDynamicalParameters, LeniaHyperParameters
 from adtool.maps.UniformParameterMap import UniformParameterMap
@@ -45,10 +46,10 @@ class LeniaParameterMap(Leaf):
 
         self.uniform = UniformParameterMap(
             premap_key=f"tensor_{self.premap_key}",
-            tensor_low=param_obj.tensor_low,
-            tensor_high=param_obj.tensor_high,
-            tensor_bound_low=param_obj.tensor_bound_low,
-            tensor_bound_high=param_obj.tensor_bound_high,
+            tensor_low=param_obj.tensor_low.numpy(),
+            tensor_high=param_obj.tensor_high.numpy(),
+            tensor_bound_low=param_obj.tensor_bound_low.numpy(),
+            tensor_bound_high=param_obj.tensor_bound_high.numpy(),
         )
         if not neat_config_str:
             self.neat = NEATParameterMap(
@@ -63,7 +64,7 @@ class LeniaParameterMap(Leaf):
         # based upon the tensor representation of LeniaDynamicalParameters
         self.uniform_mutator = partial(
             add_gaussian_noise,
-            mean=torch.tensor([0.0]),
+            mean=torch.tensor([0.0]).numpy(),
 
     
 
@@ -77,7 +78,7 @@ class LeniaParameterMap(Leaf):
 
 
 
-    ).to_tensor()
+    ).to_tensor().numpy()
         )
 
         self.SX = param_obj.init_state_dim[1]
@@ -114,13 +115,20 @@ class LeniaParameterMap(Leaf):
         # sample genome
         genome = self.neat.sample()
 
+        print("p_dyn_tensor", p_dyn_tensor)
+
         # convert to parameter objects
-        dp = LeniaDynamicalParameters().from_tensor(p_dyn_tensor)
+        dp = LeniaDynamicalParameters().from_tensor(
+            torch.tensor(
+            p_dyn_tensor
+            )
+            )
         p_dict = {
-            "dynamic_params": asdict(dp),
+            "dynamic_params": replace_torch_with_numpy(asdict(dp)),
             "genome": genome,
             "neat_config": self.neat.neat_config,
         }
+
 
         return p_dict
 
@@ -142,7 +150,7 @@ class LeniaParameterMap(Leaf):
 
         # reassemble parameter_dict
         intermed_dict["genome"] = genome
-        intermed_dict["dynamic_params"] = asdict(
+        intermed_dict["dynamic_params"] =   asdict(
             LeniaDynamicalParameters().from_tensor(mutated_dp_tensor)
         )
 

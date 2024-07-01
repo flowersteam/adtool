@@ -191,6 +191,8 @@ class ExperimentPipeline(Leaf):
                         target = replace_lists_with_tensor(target)
                         data_dict['target']=target['target']
 
+                print("data_dict",data_dict)
+
                 # pass trial parameters through system
                 data_dict = self._system.map(data_dict)
 

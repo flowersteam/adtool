@@ -309,7 +309,6 @@ class TorchFlowLenia(torch.nn.Module):
 
         self.SX = SX
         self.SY = SY
-        print("spheric_pad",self.R)
         self.spheric_pad = SphericPad(self.R)
 
         self.RT = ReintegrationTracking(self.SX, self.SY, self.dt,

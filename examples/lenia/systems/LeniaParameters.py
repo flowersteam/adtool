@@ -44,6 +44,10 @@ class LeniaDynamicalParameters:
         if isinstance(self.s, torch.Tensor):
             self.s = self.s.item()
 
+        if isinstance(self.b, np.ndarray):
+            self.b = torch.from_numpy(self.b)
+
+
         # check constraints
         if isinstance(self.R, float):
             self.R = min(19,round(self.R))
@@ -54,7 +58,7 @@ class LeniaDynamicalParameters:
         
         self.T =min(10.0, max(1.0, self.T))
 
-        if self.b.size() != (4,):
+        if  (4,) != self.b.shape:
             raise ValueError("b must be a 4-vector.")
         self.b = torch.clamp(self.b, min=0.0, max=1.0)
 
