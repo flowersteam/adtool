@@ -17,6 +17,7 @@ from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 import sys
 
+from adtool.utils.misc.torch_utils import replace_torch_with_numpy
 
 
 
@@ -50,10 +51,10 @@ class FlowLeniaCPPNParameterMap(Leaf):
 
         self.uniform = UniformParameterMap(
             premap_key=f"tensor_{self.premap_key}",
-            tensor_low=param_obj.tensor_low,
-            tensor_high=param_obj.tensor_high,
-            tensor_bound_low=param_obj.tensor_bound_low,
-            tensor_bound_high=param_obj.tensor_bound_high,
+            tensor_low=param_obj.tensor_low.numpy(),
+            tensor_high=param_obj.tensor_high.numpy(),
+            tensor_bound_low=param_obj.tensor_bound_low.numpy(),
+            tensor_bound_high=param_obj.tensor_bound_high.numpy(),
         )
         if not neat_config_str:
             self.neat = NEATParameterMap(
@@ -80,7 +81,8 @@ class FlowLeniaCPPNParameterMap(Leaf):
                         s = 0.01
                     )
                 ] * system.nb_k
-            ).to_tensor(),
+            ).to_tensor().numpy(),
+            
             
 
     
@@ -99,7 +101,7 @@ class FlowLeniaCPPNParameterMap(Leaf):
                         s = 0.01
                     )
                 ] * system.nb_k
-    ).to_tensor()
+    ).to_tensor().numpy(),
         )
 
         self.SX = param_obj.init_state_dim[1]
@@ -138,9 +140,9 @@ class FlowLeniaCPPNParameterMap(Leaf):
 
 
         # convert to parameter objects
-        dp = FlowLeniaDynamicalParameters().from_tensor(p_dyn_tensor)
+        dp = FlowLeniaDynamicalParameters().from_numpy(p_dyn_tensor)
         p_dict = {
-            "dynamic_params": asdict(dp),
+            "dynamic_params": replace_torch_with_numpy(asdict(dp)),
             "genome": genome,
             "neat_config": self.neat.neat_config,
         }
@@ -156,6 +158,7 @@ class FlowLeniaCPPNParameterMap(Leaf):
         # mutate dynamic parameters
         dp = FlowLeniaDynamicalParameters(**parameter_dict["dynamic_params"])
         dp_tensor = dp.to_tensor()
+        print("dp_tensor", dp_tensor)
         mutated_dp_tensor = self.uniform_mutator(dp_tensor)
 
         # mutate CPPN genome
@@ -165,8 +168,8 @@ class FlowLeniaCPPNParameterMap(Leaf):
         # reassemble parameter_dict
         intermed_dict["genome"] = genome
         intermed_dict["dynamic_params"] = asdict(
-            FlowLeniaDynamicalParameters().from_tensor(mutated_dp_tensor)
-        )
+            FlowLeniaDynamicalParameters().from_tensor(mutated_dp_tensor))
+        
 
         return intermed_dict
 

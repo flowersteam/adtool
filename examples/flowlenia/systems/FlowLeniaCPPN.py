@@ -44,6 +44,7 @@ class FlowLeniaCPPN(FlowLenia):
         intermed_dict["params"] = self.cppn.map(intermed_dict["params"])
 
 
+        print("intermed_dict",intermed_dict)
         # pass params to Lenia
         intermed_dict = super().map(intermed_dict)
         return intermed_dict

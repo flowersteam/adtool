@@ -15,35 +15,13 @@ from adtool.wrappers.mutators import add_gaussian_noise
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 import sys
-torch
+from adtool.utils.misc.torch_utils import replace_torch_with_numpy
 
 
-def replace_lists_with_tensor(d):
-    # if we found a list of floats, convert it to a tensor, then if we found list of tensors, convert it to a tensor etc from bottom-up
-    if isinstance(d, list) and all(isinstance(i, float) for i in d):
-        return torch.tensor(d).squeeze()
-    elif isinstance(d, list):
-        return [replace_lists_with_tensor(i) for i in d]
-    elif isinstance(d, dict):
-        return {k:replace_lists_with_tensor(v) for k,v in d.items()}
-    else:
-        return d
 
 
-def replace_torch_with_numpy(d):
-    # if we found a list of floats, convert it to a tensor, then if we found list of tensors, convert it to a tensor etc from bottom-up
-    if isinstance(d, torch.Tensor):
-        # check is it a scalar
-        if d.size() == torch.Size([]):
-            return d.item()
-        else:
-            return d.numpy()
-    elif isinstance(d, list):
-        return [replace_torch_with_numpy(i) for i in d]
-    elif isinstance(d, dict):
-        return {k:replace_torch_with_numpy(v) for k,v in d.items()}
-    else:
-        return d
+
+
 
 
 
@@ -97,7 +75,8 @@ class FlowLeniaParameterMap(Leaf):
                         s = 0.01
                     )
                 ] * system.nb_k
-            ).to_tensor(),
+            ).to_tensor().numpy(),
+            
             
 
     
@@ -116,7 +95,7 @@ class FlowLeniaParameterMap(Leaf):
                         s = 0.01
                     )
                 ] * system.nb_k
-    ).to_tensor()
+    ).to_tensor().numpy(),
         )
 
         self.SX = param_obj.init_state_dim[1]

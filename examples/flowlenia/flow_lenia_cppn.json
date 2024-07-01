@@ -27,7 +27,7 @@
                 "behavior_map_config": {},
                 "parameter_map_config": {
                     "init_state_dim": [10, 10],
-                    "neat_config_path": "adtool/adtool/maps/cppn/config.cfg"
+                    "neat_config_path": "adtool/maps/cppn/config.cfg"
                 }
             }
         },

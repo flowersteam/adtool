@@ -48,6 +48,7 @@ class FlowLeniaNoise(FlowLenia):
              , self.C))
         
         # pass params to Lenia
+        print("intermed_dict",intermed_dict)
         intermed_dict = super().map(intermed_dict)
         return intermed_dict
     

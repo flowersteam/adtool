@@ -40,6 +40,10 @@ class BoxProjector(Leaf):
         self.low = init_low
         self.high = init_high
 
+        # if init_low is not None:
+        #     raise ValueError("init_low must be None for now")
+
+
     def map(self, input: Dict) -> Dict:
         """
         Passes `input`, adding a `sampler` Callable item which `Explorer` can
@@ -58,6 +62,7 @@ class BoxProjector(Leaf):
 
         output[self.premap_key] = tensor_data
 
+
      #   print("tensor_data", tensor_data)   
 
 
@@ -66,6 +71,7 @@ class BoxProjector(Leaf):
     def sample(self) -> np.ndarray:
         dim = self.tensor_shape
         rand_nums = np.random.rand(*dim)
+
 
         dim_lengths = self.high - self.low
         sample = rand_nums * dim_lengths + self.low
@@ -87,9 +93,7 @@ class BoxProjector(Leaf):
         """
         Update self.low and self.high which record the highest and lowest
         feature observations in the box space.
-        """
-
-        
+        """        
 
         if self.low is None:
             self.low = np.zeros_like(data)

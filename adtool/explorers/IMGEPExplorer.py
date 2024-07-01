@@ -77,7 +77,7 @@ class IMGEPExplorerInstance(Leaf):
         data_dict = {}
         # initialize sample
         params_init = self.parameter_map.sample()
-
+        print("params_init", params_init)
 
         data_dict[self.postmap_key] = params_init
 
