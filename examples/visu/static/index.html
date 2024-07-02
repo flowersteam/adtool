@@ -104,7 +104,7 @@
     <div id="controlsMenu">
         <div id="controlsToggle" onclick="toggleControls()">Controls ▼</div>
         <div id="controlsContent" style="display: none;">
-            <h3>Controls</h3>
+          
             <ul>
                 <li><strong>Hover:</strong> Play video</li>
                 <li><strong>Double-click:</strong> Set/Unset target</li>
@@ -136,6 +136,9 @@
         controls.screenSpacePanning = true;
         controls.maxPolarAngle = Math.PI / 2;
         controls.minPolarAngle = Math.PI / 2;
+
+
+        const K=30;
 
         const planes = [];
         const videoElement = document.getElementById('hoverVideo');
@@ -175,7 +178,7 @@
         function createPlane(texture, position, videoSrc) {
             const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
             const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.1), material);
-            plane.position.set(position[0], position[1], 0);
+            plane.position.set(K*position[0], K*position[1], 0);
             plane.userData.videoSrc = videoSrc;
             return plane;
         }
@@ -227,12 +230,29 @@
 
         loadPoints();
 
-        camera.position.set(0, 0, 1);
+        camera.position.set(0, 0, K);
 
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
+            updatePlanesScale();
             renderer.render(scene, camera);
+        }
+
+        function updatePlanesScale() {
+            planes.forEach(plane => {
+                const distance = camera.position.z - plane.position.z;
+                const scale = distance * 0.5; // Adjust the multiplier for desired scaling effect
+                plane.scale.set(scale, scale, 1);
+            });
+            // update target sprite scale
+            if (!targetVisible) return;
+            const targetDistance = camera.position.z - targetSprite.position.z;
+            const targetScale = targetDistance * 0.05;
+            targetSprite.scale.set(targetScale, targetScale, 1);
+
+
+
         }
 
         animate();
@@ -362,11 +382,11 @@
                     };
                     entriesList.appendChild(li);
                 } else {
-					selectedEntries.delete(videoSrc);
-					const li = Array.from(entriesList.children).find((li) => li.textContent === folder);
-					entriesList.removeChild(li);
-				
-				}
+                    selectedEntries.delete(videoSrc);
+                    const li = Array.from(entriesList.children).find((li) => li.textContent === folder);
+                    entriesList.removeChild(li);
+
+                }
             }
         });
 

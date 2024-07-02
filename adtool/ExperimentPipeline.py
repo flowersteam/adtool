@@ -25,6 +25,17 @@ def replace_lists_with_tensor(d):
         return d
 
 
+def replace_lists_with_numpy(d):
+    # if we found a list of floats, convert it to a tensor, then if we found list of tensors, convert it to a tensor etc from bottom-up
+    if isinstance(d, list) and all(isinstance(i, float) for i in d):
+        return torch.tensor(d).squeeze().numpy()
+    elif isinstance(d, list):
+        return [replace_lists_with_numpy(i) for i in d]
+    elif isinstance(d, dict):
+        return {k:replace_lists_with_numpy(v) for k,v in d.items()}
+    else:
+        return d
+
 class ExperimentPipeline(Leaf):
     """
     Pipeline of an automated discovery experiment.
@@ -165,7 +176,7 @@ class ExperimentPipeline(Leaf):
                     new_trial_data = json.load(f)
                     #replace each list of list of floats with a tensor, recursively but bottom-up
 
-                    new_trial_data = replace_lists_with_tensor(new_trial_data)
+                    new_trial_data = replace_lists_with_numpy(new_trial_data)
 
 
 

@@ -34,7 +34,6 @@ def process_discovery(root, name):
         return loaded_json[discovery_path]
 
     with open(discovery_path) as f:
-        print("loading discovery.json")
         discovery_details = json.load(f)
 
     discovery_embedding = discovery_details['output']
@@ -190,7 +189,6 @@ def compute_coordinates(path):
     global pca
     print("computing coordinates", path)
     discoveries = list_discoveries(path)
-    print("discoveries", discoveries)
     if len(discoveries) == 0:
         #touch discoveries.json
         with open('static/discoveries.json', 'w') as f:

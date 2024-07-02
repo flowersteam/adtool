@@ -49,7 +49,11 @@ class FlowLeniaKernelGrowthDynamicalParameters:
             
 
         self.r = min(1.0, max(0.2, self.r))
+
+
         self.b = torch.clamp(self.b, min=0.001, max=1.0)
+
+
         self.w = torch.clamp(self.w, min=0.01, max=0.5)
         self.a = torch.clamp(self.a, min=0.0, max=1.0)
         self.m = min(0.5, max(0.05, self.m))

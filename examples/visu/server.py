@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 import websockets
 from pathlib import Path
 import json
+import threading
 
 from datetime import datetime
 
@@ -46,13 +47,13 @@ def watch_discoveries():
             continue
         for _ in changes:
             print("Change in discoveries")
-            current_pca =  compute_coordinates(discovery_files)
+            current_pca = compute_coordinates(discovery_files)
             continue
 
 
 
 
-#asyncio.run(watch_discoveries())
+#asyncio.create_task(watch_discoveries())
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -62,21 +63,18 @@ async def lifespan(app: FastAPI):
     os.makedirs(discovery_files, exist_ok=True)
     
     current_pca=compute_coordinates(discovery_files)
- #   task = asyncio.create_task(watch_discoveries())
 
- 
+    # execute watch_discoveries in a separate thread
+    t=threading.Thread(target=watch_discoveries)
+    t.start()
 
+
+    yield
+        # delete static/discoveires.json
     if os.path.exists(f"{static_files}/discoveries.json"):
         os.remove(f"{static_files}/discoveries.json")
 
-    try:
-        yield
-    finally:
-        # delete static/discoveires.json
-        if os.path.exists(f"{static_files}/discoveries.json"):
-            os.remove(f"{static_files}/discoveries.json")
-
-        os._exit(0) 
+    os._exit(0) 
 
 
 app = FastAPI(lifespan=lifespan)
