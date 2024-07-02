@@ -20,8 +20,10 @@ import json
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-def process_discovery(root, name, loaded_json):
+def process_discovery(root, name):
+    global loaded_json
     discovery = {}
+
 
     discovery_path = os.path.join(root, name, 'discovery.json')
 
@@ -59,7 +61,7 @@ def list_discoveries(path):
     with ThreadPoolExecutor() as executor:
         for root, dirs, _ in os.walk(path):
             for name in dirs:
-                tasks.append(executor.submit(process_discovery, root, name, loaded_json))
+                tasks.append(executor.submit(process_discovery, root, name))
 
         for future in as_completed(tasks):
             result = future.result()
@@ -188,7 +190,7 @@ def compute_coordinates(path):
     global pca
     print("computing coordinates", path)
     discoveries = list_discoveries(path)
-    print("discoveries", len(discoveries))
+    print("discoveries", discoveries)
     if len(discoveries) == 0:
         #touch discoveries.json
         with open('static/discoveries.json', 'w') as f:
@@ -202,7 +204,7 @@ def compute_coordinates(path):
     # if less than 2 discoveries, return
     if len(discoveries) < 2:
         return
-    X = np.array([discovery['embedding'] for discovery in discoveries  ])
+    X = np.array([discovery['embedding'] for discovery in discoveries  if 'embedding' in discovery])
 
 
 
@@ -230,26 +232,31 @@ def compute_coordinates(path):
 
 
     pca = PCA(n_components=2)
+    print("X", X.shape)
     pca.fit(X)
     embedding = pca.transform(X)
+
+    saved_coordinates = []
 
 
 
     for i, discovery in enumerate(discoveries):
-        del discovery['embedding']
-        discovery['x'] = embedding[i][0].item()
-        discovery['y'] = embedding[i][1].item()
+        saved_coordinates.append({
+            'x': embedding[i][0].item(),
+            'y': embedding[i][1].item(),
+            'visual': discovery['visual']
+        })
 
 
 
 
 
-    min_x = min(discovery['x'] for discovery in discoveries)
-    max_x = max(discovery['x'] for discovery in discoveries)
-    min_y = min(discovery['y'] for discovery in discoveries)
-    max_y = max(discovery['y'] for discovery in discoveries)
+    min_x = min(discovery['x'] for discovery in saved_coordinates)
+    max_x = max(discovery['x'] for discovery in saved_coordinates)
+    min_y = min(discovery['y'] for discovery in saved_coordinates)
+    max_y = max(discovery['y'] for discovery in saved_coordinates)
 
-    for discovery in discoveries:
+    for discovery in saved_coordinates:
         discovery['x'] = (discovery['x'] - min_x) / (max_x - min_x) - 0.5
         discovery['y'] = (discovery['y'] - min_y) / (max_y - min_y) - 0.5
 
@@ -271,15 +278,14 @@ def compute_coordinates(path):
 
    # width, height=concatenate_videos(discoveries)
     export_last_frame(discoveries)
-    print("videos concatenated")
 
     #remove path from visual
-    for discovery in discoveries:
+    for discovery in saved_coordinates:
         discovery['visual'] = discovery['visual'][ len(path):]
         # discovery['width'] = width
         # discovery['height'] = height
 
     with open('static/discoveries.json', 'w') as f:
-        json.dump(discoveries, f)
+        json.dump(saved_coordinates, f)
 
     return pca

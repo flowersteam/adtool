@@ -5,7 +5,7 @@ from fastapi import FastAPI, WebSocket, HTTPException
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from coordinates import compute_coordinates
-from watchfiles import awatch, Change
+from watchfiles import awatch, Change, watch
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
 import websockets
@@ -36,19 +36,23 @@ args = parser.parse_args()
 discovery_files=args.discoveries
 
 
-async def watch_discoveries():
+def watch_discoveries():
     global current_pca
     print("Watching discoveries")
-    async for changes in awatch(discovery_files, recursive=True):
+    for changes in watch(discovery_files, recursive=True):
         # if it's target.json, skip
+        print("change in discoveries")
         if any("target.json" in change[1] for change in changes):
             continue
         for _ in changes:
             print("Change in discoveries")
             current_pca =  compute_coordinates(discovery_files)
-            break
+            continue
 
 
+
+
+#asyncio.run(watch_discoveries())
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -58,17 +62,26 @@ async def lifespan(app: FastAPI):
     os.makedirs(discovery_files, exist_ok=True)
     
     current_pca=compute_coordinates(discovery_files)
-    task = asyncio.create_task(watch_discoveries())
-    yield
-    task.cancel()
-    await task
+ #   task = asyncio.create_task(watch_discoveries())
+
+ 
 
     if os.path.exists(f"{static_files}/discoveries.json"):
         os.remove(f"{static_files}/discoveries.json")
 
+    try:
+        yield
+    finally:
+        # delete static/discoveires.json
+        if os.path.exists(f"{static_files}/discoveries.json"):
+            os.remove(f"{static_files}/discoveries.json")
+
+        os._exit(0) 
 
 
 app = FastAPI(lifespan=lifespan)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -124,7 +137,7 @@ async def websocket_endpoint(websocket: WebSocket):
     print("Websocket connection")
     await websocket.accept()
     while True:
-        async for changes in awatch(f"{static_files}/discoveries.json"):
+        async for changes in awatch(f"{static_files}/"):
             for change in changes:
                 if change[0] in (Change.added, Change.modified):
                     print("New coordinates file")

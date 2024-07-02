@@ -228,13 +228,13 @@ class IMGEPExplorerInstance(Leaf):
         # TODO: simple L2 distance right now
         # (200,17) , (17,)
         # return the argmin of the L2 distance with numpy
+
         return np.argmin(np.linalg.norm(goal_history - goal, axis=1))
     
     def _vector_search_for_goal(self, goal: np.ndarray, lookback_length: int) -> Dict:
         history_buffer = self._history_saver.get_history(
             lookback_length=lookback_length
         )
-
 
         goal_history = self._extract_tensor_history(history_buffer, self.premap_key)
         source_policy_idx = self._find_closest(goal, goal_history)

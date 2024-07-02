@@ -188,7 +188,7 @@ class ExperimentPipeline(Leaf):
                     with open(f"{mypath}/target.json") as f:
                         target=json.load(f)
                         #replace each list of list of floats with a tensor, recursively but bottom-up
-                        target = replace_lists_with_tensor(target)
+                        # target = replace_lists_with_tensor(target)
                         data_dict['target']=target['target']
 
 

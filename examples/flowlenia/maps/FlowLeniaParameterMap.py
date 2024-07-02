@@ -48,7 +48,6 @@ class FlowLeniaParameterMap(Leaf):
         if len(config_decorator_kwargs) > 0:
             param_obj = dataclasses.replace(param_obj, **config_decorator_kwargs)
 
-        print("premap_key",premap_key)
         self.premap_key = premap_key
 
         self.uniform = UniformParameterMap(
