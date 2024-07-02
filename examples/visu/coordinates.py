@@ -188,6 +188,7 @@ def compute_coordinates(path):
     global pca
     print("computing coordinates", path)
     discoveries = list_discoveries(path)
+    print("discoveries", len(discoveries))
     if len(discoveries) == 0:
         #touch discoveries.json
         with open('static/discoveries.json', 'w') as f:

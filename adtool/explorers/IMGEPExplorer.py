@@ -226,7 +226,6 @@ class IMGEPExplorerInstance(Leaf):
     def _find_closest(self, goal: np.ndarray,
                        goal_history: np.ndarray):
         # TODO: simple L2 distance right now
-        print(goal_history.shape, goal.shape)
         # (200,17) , (17,)
         # return the argmin of the L2 distance with numpy
         return np.argmin(np.linalg.norm(goal_history - goal, axis=1))

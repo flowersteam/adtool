@@ -95,7 +95,6 @@ class BoxProjector(Leaf):
         Update self.low and self.high which record the highest and lowest
         feature observations in the box space.
         """        
-        print("data",data)
 
         if self.low is None:
             self.low = np.zeros_like(data)
@@ -114,8 +113,6 @@ class BoxProjector(Leaf):
 
         # Check shapes before assignment to avoid shape mismatch error
         if data[low_mask].shape != self.low[low_mask].shape:
-            print("data[low_mask].shape",data[low_mask])
-            print("self.low[low_mask].shape",self.low[low_mask])
             raise ValueError("Shape mismatch in low mask assignment")
         
         if data[high_mask].shape != self.high[high_mask].shape:

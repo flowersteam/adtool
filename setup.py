@@ -44,6 +44,7 @@ setup(
             "watchfiles",
             "scikit-learn",
             "opencv-python",
+            "fastapi[uvicorn]",
         ],
     },
     packages=find_packages(include=[".","adtool","adtool.*"]),
