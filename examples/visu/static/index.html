@@ -242,7 +242,7 @@
         function updatePlanesScale() {
             planes.forEach(plane => {
                 const distance = camera.position.z - plane.position.z;
-                const scale = distance * 0.5; // Adjust the multiplier for desired scaling effect
+                const scale = distance * 0.7; // Adjust the multiplier for desired scaling effect
                 plane.scale.set(scale, scale, 1);
             });
             // update target sprite scale

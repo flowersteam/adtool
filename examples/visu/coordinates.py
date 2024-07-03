@@ -230,7 +230,6 @@ def compute_coordinates(path):
 
 
     pca = PCA(n_components=2)
-    print("X", X.shape)
     pca.fit(X)
     embedding = pca.transform(X)
 
