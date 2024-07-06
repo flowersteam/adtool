@@ -66,9 +66,7 @@ proposes a software package for both :
 
 The repo comes with an existing implementation of the [Lenia
 system](https://chakazul.github.io/lenia.html) which can be explored using the
-curiosity search algorithms described. The Python API described in the
-[technical documentation](https://developmentalsystems.org/adtool/) can be used
-to add custom systems and (optionally) search algorithms.
+curiosity search algorithms described.
 
 ### Installation
 
@@ -122,10 +120,3 @@ The web interface can be accessed at `http://127.0.0.1:8765/`.
 ```bash
 pip install git+https://github.com/flowersteam/adtool
 ```
-
-
-
-## TODO
-- [ ] Add an example with a 'non Python' system 
-- [ ] Improve UI to select and export discoveries easily
-- [ ] Integrate your feedbacks and suggestions!
