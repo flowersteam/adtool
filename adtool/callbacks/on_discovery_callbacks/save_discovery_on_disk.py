@@ -35,7 +35,6 @@ class SaveDiscoveryOnDisk(SaveDiscovery):
             )
             #save binary file to disk
 
-            print("Rendered output saved to disk")
 
             discovery["rendered_output"] = rendered_output_name
         #save config in config.json in the directory

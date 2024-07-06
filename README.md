@@ -81,7 +81,7 @@ pip install .
 ### Examples
 Various examples are provided in the `examples/` directory.
 ```bash
-python3 adtool/run.py --config_file examples/flowlenia/flow_lenia_cppn.json
+python3 run.py --config_file examples/grayscott/gray_scott.json
 ``` 
 Available examples are:
 - `examples/grayscott/gray_scott.json` - Discovering variations around a stable diffusion inference
@@ -91,9 +91,9 @@ Available examples are:
 - `examples/lenia/lenia.json` - Discovering lenia patterns
 - `examples/stable_diffusion/stable_diffusion.json` - Discovering variations around a stable diffusion inference
 
-To execute stable_diffusion example, you need to install required dependencies:
+To execute examples, you need to install required dependencies:
 ```bash
-pip install .[sd]
+pip install .[examples]
 ```
 
 ### Reloading
