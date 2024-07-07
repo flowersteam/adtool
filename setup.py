@@ -39,6 +39,7 @@ setup(
             "diffusers",
             "accelerate",
             "torch>=1.7.1",
+            "scipy"
         ],
         "visu": [
             "websockets",
@@ -46,6 +47,7 @@ setup(
             "scikit-learn",
             "opencv-python",
             "fastapi[uvicorn]",
+            "umap-learn"
         ],
     },
     packages=find_packages(include=[".","adtool","adtool.*"]),

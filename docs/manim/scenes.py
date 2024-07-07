@@ -72,9 +72,9 @@ class s2(Scene):
         rect3.to_edge(RIGHT).shift(DOWN * 2.5)
 
         # Create arrows
-        arrow1 = Arrow(start=text_box1.get_right(), end=rect1.get_left())
-        arrow2 = Arrow(start=text_box2.get_right(), end=rect2.get_left())
-        arrow3 = Arrow(start=text_box3.get_right(), end=rect3.get_left())
+        arrow1 = Arrow(start=text_box1.get_right(), end=rect3.get_left())
+        arrow2 = Arrow(start=text_box2.get_right(), end=rect1.get_left())
+        arrow3 = Arrow(start=text_box3.get_right(), end=rect2.get_left())
 
         # Create labels for the groups
         parameters_label = Text("parameters", font_size=24)
@@ -140,7 +140,7 @@ class s3(Scene):
         # Create labels for the boxes
         param_space_label = Text("Parameters Space", font_size=20)
         obs_space_label = Text("Observation Space", font_size=20)
-        goal_space_label = Text("Goal Space", font_size=20)
+        goal_space_label = Text("Behavior Space", font_size=20)
 
         # Position the labels
         param_space_label.move_to(param_space_box.get_center())
@@ -159,7 +159,7 @@ class s3(Scene):
 
 
 
-        start_sampling = Text("Start by sampling a random goal", font_size=20)
+        start_sampling = Text("Start by sampling a random behaviour signature", font_size=20)
         start_sampling.move_to(DOWN * 3)
 
         # make the goal box glow
@@ -172,7 +172,7 @@ class s3(Scene):
         self.play(FadeOut(start_sampling))
         
 
-        start_sampling = Text("Sample parameters candidates to reach the goal", font_size=20) 
+        start_sampling = Text("Sample parameters candidates that could generate the desired behaviour", font_size=20)
         start_sampling.move_to(DOWN * 3)
         self.play( FadeIn(start_sampling),
             Circumscribe(param_space_box, color=YELLOW, buff=0.1,fade_out=True))
@@ -189,18 +189,29 @@ class s3(Scene):
         self.wait(2)
         self.play(FadeOut(start_sampling))
 
-        start_sampling = Text("Map the observation to the goal space and sample a new goal accordingly", font_size=20)
+        start_sampling = Text("Map the observation to it's behaviour signature in behaviour space", font_size=20)
         start_sampling.move_to(DOWN * 3)
+
+        # AND repeat with the sampling of a new original behaviour signature 
+
+        repeat = Text("And repeat with the sampling of a new original behaviour signature", font_size=20)
+        repeat.move_to(DOWN * 3)
 
         self.play( FadeIn(start_sampling),
             Circumscribe(goal_space_box, color=YELLOW, buff=0.1,fade_out=True))
+            
+
         
-        self.wait(3)
+        self.wait(2)
         self.play(FadeOut(start_sampling))
+
+        self.play( FadeIn(repeat))
+
+        
 
 
         # Hold the final scene for a while
-        self.wait(3) 
+        self.wait(5) 
 
 
 

@@ -6,6 +6,8 @@ import numpy as np
 from sklearn.decomposition import PCA
 import cv2
 from sklearn.cluster import KMeans
+import umap
+
 
 #from pydub import AudioSegment
 
@@ -200,9 +202,35 @@ def compute_coordinates(path):
         return
 
     # if less than 2 discoveries, return
-    if len(discoveries) < 2:
+    if len(discoveries) == 0:
         return
+    if len(discoveries) <3:
+        with open('static/discoveries.json', 'w') as f:
+            json.dump([{
+                'x': 0,
+                'y': 0,
+                'visual': discoveries[0]['visual']
+            }], f)
+        return
+    
+    if len(discoveries) == 2:
+        with open('static/discoveries.json', 'w') as f:
+            json.dump([{
+                'x': -1,
+                'y': 0,
+                'visual': discoveries[0]['visual']
+            }, {
+                'x': 1,
+                'y': 0,
+                'visual': discoveries[1]['visual']
+            }], f)
+        return
+            
+
+
+        
     X = np.array([discovery['embedding'] for discovery in discoveries  if 'embedding' in discovery])
+
 
 
 
@@ -226,18 +254,32 @@ def compute_coordinates(path):
 
 
 
+    # check if there is nan values
+    if np.isnan(X).any():
+        print("nan found in X")
+        return
 
 
 
-    pca = PCA(n_components=2)
+   # pca = PCA(n_components=2, random_state=0, whiten=True)
+    pca = umap.UMAP(n_components=2, random_state=0)
     pca.fit(X)
+
+
+
     embedding = pca.transform(X)
+    # check if there is nan values
+    if np.isnan(embedding).any():
+        print("nan found in embedding")
 
     saved_coordinates = []
 
 
 
     for i, discovery in enumerate(discoveries):
+        # if nan in embedding, skip
+        if np.isnan(embedding[i]).any():
+            continue
         saved_coordinates.append({
             'x': embedding[i][0].item(),
             'y': embedding[i][1].item(),

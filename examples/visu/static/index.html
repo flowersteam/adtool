@@ -5,7 +5,9 @@
     <title>ADtool</title>
     <link rel="icon" href="/static/images/favicon.png">
     <style>
-        body { margin: 0; overflow: hidden; }
+        body { margin: 0; overflow: hidden; 
+        
+        }
         video {
             display: none;
             position: absolute;
@@ -189,9 +191,18 @@
 
             console.log(pointsData.length);
 
+            var nb_points=0;
+
             const texturePromises = pointsData.map((point) => {
+                // nb_points++;
+                // if (nb_points>100){
+                //     return
+                // }
                 const imageName = point.visual.replace('.mp4', '.png');
                 return fetch(`/discoveries/${imageName}`).then((response) => response.blob()).then((blob) => {
+
+
+
                     return new Promise((resolve) => {
                         const img = new Image();
                         img.src = URL.createObjectURL(blob);
@@ -205,11 +216,27 @@
                             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
                             const data = imageData.data;
 
-                            // for (let j = 0; j < data.length; j += 4) {
-                            //     if (data[j] < 50 && data[j + 1] < 50 && data[j + 2] < 50) {
-                            //         data[j + 3] = 0;
-                            //     }
-                            // }
+                for (let j = 0; j < data.length; j += 4) {
+                    if (data[j] > 200 && data[j + 1] > 200 && data[j + 2] > 200) {
+                        data[j + 3] = 0;
+                    }
+                }
+
+                // // if it's full white, skip it
+                // var is_white=true;
+                // for (let j = 0; j < data.length; j += 4) {
+                //     if (data[j] < 200 || data[j + 1] < 200 || data[j + 2] < 200) {
+                //         is_white=false;
+                //         break;
+                //     }
+                // }
+                // if (is_white){
+                //     //finish the promise without resolving
+                //     resolve();
+
+
+                // } 
+                console.log(imageName)
 
                             context.putImageData(imageData, 0, 0);
                             const processedTexture = new THREE.CanvasTexture(canvas);
@@ -219,8 +246,17 @@
                 });
             });
 
+
+
             Promise.all(texturePromises).then((textures) => {
+                
+
                 textures.forEach((texture, i) => {
+
+                    if (!texture) return;
+
+                    console.log(pointsData[i].x, pointsData[i].y)
+                    // i/10
                     const plane = createPlane(texture, [pointsData[i].x, pointsData[i].y], `/discoveries/${pointsData[i].visual}`);
                     planes.push(plane);
                     scene.add(plane);
@@ -242,7 +278,7 @@
         function updatePlanesScale() {
             planes.forEach(plane => {
                 const distance = camera.position.z - plane.position.z;
-                const scale = distance * 0.7; // Adjust the multiplier for desired scaling effect
+                const scale = distance * 1.5; // Adjust the multiplier for desired scaling effect
                 plane.scale.set(scale, scale, 1);
             });
             // update target sprite scale
