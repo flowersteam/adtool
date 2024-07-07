@@ -123,7 +123,7 @@ class s3(Scene):
         self.play(FadeIn(check_adtool))
 
         # subtext
-        subtext = Text("Sampling cycle based on IMGEP algorithm ", font_size=20)
+        subtext = Text("Interesting parameters sampling based on IMGEP algorithm", font_size=20)
         subtext.next_to(check_adtool, DOWN)
         self.play(FadeIn(subtext))
 
@@ -157,7 +157,7 @@ class s3(Scene):
         self.play(FadeIn(param_space_label), FadeIn(obs_space_label), FadeIn(goal_space_label),
                     FadeIn(arrow1), FadeIn(arrow2), FadeIn(arrow3))
 
-
+        self.wait(2)
 
         start_sampling = Text("Start by sampling a random behaviour signature", font_size=20)
         start_sampling.move_to(DOWN * 3)

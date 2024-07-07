@@ -167,7 +167,7 @@ async def export_files(files: list[str]):
     #copy past all files to a new directory
     for file in files:
         file_path=Path(file)
-        file_path =  "/".join(file_path.parts[:-1])
+        file_path =  "/".join(file_path.parts[2:-1])
         file_path = f"{discovery_files}/{file_path}"   
         
         os.system(f"cp -r {file_path} {new_dir}")

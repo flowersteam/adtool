@@ -139,6 +139,13 @@
         controls.maxPolarAngle = Math.PI / 2;
         controls.minPolarAngle = Math.PI / 2;
 
+        controls.maxDistance = 500; // Maximum zoom out distance
+        controls.minDistance = 0; // Minimum zoom in distance
+
+                camera.near = 0.1; // Minimum render distance
+        camera.far = 500; // Maximum render distance
+        camera.updateProjectionMatrix();
+
 
         const K=30;
 
@@ -426,16 +433,7 @@
             }
         });
 
-        function exportEntries() {
-            const data = Array.from(selectedEntries).map(entry => entry.split('/').pop()).join('\n');
-            const blob = new Blob([data], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'selected_entries.txt';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
+
 
         if (window.self !== window.top) {
             document.getElementById('iframeButton').style.display = 'block';
@@ -470,6 +468,34 @@
                 document.getElementById('controlsToggle').textContent = 'Controls ▼';
             }
         }
+
+        window.exportEntries = function  exportEntries() {
+            // const data = Array.from(selectedEntries).map(entry => entry.split('/').pop()).join('\n');
+            // const blob = new Blob([data], { type: 'text/plain' });
+            // const url = URL.createObjectURL(blob);
+            // const a = document.createElement('a');
+            // a.href = url;
+            // a.download = 'selected_entries.txt';
+            // a.click();
+            // URL.revokeObjectURL(url);
+
+                // call /export endpoint
+
+//                 @app.post("/export")
+// async def export_files(files: list[str]):
+                fetch('/export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(Array.from(selectedEntries)),
+                }).then(
+                    // alert the user that the export is ready
+                    () => alert('Export ready!'),
+                );
+
+        }
+
     </script>
 </body>
 </html>

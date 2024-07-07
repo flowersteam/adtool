@@ -209,7 +209,7 @@ def compute_coordinates(path):
             json.dump([{
                 'x': 0,
                 'y': 0,
-                'visual': discoveries[0]['visual']
+                'visual': discoveries[0]['visual'][len(path):]
             }], f)
         return
     
@@ -218,11 +218,11 @@ def compute_coordinates(path):
             json.dump([{
                 'x': -1,
                 'y': 0,
-                'visual': discoveries[0]['visual']
+                'visual': discoveries[0]['visual'][len(path):]
             }, {
                 'x': 1,
                 'y': 0,
-                'visual': discoveries[1]['visual']
+                'visual': discoveries[1]['visual'][len(path):]
             }], f)
         return
             
