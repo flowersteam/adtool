@@ -84,7 +84,7 @@ Various examples are provided in the `examples/` directory.
 python3 run.py --config_file examples/grayscott/gray_scott.json
 ``` 
 Available examples are:
-- `examples/grayscott/gray_scott.json` - Discovering variations around a stable diffusion inference
+- `examples/grayscott/gray_scott.json` - Discovering Gray-Scott diffusion patterns
 - `examples/particlelenia/particlelenia.json` - Discovering particle lenia patterns
 - `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN
 - `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
