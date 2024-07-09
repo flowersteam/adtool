@@ -11,7 +11,6 @@ from typing import Callable, Dict, List
 from pydoc import locate as _locate
 
 import numpy as np
-import torch
 from adtool.ExperimentPipeline import ExperimentPipeline
 from adtool.utils.logger import AutoDiscLogger
 from collections import defaultdict
@@ -168,13 +167,8 @@ def _set_seed(seed: int) -> None:
     - seed: seed number
     """
     seed = int(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
     np.random.seed(seed)  # Numpy module.
     random.seed(seed)  # Python random module.
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
 
 
 
