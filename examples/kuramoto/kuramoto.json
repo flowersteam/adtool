@@ -6,10 +6,11 @@
         }
     },
     "system": {
-        "path": "examples.particlelenia.systems.ParticleLeniaNoise.ParticleLeniaNoise",
+        "path": "examples.kuramoto.systems.Kuramoto.Kuramoto",
         "config": {
-            "n_particles": 100,
-            "n_steps": 10000
+            "N": 3,
+            "K": 40,
+            "num_inference_steps": 100
         }
     },
     "explorer": {
@@ -17,11 +18,11 @@
         "config": {
             "mutator": "specific",
             "equil_time": 1,
-            "behavior_map": "examples.particlelenia.maps.ParticleLeniaStatistics.ParticleLeniaStatistics",
-            "parameter_map": "examples.particlelenia.maps.ParticleLeniaParameterMap.ParticleLeniaParameterMap",
+            "behavior_map": "examples.kuramoto.maps.KuramotoStatistics.KuramotoStatistics",
+            "parameter_map": "examples.kuramoto.maps.KuramotoParameterMap.KuramotoParameterMap",
             "mutator_config": {},
             "behavior_map_config": {},
-            "parameter_map_config": {}
+            "parameter_map_config": {  }
         }
     },
     "input_wrappers": [],

@@ -11,7 +11,6 @@ from adtool.wrappers.mutators import add_gaussian_noise, call_mutate_method
 from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.expose_config.expose_config import expose
 from adtool.utils.leaf.Leaf import Leaf
-from adtool.utils.leaf.locators.locators import BlobLocator
 from pydantic import Field
 from pydoc import locate
 from typing import Dict
@@ -60,7 +59,6 @@ class IMGEPExplorerInstance(Leaf):
     ) -> None:
         super().__init__()
 
-        self.locator = BlobLocator()
         self.premap_key = premap_key
         self.postmap_key = postmap_key
         self.parameter_map = parameter_map
@@ -237,6 +235,7 @@ class IMGEPExplorerInstance(Leaf):
         )
 
         goal_history = self._extract_tensor_history(history_buffer, self.premap_key)
+
         source_policy_idx = self._find_closest(goal, goal_history)
 
 

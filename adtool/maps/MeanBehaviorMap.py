@@ -18,7 +18,7 @@ class MeanBehaviorMap(Map):
         self,
         premap_key: str = "output",
         postmap_key: str = "output",
-        input_shape: Tuple[int] = (1),
+        input_shape: Tuple[int] = (1,),
     ) -> None:
         super().__init__()
         self.locator = BlobLocator()
