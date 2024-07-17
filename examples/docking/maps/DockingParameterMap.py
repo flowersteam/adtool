@@ -13,78 +13,124 @@ from adtool.utils.leaf.locators.locators import BlobLocator
 
 import selfies as sf
 
+from rdkit.Chem import Lipinski
+from rdkit import Chem
+
 import random
 
 
-chemical_space=[('[#B-1]', 6.463455621913702e-05),
- ('[#B]', 0.00032317278109568514),
- ('[#Branch1]', 0.03231727810956851),
- ('[#Branch2]', 0.019390366865741106),
- ('[#Branch3]', 0.006463455621913703),
- ('[#C+1]', 6.463455621913702e-05),
- ('[#C-1]', 6.463455621913702e-05),
- ('[#C]', 0.0032317278109568514),
- ('[#N+1]', 0.00032317278109568514),
- ('[#N]', 0.006463455621913703),
- ('[#O+1]', 6.463455621913702e-05),
- ('[#P+1]', 3.231727810956851e-05),
- ('[#P-1]', 3.231727810956851e-05),
- ('[#P]', 6.463455621913702e-05),
- ('[#S+1]', 6.463455621913702e-05),
- ('[#S-1]', 6.463455621913702e-05),
- ('[#S]', 0.00032317278109568514),
- ('[=B+1]', 6.463455621913703e-06),
- ('[=B-1]', 6.463455621913703e-06),
- ('[=B]', 6.463455621913702e-05),
- ('[=Branch1]', 0.02585382248765481),
- ('[=Branch2]', 0.012926911243827405),
- ('[=Branch3]', 0.0032317278109568514),
- ('[=C+1]', 6.463455621913702e-05),
- ('[=C-1]', 6.463455621913702e-05),
- ('[=C]', 0.09695183432870554),
- ('[=N+1]', 0.00032317278109568514),
- ('[=N-1]', 0.00032317278109568514),
- ('[=N]', 0.019390366865741106),
- ('[=O+1]', 6.463455621913702e-05),
- ('[=O]', 0.06463455621913702),
- ('[=P+1]', 6.463455621913703e-06),
- ('[=P-1]', 6.463455621913703e-06),
- ('[=P]', 0.00032317278109568514),
- ('[=Ring1]', 0.05170764497530962),
- ('[=Ring2]', 0.03231727810956851),
- ('[=Ring3]', 0.012926911243827405),
- ('[=S+1]', 6.463455621913702e-05),
- ('[=S-1]', 6.463455621913702e-05),
- ('[=S]', 0.006463455621913703),
- ('[B+1]', 3.231727810956851e-05),
- ('[B-1]', 3.231727810956851e-05),
- ('[B]', 0.00032317278109568514),
- ('[Br]', 0.006463455621913703),
- ('[Branch1]', 0.06463455621913702),
- ('[Branch2]', 0.03231727810956851),
- ('[Branch3]', 0.012926911243827405),
- ('[C+1]', 0.00032317278109568514),
- ('[C-1]', 0.00032317278109568514),
- ('[C]', 0.16158639054784255),
- ('[Cl]', 0.012926911243827405),
- ('[F]', 0.009695183432870553),
- ('[I]', 0.0032317278109568514),
- ('[N+1]', 0.0032317278109568514),
- ('[N-1]', 0.0032317278109568514),
- ('[N]', 0.05170764497530962),
- ('[O+1]', 6.463455621913702e-05),
- ('[O-1]', 0.0032317278109568514),
- ('[O]', 0.09695183432870554),
- ('[P+1]', 6.463455621913703e-06),
- ('[P-1]', 6.463455621913703e-06),
- ('[P]', 0.0032317278109568514),
- ('[Ring1]', 0.06463455621913702),
- ('[Ring2]', 0.03878073373148221),
- ('[Ring3]', 0.019390366865741106),
- ('[S+1]', 0.00032317278109568514),
- ('[S-1]', 0.00032317278109568514),
- ('[S]', 0.012926911243827405)]
+chemical_space=[('[=B+1]', 5.747588886462131e-06),
+ ('[=B-1]', 5.747588886462131e-06),
+ ('[=B]', 5.747588886462131e-05),
+ ('[=Branch1]', 0.022990355545848523),
+ ('[=Branch2]', 0.011495177772924262),
+ ('[=Branch3]', 0.0028737944432310654),
+ ('[=C+1]', 5.747588886462131e-05),
+ ('[=C-1]', 5.747588886462131e-05),
+ ('[=C]', 0.08621383329693195),
+ ('[=N+1]', 0.00028737944432310656),
+ ('[=N-1]', 0.00028737944432310656),
+ ('[=N]', 0.017242766659386392),
+ ('[=O+1]', 5.747588886462131e-05),
+ ('[=O]', 0.05747588886462131),
+ ('[=P+1]', 5.747588886462131e-06),
+ ('[=P-1]', 5.747588886462131e-06),
+ ('[=P]', 0.00028737944432310656),
+ ('[=Ring1]', 0.045980711091697046),
+ ('[=Ring2]', 0.028737944432310654),
+ ('[=Ring3]', 0.011495177772924262),
+ ('[=S+1]', 5.747588886462131e-05),
+ ('[=S-1]', 5.747588886462131e-05),
+ ('[=S]', 0.005747588886462131),
+ ('[B+1]', 2.8737944432310656e-05),
+ ('[B-1]', 2.8737944432310656e-05),
+ ('[B]', 0.00028737944432310656),
+ ('[Br]', 0.005747588886462131),
+ ('[Branch1]', 0.05747588886462131),
+ ('[Branch2]', 0.028737944432310654),
+ ('[Branch3]', 0.011495177772924262),
+ ('[C+1]', 0.00028737944432310656),
+ ('[C-1]', 0.00028737944432310656),
+ ('[C]', 0.14368972216155326),
+ ('[Cl]', 0.011495177772924262),
+ ('[F]', 0.008621383329693196),
+ ('[H]', 0.1724276665938639),
+ ('[I]', 0.0028737944432310654),
+ ('[N+1]', 0.0028737944432310654),
+ ('[N-1]', 0.0028737944432310654),
+ ('[N]', 0.045980711091697046),
+ ('[O+1]', 5.747588886462131e-05),
+ ('[O-1]', 0.0028737944432310654),
+ ('[O]', 0.08621383329693195),
+ ('[P+1]', 5.747588886462131e-06),
+ ('[P-1]', 5.747588886462131e-06),
+ ('[P]', 0.0028737944432310654),
+ ('[Ring1]', 0.05747588886462131),
+ ('[Ring2]', 0.034485533318772785),
+ ('[Ring3]', 0.017242766659386392),
+ ('[S+1]', 0.00028737944432310656),
+ ('[S-1]', 0.00028737944432310656),
+ ('[S]', 0.011495177772924262)]
 
+
+from rdkit import Chem
+from rdkit.Chem import Crippen
+from rdkit.Chem import Lipinski
+from rdkit.Chem import Descriptors
+
+class SmilesError(Exception): pass
+
+def log_partition_coefficient(smiles):
+    '''
+    Returns the octanol-water partition coefficient given a molecule SMILES 
+    string
+    '''
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+    except Exception as e:
+        raise SmilesError('%s returns a None molecule' % smiles)
+        
+    return Crippen.MolLogP(mol)
+    
+def lipinski_trial(smiles):
+    '''
+    Returns which of Lipinski's rules a molecule has failed, or an empty list
+    
+    Lipinski's rules are:
+    Hydrogen bond donors <= 5
+    Hydrogen bond acceptors <= 10
+    Molecular weight < 500 daltons
+    logP < 5
+    '''
+
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        raise Exception('%s is not a valid SMILES string' % smiles)
+    
+    
+    num_hdonors = Lipinski.NumHDonors(mol)
+    
+
+    
+    if num_hdonors > 5:
+        return False
+    
+    num_hacceptors = Lipinski.NumHAcceptors(mol)
+   
+    if num_hacceptors > 10:
+        return False
+    
+    mol_weight = Descriptors.MolWt(mol)
+        
+    if mol_weight >= 500:
+        return False
+        
+    mol_logp = Crippen.MolLogP(mol)
+
+    if mol_logp >= 5:
+        return False
+    
+    return True
 
 
 class DockingParameterMap(Leaf):
@@ -136,14 +182,16 @@ class DockingParameterMap(Leaf):
     
     def minimal_checks(self, smiles: str) -> bool:
 
-        # Lipinski's rule of five for example
+        # Lipinski's rule of five for example        
+        if not lipinski_trial(smiles):
+            return False
 
 
-        # convert to selfies
-        selfies = sf.encoder(smiles)
-        if len(list(sf.split_selfies(selfies))) > 2 :
-            return True
-        return False
+        # # convert to selfies
+        # selfies = sf.encoder(smiles)
+        # if len(list(sf.split_selfies(selfies))) > 2 :
+        #     return True
+        return True
 
     def mutate(self, parameter_dict: Dict) -> Dict:
         intermed_dict = deepcopy(parameter_dict)
@@ -173,6 +221,7 @@ class DockingParameterMap(Leaf):
             mutated_smiles = sf.decoder(mutated_selfies)
             if self.minimal_checks(mutated_smiles) and mutated_smiles!=current_smiles:
                 break
+            
         
 
             

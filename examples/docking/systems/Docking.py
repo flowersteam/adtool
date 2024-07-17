@@ -5,6 +5,9 @@ from plip.exchange.report import BindingSiteReport
 
 from typing import Dict, Any, Tuple
 
+from rdkit import Chem
+from rdkit.Chem import AllChem
+
 # reduce plip logging
 import logging
 logging.getLogger('plip').setLevel(logging.CRITICAL)
@@ -47,11 +50,14 @@ def read_box_file(box_file):
     return center_x, center_y, center_z, size_x, size_y, size_z
 
 def generate_ligand_pdb(smiles, output_file):
-    from rdkit import Chem
-    from rdkit.Chem import AllChem
+
+
 
     m = Chem.MolFromSmiles(smiles)
     m = Chem.AddHs(m)
+    # make hydrogens explicit
+
+
     AllChem.EmbedMolecule(m)
     AllChem.MMFFOptimizeMolecule(m, maxIters=1000000)
     Chem.MolToPDBFile(m, output_file)

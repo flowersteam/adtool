@@ -28,7 +28,9 @@ def retrieve_plip_interactions(pdb_file):
         return []
     key, site = key_site[0]
 
+
     binding_site = BindingSiteReport(site) 
+
 
     return getattr(binding_site, "hydrophobic_info")
 
