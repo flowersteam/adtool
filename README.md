@@ -86,6 +86,7 @@ python3 run.py --config_file examples/grayscott/gray_scott.json
 Available examples are:
 - `examples/grayscott/gray_scott.json` - Discovering Gray-Scott diffusion patterns
 - `examples/particlelenia/particlelenia.json` - Discovering particle lenia patterns
+- `examples/docking/docking.json` - Minimalist pipeline to discover docking patterns in a protein pocket
 - `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN
 - `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
 - `examples/flowlenia/flow_lenia_noise.json` - Discovering flowlenia patterns initialized with noise
@@ -95,6 +96,14 @@ Available examples are:
 To execute examples, you need to install required dependencies:
 ```bash
 pip install .[examples]
+```
+For the docking example, you need to install the `rdkit` package and download the `gnina` executable:
+```bash
+sudo apt install openbabel
+pip install plip --global-option=build_ext --global-option="-I/usr/local/include/openbabel3" --global-option="-L/usr/local/lib"
+pip install rdkit
+wget https://github.com/gnina/gnina/releases/download/v1.1/gnina -O examples/docking/systems/gnina
+chmod +x examples/docking/systems/gnina
 ```
 
 ### Reloading

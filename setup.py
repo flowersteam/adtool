@@ -49,6 +49,9 @@ setup(
             "fastapi[uvicorn]",
             "umap-learn"
         ],
+        "docking":[
+            "rdkit",
+        ]
     },
     packages=find_packages(include=[".","adtool","adtool.*"]),
     package_dir={"": "."},

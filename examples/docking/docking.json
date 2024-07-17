@@ -1,0 +1,41 @@
+{
+    "experiment": {
+        "config": {
+            "save_location": "./",
+            "save_frequency": 1
+        }
+    },
+    "system": {
+        "path": "examples.docking.systems.Docking.Docking",
+        "config": {
+            "biomolecule": "examples/docking/systems/P22680_3V8D_A.pdb",
+            "bbox": "examples/docking/systems/P22680_3V8D_A_box_2.txt"
+        }
+    },
+    "explorer": {
+        "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
+        "config": {
+            "mutator": "specific",
+            "equil_time": 1,
+            "behavior_map": "examples.docking.maps.DockingStatistics.DockingStatistics",
+            "parameter_map": "examples.docking.maps.DockingParameterMap.DockingParameterMap",
+            "mutator_config": {},
+            "behavior_map_config": {},
+            "parameter_map_config": { 
+                "seed_smiles": "CC1=CC(=O)C(=C(C1=O)O)O"
+             }
+        }
+    },
+    "input_wrappers": [],
+    "output_representations": [],
+    "logger_handlers":[],
+    "callbacks": {
+    "on_discovery":[
+    {"path":"adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+    "config": {}
+    }
+    ]
+    
+}
+
+}

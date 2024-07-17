@@ -53,7 +53,6 @@ class GrayScottParameterMap(Leaf):
         if param_obj is None:
             param_obj = GrayScottParams(F=0.0, k=0)
 
-        self.locator = BlobLocator()
         if len(config_decorator_kwargs) > 0:
             param_obj = dataclasses.replace(param_obj, **config_decorator_kwargs)
 
@@ -85,6 +84,7 @@ class GrayScottParameterMap(Leaf):
         return intermed_dict
 
     def sample(self) -> Dict:
+        print("GrayScottParameterMap.sample()")
         p_dyn_tensor = self.uniform.sample()
         dp = GrayScottParams.from_tensor(p_dyn_tensor)
         p_dict = {
