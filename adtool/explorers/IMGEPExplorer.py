@@ -234,7 +234,9 @@ class IMGEPExplorerInstance(Leaf):
             lookback_length=lookback_length
         )
 
+
         goal_history = self._extract_tensor_history(history_buffer, self.premap_key)
+
 
         source_policy_idx = self._find_closest(goal, goal_history)
 

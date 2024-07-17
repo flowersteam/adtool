@@ -89,14 +89,22 @@ class DockingStatistics(Leaf):
 
         self.system = system
 
-        # projector for behavior space
-        self.projector = BoxProjector(premap_key=self.postmap_key)
 
         self.atom_indices = atoms_in_bounding_box(
             self.system.biomolecule,
             (self.system.center_x, self.system.center_y, self.system.center_z),
             (self.system.size_x, self.system.size_y, self.system.size_z),
         )
+
+                # projector for behavior space
+        self.projector = BoxProjector(premap_key=self.postmap_key,
+                                        bound_lower=np.zeros(len(self.atom_indices)),
+                                        bound_upper=np.ones(len(self.atom_indices)),
+                                        init_low=np.zeros(len(self.atom_indices)),
+                                        init_high=np.ones(len(self.atom_indices))
+
+                                      )
+
 
     def map(self, input: Dict) -> Dict:
         intermed_dict = deepcopy(input)
@@ -113,7 +121,8 @@ class DockingStatistics(Leaf):
         return intermed_dict
 
     def sample(self):
-        return self.projector.sample()
+        sampled= self.projector.sample()
+        return sampled
 
     def _calc_statistics(self, interactions, atom_indices) -> np.ndarray:
         dists = [i[6] for i in interactions]
