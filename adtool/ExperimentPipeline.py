@@ -159,6 +159,11 @@ class ExperimentPipeline(Leaf):
 
             discoveries_folders = [f for f in listdir(mypath) if not isfile(join(mypath, f))]
             #get discovery.json files in discoveries folders
+            # log a warning message if not empty
+            self.logger.warning(
+                f"[PRELOAD] - Loading previous discoveries from experiment"
+            )
+
             json_discoveries = [ 
                 folder for folder in discoveries_folders for f in listdir(join(mypath, folder))
                 if isfile(join(mypath, folder, f)) and
