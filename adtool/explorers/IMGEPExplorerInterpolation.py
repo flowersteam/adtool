@@ -141,31 +141,13 @@ class IMGEPExplorerInstance(Leaf):
 
         return trial_data_reset
 
-    def suggest_trial(self, lookback_length: int = -1,
-                      goal: np.ndarray = None
-                      
-                      ):
-        """Sample according to the policy a new trial of parameters for the
-        system.
-
-        Args:
-            lookback_length:
-                number of previous trials to consider when choosing the next
-                trial, i.e., it is a batch size based on the save frequency.
-
-                Note that the default `lookback_length = -1` will retrieve the
-                entire  history.
-
-        Returns:
-            A `torch.Tensor` containing the parameters to try.
-        """
+    def suggest_trial(self, lookback_length: int = -1, goal: np.ndarray = None):
         if goal is None:
             goal = self.behavior_map.sample()
 
-        source_policy = self._vector_search_for_goal(goal, lookback_length)
+        interpolated_policy = self._vector_search_for_goal(goal, lookback_length)
 
-        params_trial = self.mutator(source_policy)
-
+        params_trial = self.mutator(interpolated_policy)
 
         return params_trial
 
@@ -221,32 +203,37 @@ class IMGEPExplorerInstance(Leaf):
 
         return tensor_history
 
-    def _find_closest(self, goal: np.ndarray,
-                       goal_history: np.ndarray):
-        # TODO: simple L2 distance right now
-        # (200,17) , (17,)
-        # return the argmin of the L2 distance with numpy
-
-        return np.argmin(np.linalg.norm(goal_history - goal, axis=1))
+    def _find_two_closest(self, goal: np.ndarray, goal_history: np.ndarray):
+        distances = np.linalg.norm(goal_history - goal, axis=1)
+        return np.argsort(distances)[:2]
     
+    def _interpolate_policies(self, policy1: Dict, policy2: Dict, weight: float):
+        interpolated_policy = {}
+        for key in policy1.keys():
+            interpolated_policy[key] = (1 - weight) * policy1[key] + weight * policy2[key]
+        return interpolated_policy
+        
     def _vector_search_for_goal(self, goal: np.ndarray, lookback_length: int) -> Dict:
         history_buffer = self._history_saver.get_history(
             lookback_length=lookback_length
         )
 
-
         goal_history = self._extract_tensor_history(history_buffer, self.premap_key)
 
-
-        source_policy_idx = self._find_closest(goal, goal_history)
-
+        closest_indices = self._find_two_closest(goal, goal_history)
 
         param_history = self._extract_dict_history(history_buffer, self.postmap_key)
-        source_policy = param_history[source_policy_idx]
+        policy1 = param_history[closest_indices[0]]
+        policy2 = param_history[closest_indices[1]]
 
-        return source_policy
+        # Calculate the weights based on the distances
+        distances = np.linalg.norm(goal_history[closest_indices] - goal, axis=1)
+        total_distance = np.sum(distances)
+        weight = distances[0] / total_distance
 
+        interpolated_policy = self._interpolate_policies(policy1, policy2, weight)
 
+        return interpolated_policy
 @expose
 class IMGEPExplorer():
     config=IMGEPConfig

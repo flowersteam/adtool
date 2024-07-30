@@ -13,7 +13,7 @@ class BaseOnDiscoveryCallback(BaseCallback):
         "run_parameters",
         "raw_output",
         "output",
-        "rendered_output",
+        "rendered_outputs",
     ]
 
     def __init__(self, to_save_outputs: List[str], **kwargs) -> None:

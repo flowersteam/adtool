@@ -15,6 +15,7 @@ import selfies as sf
 
 from rdkit.Chem import Lipinski
 from rdkit import Chem
+from rdkit.Chem import AllChem
 
 import random
 
@@ -130,6 +131,11 @@ def lipinski_trial(smiles):
     if mol_logp >= 5:
         return False
     
+    try:
+        AllChem.EmbedMolecule(mol)
+    except:
+        return False
+    
     return True
 
 
@@ -160,15 +166,17 @@ class DockingParameterMap(Leaf):
     def sample(self) -> Dict:
         # sample from chemical space with probabilities
         
-        while True:
-            random_selfies=""
-            for _ in range(random.randint(10, 200)):
-                random_selfies += np.random.choice( 
-                    [x[0] for x in chemical_space], p=[x[1] for x in chemical_space]
-                )
-            smiles=sf.decoder(random_selfies)
-            if self.minimal_checks(smiles):
-                break
+        # while True:
+        #     random_selfies=""
+        #     for _ in range(random.randint(10, 200)):
+        #         random_selfies += np.random.choice( 
+        #             [x[0] for x in chemical_space], p=[x[1] for x in chemical_space]
+        #         )
+        #     smiles=sf.decoder(random_selfies)
+        #     if self.minimal_checks(smiles):
+        #         break
+
+        smiles = self.seed_smiles
 
 
 

@@ -8,9 +8,9 @@
         "system": {
             "path": "examples.grayscott.systems.GrayScott.GrayScott",
             "config": {
-                "height": 256,
-                "width": 256,
-                "num_inference_steps": 5000
+                "height": 128,
+                "width": 128,
+                "num_inference_steps": 500
             }
         },
         "explorer": {

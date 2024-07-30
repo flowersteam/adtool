@@ -138,7 +138,7 @@ class KuramotoSimulation:
         byte_img = io.BytesIO()
         imageio.mimwrite(byte_img, frames, format='mp4', fps=10)
         byte_img.seek(0)
-        return byte_img.getvalue(), "mp4"
+        return [(byte_img.getvalue(), "mp4")]
 
 class GenerationParams(BaseModel):
     N: int = Field(2, ge=1, le=100)

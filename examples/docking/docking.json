@@ -22,7 +22,7 @@
             "mutator_config": {},
             "behavior_map_config": {},
             "parameter_map_config": { 
-                "seed_smiles": "CC1=CC(=O)C(=C(C1=O)O)O"
+                "seed_smiles": "CC1(C(N2C(S1)C(C2=O)NC(=O)CC3=CC=CC=C3)C(=O)O)C"
              }
         }
     },

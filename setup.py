@@ -51,6 +51,9 @@ setup(
         ],
         "docking":[
             "rdkit",
+            "selenium",
+            "webdriver_manager",
+            "imageio"
         ]
     },
     packages=find_packages(include=[".","adtool","adtool.*"]),

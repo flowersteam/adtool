@@ -259,10 +259,15 @@ def compute_coordinates(path):
         print("nan found in X")
         return
 
+    # normalize X
+    X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-6)
+    
+
+
 
 
    # pca = PCA(n_components=2, random_state=0, whiten=True)
-    pca = umap.UMAP(n_components=2, random_state=0)
+    pca = umap.UMAP(n_components=2, random_state=0, n_neighbors=min(10, len(X)))    
     pca.fit(X)
 
 

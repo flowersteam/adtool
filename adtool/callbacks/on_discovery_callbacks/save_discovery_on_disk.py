@@ -22,21 +22,23 @@ class SaveDiscoveryOnDisk(SaveDiscovery):
         run_idx: int,
         seed: int,
         discovery: Dict[str, Any],
-        rendered_output=None,
-        rendered_output_extension=None,
+        rendered_outputs=None
     ) -> None:
         #save binary file
         dir_path = self._initialize_save_path(
             resource_uri, experiment_id, run_idx, seed
         )
-        if rendered_output is not None:
-            rendered_output_name = self._save_binary_callback(
-                rendered_output, dir_path, rendered_output_extension
-            )
+        if rendered_outputs is not None:
+            discovery["rendered_outputs"]=[]
+            for rendered_output in rendered_outputs:
+                rendered_output_name = self._save_binary_callback(
+                    rendered_output[0], dir_path, rendered_output[1],
+                    name="visu"
+                )
             #save binary file to disk
 
 
-            discovery["rendered_output"] = rendered_output_name
+                discovery["rendered_outputs"].append( rendered_output_name)
         #save config in config.json in the directory
         config_path = os.path.join(dir_path, "config.json")
         with open(config_path, "w") as f:
@@ -75,8 +77,14 @@ class SaveDiscoveryOnDisk(SaveDiscovery):
 
         return dir_path
 
-    def _save_binary_callback(cls: Type, binary: bytes, save_dir: str, extension:str) -> str:
-        file_name = sha1(binary).hexdigest()+f".{extension}"
+    def _save_binary_callback(cls: Type, binary: bytes, save_dir: str, extension:str,
+                              name=None
+                  
+                              ) -> str:
+        if name is None:
+            file_name = sha1(binary).hexdigest()+f".{extension}"
+        else:
+            file_name = f"{name}.{extension}"
         file_path = os.path.join(save_dir, file_name)
         with open(file_path, "wb") as f:
             f.write(binary)

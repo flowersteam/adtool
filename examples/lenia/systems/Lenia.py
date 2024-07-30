@@ -166,7 +166,7 @@ class Lenia(System):
             imageio.mimwrite(
                 byte_img, im_array, "mp4", fps=1, output_params=["-f", "mp4"]
             )
-            return byte_img.getvalue(), "mp4"
+            return [(byte_img.getvalue(), "mp4")]
         else:
             raise NotImplementedError
 

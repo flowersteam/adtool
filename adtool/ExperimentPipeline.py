@@ -146,8 +146,7 @@ class ExperimentPipeline(Leaf):
         - **LeafUID**: returns the UID associated to the experiment
         """
         try:
-            data_dict = self._explorer.bootstrap(
-            )
+
 
             
 
@@ -160,14 +159,18 @@ class ExperimentPipeline(Leaf):
             discoveries_folders = [f for f in listdir(mypath) if not isfile(join(mypath, f))]
             #get discovery.json files in discoveries folders
             # log a warning message if not empty
-            self.logger.warning(
-                f"[PRELOAD] - Loading previous discoveries from experiment"
-            )
+
 
             json_discoveries = [ 
                 folder for folder in discoveries_folders for f in listdir(join(mypath, folder))
                 if isfile(join(mypath, folder, f)) and
                    f=="discovery.json" ]
+            
+            if json_discoveries:
+                self.logger.warning(
+                f"[PRELOAD] - Loading previous discoveries from experiment"
+            )
+
             
             for json_discovery in json_discoveries:
                 # check if config.json is the same
@@ -186,13 +189,21 @@ class ExperimentPipeline(Leaf):
 
 
                   #  print(new_trial_data)
-
+        
                     
                     self._explorer._history_saver.map( new_trial_data )
-            self.logger.info(
-                "[LOADED] - Loaded previous discoveries from experiment"
-                f"{self.experiment_id} with seed {self.seed}"
-            )
+                    
+            if json_discoveries:
+                self.logger.info(
+                    "[LOADED] - Loaded previous discoveries from experiment"
+                    f"{self.experiment_id} with seed {self.seed}"
+                )
+                #mutate the latest discovery to be the last one
+                # data_dict=self._explorer.read_last_discovery()
+                # print(data_dict)
+            #     data_dict = self._explorer.map(data_dict)
+            # else:
+            data_dict = self._explorer.bootstrap()
             
 
 
@@ -212,7 +223,7 @@ class ExperimentPipeline(Leaf):
                 data_dict = self._system.map(data_dict)
 
                 # render system output
-                rendered_output,ext = self._system.render(data_dict)
+                rendered_outputs = self._system.render(data_dict)
 
                 # exploration phase : emits new trial parameters for next loop
                 data_dict = self._explorer.map(data_dict)    
@@ -241,8 +252,7 @@ class ExperimentPipeline(Leaf):
                     experiment_id=self.experiment_id,
                     seed=self.seed,
                     discovery=discovery_to_save,
-                    rendered_output=rendered_output,
-                    rendered_output_extension=ext,
+                    rendered_outputs=rendered_outputs,
 
                     # run_parameters=discovery[self._explorer.postmap_key],
                     # output=discovery[self._explorer.premap_key],

@@ -18,7 +18,7 @@ def retrieve_plip_interactions(pdb_file):
     protlig = PDBComplex()
 
 
-    protlig.load_pdb(pdb_file.decode('utf-8'), as_string=True)
+    protlig.load_pdb(pdb_file, as_string=True)
 
     for ligand in protlig.ligands:
         protlig.characterize_complex(ligand)

@@ -141,7 +141,7 @@ class GrayScottSimulation:
         byte_img = io.BytesIO()
         imageio.mimwrite(byte_img, im_array, format='mp4', fps=self.num_inference_steps/10)
         byte_img.seek(0)
-        return byte_img.getvalue(), "mp4"
+        return [(byte_img.getvalue(), "mp4")]
 
 class GenerationParams(BaseModel):
     height: int = Field(512, ge=64, le=1024)

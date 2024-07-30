@@ -27,8 +27,9 @@ class KuramotoParameterMap(Leaf):
 
         self.N = system.N
         self.K = system.K
+        # 2 trop fort
 
-        self.SCALING_FACTOR = 0.2
+        self.SCALING_FACTOR = 0.1
 
 
 

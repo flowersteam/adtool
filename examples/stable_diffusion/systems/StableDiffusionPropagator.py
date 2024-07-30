@@ -187,7 +187,7 @@ class StableDiffusion(System):
         imgs = imgs + [final_result] * 50
         byte_img = io.BytesIO()
         imageio.mimwrite(byte_img, imgs, "mp4", fps=5, output_params=["-f", "mp4"])
-        return byte_img.getvalue(), "mp4"
+        return [(byte_img.getvalue(), "mp4")]
 
 
 class GenerationParams(BaseModel):

@@ -190,7 +190,7 @@ class ParticleLenia:
         byte_img = io.BytesIO()
         imageio.mimsave(byte_img, images, format='mp4', fps=10)
         byte_img.seek(0)
-        return byte_img.getvalue(), "mp4"
+        return [(byte_img.getvalue(), "mp4")]
 
 # # Example usage
 # dt = 0.1
