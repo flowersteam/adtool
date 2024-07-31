@@ -10,25 +10,17 @@ import os
 from os.path import isfile, join
 import json
 
-import torch
+import numpy as np
 
-
-def replace_lists_with_tensor(d):
-    # if we found a list of floats, convert it to a tensor, then if we found list of tensors, convert it to a tensor etc from bottom-up
-    if isinstance(d, list) and all(isinstance(i, float) for i in d):
-        return torch.tensor(d).squeeze()
-    elif isinstance(d, list):
-        return [replace_lists_with_tensor(i) for i in d]
-    elif isinstance(d, dict):
-        return {k:replace_lists_with_tensor(v) for k,v in d.items()}
-    else:
-        return d
 
 
 def replace_lists_with_numpy(d):
     # if we found a list of floats, convert it to a tensor, then if we found list of tensors, convert it to a tensor etc from bottom-up
     if isinstance(d, list) and all(isinstance(i, float) for i in d):
-        return torch.tensor(d).squeeze().numpy()
+        return np.array(d)
+    #if just a number
+    elif isinstance(d, float):
+        return d
     elif isinstance(d, list):
         return [replace_lists_with_numpy(i) for i in d]
     elif isinstance(d, dict):

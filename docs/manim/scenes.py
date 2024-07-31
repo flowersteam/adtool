@@ -10,8 +10,8 @@ class s1(Scene):
         
         # Title and Subtitles
         title = Text("flowersteam/adtool").scale(1.5)
-        subtitle_line1 = Text("A Python Framework for Assisted Identification", t2c={"Assisted Identification": BLUE}).scale(0.5)
-        subtitle_line2 = Text("of Original Settings for Parameterized Systems", t2c={"Original Settings": BLUE}).scale(0.5)
+        subtitle_line1 = Text("A general Python Framework to reveal behaviour diversity", t2c={"behaviour diversity": BLUE}).scale(0.5)
+        subtitle_line2 = Text("of your complex systems", t2c={"complex systems": BLUE}).scale(0.5)
         
         # Positioning
         title_logo_group = Group(github_logo, title).arrange(RIGHT, buff=0.5)
@@ -115,7 +115,48 @@ class s2(Scene):
 from manim import Scene, Text, VGroup, Write, FadeIn, DOWN, BLUE, Square, Arrow, Create, RIGHT, LEFT, UP
 from manim import SurroundingRectangle, Rectangle, AnimationGroup, RED, PI, CurvedArrow
 
+
 class s3(Scene):
+    def construct(self):
+        check_adtool = Text("Check ADTool", font_size=36, t2c={"ADTool": BLUE})
+        check_adtool.to_edge(UP)
+        self.play(FadeIn(check_adtool))
+        subtext = Text("To explore comportemental diversity of your system", font_size=20)
+        text_below = Text("and apply it to ...", font_size=20)
+        subtext.next_to(check_adtool, DOWN)
+        text_below.next_to(subtext, DOWN)
+        # show them at the same time
+        self.play(FadeIn(subtext), FadeIn(text_below))
+
+        #self.wait(2)
+        # cellular automata
+        ca = Text("Cellular Automata", font_size=20, t2c={"Cellular Automata": BLUE})
+        ca.next_to(text_below, DOWN)
+        self.play(FadeIn(ca))
+        self.wait(8.5)
+        #hide it then print "or any complex parametric system"
+        self.play(FadeOut(ca))
+        complex_system = Text("any complex parametric system", font_size=20, t2c={"complex parametric system": BLUE})
+        complex_system.next_to(text_below, DOWN)
+        self.play(FadeIn(complex_system))
+        self.wait(8.5)
+        
+
+
+
+
+
+
+        # Create the text labels
+
+
+
+
+
+        
+
+
+class s3b(Scene):
     def construct(self):
         # Check ADTool text
         check_adtool = Text("Check ADTool", font_size=36, t2c={"ADTool": BLUE})
@@ -222,3 +263,68 @@ class s4(Scene):
         title.to_edge(UP)
         self.play(FadeIn(title))
         self.wait(5)
+
+
+
+from manim import *
+
+class FinalScene(Scene):
+    def construct(self):
+        # Title
+        title = Text("Implemented Examples", font_size=36)
+        title.to_edge(UP)
+
+        # List of examples
+        examples = VGroup(
+            Text("• Flow Lenia", font_size=24),
+            Text("• Particle Lenia", font_size=24),
+            Text("• Lenia", font_size=24),
+            Text("• Reaction-Diffusion Model", font_size=24),
+            Text("• Curiosity Driven Drug Discovery Pipeline", font_size=24),
+            Text("• Kuramoto Oscillators Model", font_size=24)
+        ).arrange(DOWN, aligned_edge=LEFT).next_to(title, DOWN, buff=0.5)
+
+        # Features title
+        features_title = Text("Other features", font_size=36)
+        features_title.next_to(examples, DOWN, buff=0.5)
+
+        # List of features
+        features = VGroup(
+            Text("• Import/Export Discoveries", font_size=24),
+            Text("• Interactive Visualizer", font_size=24),
+            Text("• Exploration with Human Feedback", font_size=24)
+        ).arrange(DOWN, aligned_edge=LEFT).next_to(features_title, DOWN, buff=0.5)
+
+        # Group all elements together
+        all_elements = VGroup(title, examples, features_title, features)
+
+        # Animation: Write all elements at the same time
+        self.play(Write(all_elements, run_time=2))
+
+        # Hold the final scene
+        self.wait(5)
+
+
+from manim import *
+
+class FinalScene2(Scene):
+    def construct(self):
+        # Title
+        title = Text("Implemented algorithms", font_size=36)
+        title.to_edge(UP)
+
+        # List of examples
+        examples = VGroup(
+            Text("• IMGEP", font_size=24),
+            Text("• Curiosity Driven IMGEP", font_size=24),
+            Text("• IMGEP Interpolation", font_size=24),
+            Text("• and more coming soon", font_size=24)
+        ).arrange(DOWN, aligned_edge=LEFT).next_to(title, DOWN, buff=0.5)
+
+        # show them
+        self.play(FadeIn(title))
+        self.play(Write(examples))
+
+
+        # wait
+        self.wait(4)

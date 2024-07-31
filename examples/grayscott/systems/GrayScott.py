@@ -139,7 +139,7 @@ class GrayScottSimulation:
         im_array = [frame for frame in self.frames]
         
         byte_img = io.BytesIO()
-        imageio.mimwrite(byte_img, im_array, format='mp4', fps=self.num_inference_steps/10)
+        imageio.mimwrite(byte_img, im_array, format='mp4', fps=self.num_inference_steps/1)
         byte_img.seek(0)
         return [(byte_img.getvalue(), "mp4")]
 

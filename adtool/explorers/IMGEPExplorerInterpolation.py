@@ -207,12 +207,35 @@ class IMGEPExplorerInstance(Leaf):
         distances = np.linalg.norm(goal_history - goal, axis=1)
         return np.argsort(distances)[:2]
     
-    def _interpolate_policies(self, policy1: Dict, policy2: Dict, weight: float):
-        interpolated_policy = {}
-        for key in policy1.keys():
-            interpolated_policy[key] = (1 - weight) * policy1[key] + weight * policy2[key]
-        return interpolated_policy
+
+
+    def _interpolate_policies_recursive(self, policy1, policy2, weight: float):
         
+        if isinstance(policy1, np.ndarray):
+            # element-wise interpolation
+            return np.add((1 - weight) * policy1, weight * policy2)
+
+        if isinstance(policy1, dict):
+            interpolated_policy = {}
+            for key in policy1.keys():
+                interpolated_policy[key] = self._interpolate_policies_recursive(policy1[key], policy2[key], weight)
+            return interpolated_policy
+        elif isinstance(policy1, list):
+            interpolated_policy = []
+            for i in range(len(policy1)):
+                interpolated_policy.append(self._interpolate_policies_recursive(policy1[i], policy2[i], weight))
+
+            return interpolated_policy
+        else:
+            return (1 - weight) * policy1 + weight * policy2
+    
+    # same but also consider lists
+    def _interpolate_policies(self, policy1: Dict, policy2: Dict, weight: float):
+
+        dynamic_params= self._interpolate_policies_recursive(policy1['dynamic_params'], policy2['dynamic_params'], weight)
+        return {'dynamic_params': dynamic_params}
+                    
+
     def _vector_search_for_goal(self, goal: np.ndarray, lookback_length: int) -> Dict:
         history_buffer = self._history_saver.get_history(
             lookback_length=lookback_length
@@ -224,12 +247,15 @@ class IMGEPExplorerInstance(Leaf):
 
         param_history = self._extract_dict_history(history_buffer, self.postmap_key)
         policy1 = param_history[closest_indices[0]]
+        if len(closest_indices) == 1:
+            return policy1
         policy2 = param_history[closest_indices[1]]
 
         # Calculate the weights based on the distances
         distances = np.linalg.norm(goal_history[closest_indices] - goal, axis=1)
         total_distance = np.sum(distances)
         weight = distances[0] / total_distance
+
 
         interpolated_policy = self._interpolate_policies(policy1, policy2, weight)
 

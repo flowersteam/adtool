@@ -325,7 +325,7 @@ def compute_coordinates(path):
 
     #remove path from visual
     for discovery in saved_coordinates:
-        discovery['visual'] = discovery['visual'][ len(path):]
+        discovery['visual'] = discovery['visual'][1+ len(path):]
         # discovery['width'] = width
         # discovery['height'] = height
 

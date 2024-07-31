@@ -99,7 +99,7 @@ pip install .[examples]
 ```
 For the docking example, you need to install the `rdkit` package and download the `gnina` executable:
 ```bash
-sudo apt install openbabel
+sudo apt install openbabel libxml2-dev libxslt-dev libopenbabel-dev swig
 pip install plip --global-option=build_ext --global-option="-I/usr/local/include/openbabel3" --global-option="-L/usr/local/lib"
 pip install rdkit
 wget https://github.com/gnina/gnina/releases/download/v1.1/gnina -O examples/docking/systems/gnina
