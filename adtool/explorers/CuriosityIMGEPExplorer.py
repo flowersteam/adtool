@@ -84,41 +84,46 @@ class CuriosityDrivenIMGEP(Leaf):
 
     def update_uncertainty_map(self):
         history = self._history_saver.get_history()
-        print("history", history)
         goals = self._extract_tensor_history(history, self.premap_key)
-        print("goals", goals)
-        self.kdtree = KDTree(goals)
         
-        k = min(len(goals), 10)  # number of neighbors to consider
-        print( "k", k)
-        print(self.kdtree.query(goals, k=k))
-        distances, indices = self.kdtree.query(goals, k=k)
+        # Filter out NaN values
+        valid_mask = ~np.isnan(goals).any(axis=1)
+        valid_goals = goals[valid_mask]
+        
+        if len(valid_goals) == 0:
+            self.kdtree = None
+            self.uncertainty_map = None
+            return
+
+        self.kdtree = KDTree(valid_goals)
+        
+        k = min(len(valid_goals), 10)  # number of neighbors to consider 
+        distances, indices = self.kdtree.query(valid_goals, k=k)
         if len(distances.shape) == 1:
             distances = np.expand_dims(distances, axis=1)
 
         self.uncertainty_map = np.mean(distances, axis=1)
-
-
-        
-
+        self.valid_indices = np.where(valid_mask)[0]
+            
 
 
     def sample_curious_goal(self):
-        if self.uncertainty_map is None or np.random.rand() < 0.1:  # Occasional random sampling
+        if self.uncertainty_map is None or self.kdtree is None or \
+        np.random.rand() < 0.1:  # Occasional random sampling
             return self.behavior_map.sample()
         
         probs = self.uncertainty_map / np.sum(self.uncertainty_map)
         idx = np.random.choice(len(probs), p=probs)
         return self.kdtree.data[idx]
-
+    
     def suggest_trial(self, lookback_length: int = -1, goal: np.ndarray = None):
         self.update_uncertainty_map()
         
         if goal is None:
-            if np.random.rand() < self.novelty_weight:
-                goal = self.sample_curious_goal()
-            else:
+            if self.kdtree is None or np.random.rand() < self.novelty_weight:
                 goal = self.behavior_map.sample()
+            else:
+                goal = self.sample_curious_goal()
 
         source_policy = self._vector_search_for_goal(goal, lookback_length)
         params_trial = self.mutator(source_policy)
@@ -147,9 +152,19 @@ class CuriosityDrivenIMGEP(Leaf):
     def _vector_search_for_goal(self, goal: np.ndarray, lookback_length: int) -> Dict:
         history_buffer = self._history_saver.get_history(lookback_length=lookback_length)
         goal_history = self._extract_tensor_history(history_buffer, self.premap_key)
-        source_policy_idx = self._find_closest(goal, goal_history)
+        
+        # Filter out NaN values
+        valid_mask = ~np.isnan(goal_history).any(axis=1)
+        valid_goal_history = goal_history[valid_mask]
+        
+        if len(valid_goal_history) == 0:
+            # If no valid goals, return a random policy
+            return self.parameter_map.sample()
+        
+        source_policy_idx = self._find_closest(goal, valid_goal_history)
         param_history = self._extract_dict_history(history_buffer, self.postmap_key)
-        return param_history[source_policy_idx]
+        valid_param_history = [param for i, param in enumerate(param_history) if valid_mask[i]]
+        return valid_param_history[source_policy_idx]
 
 @expose
 class IMGEPExplorer():
