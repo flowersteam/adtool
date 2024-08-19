@@ -130,3 +130,26 @@ The web interface can be accessed at `http://127.0.0.1:8765/`.
 ```bash
 pip install git+https://github.com/flowersteam/adtool
 ```
+
+
+# FAQ on the grayscott example
+
+## How can I change the size of the simulation?
+This can be done directly by changing the configuration file [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/gray_scott.json#L11).
+
+## How can I change the number of steps for each simulation?
+Possibly directly from the configuration file [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/gray_scott.json#L13).
+
+## How can I load another exploration algorithm?
+From the configuration file by specifying the appropriate module path and name [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/gray_scott.json#L9).
+Other modules for this are defined [here](https://github.com/flowersteam/adtool/tree/2f03270c64f19f24d539f2e4f45936ef892b5fd8/adtool/explorers).
+
+## How can I change the parametric space of the simulation?
+This is the 'parameter_map', introduced [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/gray_scott.json#L21) in the configuration file.
+For example, it's possible to copy the default file serving as parameter_map defined [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/maps/GrayScottParameterMap.py), then update the path to the new parameter_map in the used configuration file [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/gray_scott.json#L22).
+
+## How can I change the statistics used to characterize the final state of the simulation?
+Same logic as 'parameter_map' but with 'behavior_map' [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/gray_scott.json#L21), an example of which is provided [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/maps/GrayScottStatistics.py). The current statistics are only calculated on the last state of the simulation, but nothing prevents considering all previous states.
+
+## How can I change the way the grayscott simulation operates?
+For this, it's possible to start from the default system definition [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/systems/GrayScott.py), make modifications in a new file, and then update the path to the new system in the configuration file [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/gray_scott.json#L9).
