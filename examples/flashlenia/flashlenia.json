@@ -1,0 +1,37 @@
+{
+    "experiment": {
+        "config": {
+            "save_location": "./",
+            "save_frequency": 1
+        }
+    },
+    "system": {
+        "path": "examples.flashlenia.systems.FlashLenia.FlashLenia",
+        "config": {
+        }
+    },
+    "explorer": {
+        "path": "adtool.explorers.CuriosityIMGEPExplorer.IMGEPExplorer",
+        "config": {
+            "mutator": "specific",
+            "equil_time": 1,
+            "behavior_map": "examples.flashlenia.maps.FlashLeniaStatistics.FlashLeniaStatistics",
+            "parameter_map": "examples.flashlenia.maps.FlashLeniaParameterMap.FlashLeniaParameterMap",
+            "mutator_config": {},
+            "behavior_map_config": {},
+            "parameter_map_config": {  }
+        }
+    },
+    "input_wrappers": [],
+    "output_representations": [],
+    "logger_handlers":[],
+    "callbacks": {
+    "on_discovery":[
+    {"path":"adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+    "config": {}
+    }
+    ]
+    
+}
+
+}

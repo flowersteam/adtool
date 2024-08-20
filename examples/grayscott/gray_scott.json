@@ -14,7 +14,7 @@
             }
         },
         "explorer": {
-            "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
+            "path": "adtool.explorers.CuriosityIMGEPExplorer.IMGEPExplorer",
             "config": {
                 "mutator": "specific",
                 "equil_time": 1,

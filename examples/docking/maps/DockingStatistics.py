@@ -81,7 +81,7 @@ class DockingStatistics(Leaf):
     def __init__(
         self,
         system: Docking,
-        premap_key: str = "output",
+        premap_key: str = "input",
         postmap_key: str = "output",
     ):
         super().__init__()
