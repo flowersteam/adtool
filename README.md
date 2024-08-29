@@ -91,6 +91,7 @@ Available examples are:
 - `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
 - `examples/flowlenia/flow_lenia_noise.json` - Discovering flowlenia patterns initialized with noise
 - `examples/lenia/lenia.json` - Discovering lenia patterns
+- `examples/flashlenia/flashlenia.json` - Cuda implementation of lenia to study initial condition sensitivity
 - `examples/stable_diffusion/stable_diffusion.json` - Discovering variations around a stable diffusion inference
 
 To execute examples, you need to install required dependencies:

@@ -72,9 +72,9 @@ class GrayScottSimulation:
 
         # Initial perturbation in the center
         center = (self.height // 2, self.width // 2)
-        self.u[center[0]-perturbation_size:center[0]+perturbation_size, center[1]-perturbation_size:center[1]+perturbation_size] = 0.50
-        self.v[center[0]-perturbation_size:center[0]+perturbation_size, center[1]-perturbation_size:center[1]+perturbation_size] = 0.25
-
+        self.u[center[0]-perturbation_size:center[0]+perturbation_size, center[1]-perturbation_size:center[1]+perturbation_size] = torch.rand((2*perturbation_size, 2*perturbation_size))
+        self.v[center[0]-perturbation_size:center[0]+perturbation_size, center[1]-perturbation_size:center[1]+perturbation_size] = torch.rand((2*perturbation_size, 2*perturbation_size))
+ 
 
     def _laplacian(self, x):
         lap = -4 * x
@@ -133,6 +133,7 @@ class GrayScottSimulation:
         self._initialize_conditions()
         self.update()
         input["output"] = self._decode_image()
+       # print("system_output", input["output"].sum())
         return input
 
     def render(self, data_dict: Dict[str, Any]) -> Tuple[bytes, str]:

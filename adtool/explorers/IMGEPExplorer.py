@@ -3,7 +3,7 @@
 from functools import partial
 import json
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from adtool.systems import System
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
@@ -76,6 +76,9 @@ class IMGEPExplorerInstance(Leaf):
         # initialize sample
         params_init = self.parameter_map.sample()
 
+   #     params_init = np.concatenate((params_init, variances), axis=0)
+
+
         data_dict[self.postmap_key] = params_init
 
 
@@ -87,8 +90,31 @@ class IMGEPExplorerInstance(Leaf):
 
 
         return data_dict
+    
+    def mean_var_goal(self, system_output:List[Dict]) -> Dict:
+        new_trial_data = []
+        for sys_out in system_output:
+            new_trial_data.append(self.observe_results(sys_out))
+        
+        var = np.var(
+            np.array([trial_data["output"] for trial_data in new_trial_data]), axis=0
+        )
+        var=var/(var+1)
+        # same but with a variance always between 0 and 1
+        
+        mean = np.mean(
+            np.array([trial_data["output"] for trial_data in new_trial_data]), axis=0
+        )
+        new_trial_data=new_trial_data[0]
+        new_trial_data["output"] =  np.concatenate((mean, var), axis=0)
+        new_trial_data.pop("raw_output", None)
+        return new_trial_data
 
-    def map(self, system_output: Dict) -> Dict:
+
+    def map(self, system_output: 
+            Union[Dict, List[Dict]]
+            
+            ) -> Dict:
         """Map the raw output of the system rollout to a subsequent parameter
         configuration to try.
 
@@ -102,7 +128,11 @@ class IMGEPExplorerInstance(Leaf):
         """
         # either do nothing, or update dict by changing "output" -> "raw_output"
         # and adding new "output" key which is the result of the behavior map
-        new_trial_data = self.observe_results(system_output)
+
+        if isinstance(system_output, list):
+            new_trial_data = self.mean_var_goal(system_output)
+        else:
+            new_trial_data = self.observe_results(system_output)
 
         # save results
         trial_data_reset = self._history_saver.map( new_trial_data )
@@ -161,6 +191,7 @@ class IMGEPExplorerInstance(Leaf):
         """
         if goal is None:
             goal = self.behavior_map.sample()
+            print("sampled goal", goal)
 
         source_policy = self._vector_search_for_goal(goal, lookback_length)
 
