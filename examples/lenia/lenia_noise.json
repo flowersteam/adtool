@@ -6,13 +6,11 @@
             }
         },
         "system": {
-            "path": "examples.lenia.systems.LeniaCPPN.LeniaCPPN",
+            "path": "examples.lenia.systems.LeniaNoise.LeniaNoise",
             "config": {
                 "SX": 256,
                 "SY": 256,
-                "final_step": 30,
-                "scale_init_state": 1,
-                "cppn_n_passes":2
+                "final_step": 30
             }
         },
         "explorer": {
@@ -21,12 +19,11 @@
                 "mutator": "specific",
                 "equil_time": 1,
                 "behavior_map": "examples.lenia.maps.LeniaStatistics.LeniaStatistics",
-                "parameter_map": "examples.lenia.maps.LeniaParameterMap.LeniaParameterMap",
+                "parameter_map": "examples.lenia.maps.LeniaNoiseParameterMap.LeniaParameterMap",
                 "mutator_config": {},
                 "behavior_map_config": {},
                 "parameter_map_config": {
-                    "init_state_dim": [10, 10],
-                    "neat_config_path": "adtool/maps/cppn/config.cfg"
+                    "init_state_dim": [10, 10]
                 }
             }
         },

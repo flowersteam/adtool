@@ -191,7 +191,7 @@ class IMGEPExplorerInstance(Leaf):
         """
         if goal is None:
             goal = self.behavior_map.sample()
-            print("sampled goal", goal)
+       #     print("sampled goal", goal)
 
         source_policy = self._vector_search_for_goal(goal, lookback_length)
 
