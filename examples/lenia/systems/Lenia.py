@@ -112,7 +112,11 @@ class Lenia(System):
             state = self._step(state, automaton)
             with torch.no_grad():
                 self.orbit[step + 1] = state
+                # if state is uniform, break
+                # if torch.all(state == state[0]):
+                #     break
 
+    
         output_dict = deepcopy(input)
         # must detach here as gradients are not used
         # and this also leads to a deepcopy error downstream

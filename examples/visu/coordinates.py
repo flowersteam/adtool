@@ -234,23 +234,23 @@ def compute_coordinates(path):
 
 
 
-    # if len(discoveries) > 100:
-    #     # keep only the top 100 most disctinct  discoveries 
-    #     kmeans = KMeans(n_clusters=100, random_state=0)
-    #     kmeans.fit(X)
-    #     centers = kmeans.cluster_centers_
-    #     top_discoveries=[]
-    #     for center in centers:
-    #         min_distance=float('inf')
-    #         top_discovery=None
-    #         for discovery in discoveries:
-    #             distance=np.linalg.norm(discovery['embedding']-center)
-    #             if distance<min_distance and discovery not in top_discoveries:
-    #                 min_distance=distance
-    #                 top_discovery=discovery
-    #         top_discoveries.append(top_discovery)
+    if len(discoveries) > 1000:
+        # keep only the top 100 most disctinct  discoveries 
+        kmeans = KMeans(n_clusters=1000, random_state=0)
+        kmeans.fit(X)
+        centers = kmeans.cluster_centers_
+        top_discoveries=[]
+        for center in centers:
+            min_distance=float('inf')
+            top_discovery=None
+            for discovery in discoveries:
+                distance=np.linalg.norm(discovery['embedding']-center)
+                if distance<min_distance and discovery not in top_discoveries:
+                    min_distance=distance
+                    top_discovery=discovery
+            top_discoveries.append(top_discovery)
 
-    #     discoveries=top_discoveries
+        discoveries=top_discoveries
 
 
 

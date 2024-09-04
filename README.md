@@ -24,49 +24,13 @@ generate or iterate on existing designs during the creative process.
 Please note that this software is currently in an **alpha stage** of
 development: it is functional and has been used internally at Inria FLOWERS to
 study cellular automata since 2021, but may not have features which are
-convenient for different workflows. For more details on the development of
-adtool, see the following [usage and technical
-section](#usage-and-technical-documentation).
-
-![Short demo](demo.gif)
-
-In the above demo, the tool is used to discover life-like propagating patterns
-in a cellular automata simulation, showcasing how a researcher can specify a
-series of experiments and monitor their results through both the Web UI and an
-integrated Jupyter notebook.
+convenient for different workflows.
 
 The software was designed and maintained with contributions from Chris Reinke,
 Clément Romac, Matthieu Perie, Mayalen Etcheverry, Jesse Lin, and other
 collaborators in the FLOWERS team.
 
 ## Summary
-
-### Scientific Background: Curiosity Search
-
-The high-dimensional phase space of a complex system poses many challenges to
-study. In particular, it is often desirable to explore the behavior space of
-such systems for interesting behaviors without knowing a priori the precise
-quantities to look for. As such, a class of algorithms based on intrinsic
-motivation or "curiosity" has been proposed in [Reinke et al.,
-2020](https://arxiv.org/abs/1908.06663) and extended in e.g., [Etcheverry et
-al., 2020](https://arxiv.org/abs/2007.01195) ![Lenia](lenia.png) Such curiosity
-algorithms enable a system to automatically generate a learning curriculum from
-which it learns to explore its behavior space autonomously in search of
-interesting behaviors, originally proposed in the context of robotic agents
-learning to interact with their environment in an unsupervised manner, as in
-[Oudeyer et al., 2007](https://ieeexplore.ieee.org/document/4141061).
-
-In practice, dealing with such ill-posed and/or subjective search tasks requires
-significant human oversight. For this reason, our adtool
-proposes a software package for both :
-
-- the implementation of such experimental pipelines for arbitrary systems and
-  search methods, and
-- the human-supervised exploration of such systems.
-
-The repo comes with an existing implementation of the [Lenia
-system](https://chakazul.github.io/lenia.html) which can be explored using the
-curiosity search algorithms described.
 
 ### Installation
 
@@ -78,6 +42,7 @@ conda activate adtool
 pip install .
 ```
 
+
 ### Examples
 Various examples are provided in the `examples/` directory.
 ```bash
@@ -85,8 +50,15 @@ python3 run.py --config_file examples/grayscott/gray_scott.json
 ``` 
 Available examples are:
 - `examples/grayscott/gray_scott.json` - Discovering Gray-Scott diffusion patterns
+![Grayscott](docs/images/grayscott.png)
+
+
 - `examples/particlelenia/particlelenia.json` - Discovering particle lenia patterns
+![Particlelenia](docs/images/particlelenia.png)
 - `examples/docking/docking.json` - Minimalist pipeline to discover docking patterns in a protein pocket
+![Docking](docs/images/docking.jpg)
+- `examples/kuramoto/kuramoto.json` - 1D Kuramoto base model
+![Kuramoto](docs/images/kuramoto.png)
 - `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN
 - `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
 - `examples/flowlenia/flow_lenia_noise.json` - Discovering flowlenia patterns initialized with noise
@@ -120,11 +92,33 @@ python3 server.py --discoveries PATH_TO_DISCOVERIES
 ```
 The web interface can be accessed at `http://127.0.0.1:8765/`.
 
+### Scientific Background: Curiosity Search
 
+The high-dimensional phase space of a complex system poses many challenges to
+study. In particular, it is often desirable to explore the behavior space of
+such systems for interesting behaviors without knowing a priori the precise
+quantities to look for. As such, a class of algorithms based on intrinsic
+motivation or "curiosity" has been proposed in [Reinke et al.,
+2020](https://arxiv.org/abs/1908.06663) and extended in e.g., [Etcheverry et
+al., 2020](https://arxiv.org/abs/2007.01195) ![Lenia](lenia.png) Such curiosity
+algorithms enable a system to automatically generate a learning curriculum from
+which it learns to explore its behavior space autonomously in search of
+interesting behaviors, originally proposed in the context of robotic agents
+learning to interact with their environment in an unsupervised manner, as in
+[Oudeyer et al., 2007](https://ieeexplore.ieee.org/document/4141061).
 
+In practice, dealing with such ill-posed and/or subjective search tasks requires
+significant human oversight. For this reason, our adtool
+proposes a software package for both :
 
-### Short demo
-![Short demo](demo.mp4)
+- the implementation of such experimental pipelines for arbitrary systems and
+  search methods, and
+- the human-supervised exploration of such systems.
+
+The repo comes with an existing implementation of the [Lenia
+system](https://chakazul.github.io/lenia.html) which can be explored using the
+curiosity search algorithms described.
+
 
 
 ### Use ADtool as a package

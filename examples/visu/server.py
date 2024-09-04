@@ -32,6 +32,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--discoveries", type=str, required=True)
+parser.add_argument("--refresh", action='store_true')
 args = parser.parse_args()
 
 discovery_files=args.discoveries
@@ -67,9 +68,11 @@ async def lifespan(app: FastAPI):
     
     current_pca=compute_coordinates(discovery_files)
 
+    if args.refresh:
     # execute watch_discoveries in a separate thread
-    t=threading.Thread(target=watch_discoveries)
-    t.start()
+        t=threading.Thread(target=watch_discoveries)
+        t.start()
+
 
 
     yield
