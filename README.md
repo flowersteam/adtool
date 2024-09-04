@@ -50,14 +50,14 @@ python3 run.py --config_file examples/grayscott/gray_scott.json
 ``` 
 Available examples are:
 - `examples/grayscott/gray_scott.json` - Discovering Gray-Scott diffusion patterns
-![Grayscott](docs/images/grayscott.png)
+![Grayscott](docs/images/grayscott.png)  
 
 
-- `examples/particlelenia/particlelenia.json` - Discovering particle lenia patterns
-![Particlelenia](docs/images/particlelenia.png)
-- `examples/docking/docking.json` - Minimalist pipeline to discover docking patterns in a protein pocket
-![Docking](docs/images/docking.jpg)
-- `examples/kuramoto/kuramoto.json` - 1D Kuramoto base model
+- `examples/particlelenia/particlelenia.json` - Discovering particle lenia patterns  
+![Particlelenia](docs/images/particlelenia.png)  
+- `examples/docking/docking.json` - Minimalist pipeline to discover docking patterns   in a protein pocket  
+![Docking](docs/images/docking.jpg)  
+- `examples/kuramoto/kuramoto.json` - 1D Kuramoto base model  
 ![Kuramoto](docs/images/kuramoto.png)
 - `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN
 - `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
