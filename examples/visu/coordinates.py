@@ -43,6 +43,15 @@ def process_discovery(root, name):
     if np.isnan(discovery_embedding).any():
         print("nan found")
         return None
+    # same for None in embedding
+    if None in discovery_embedding:
+        print("None found")
+        return None
+    
+    # same for infinities
+    if np.isinf(discovery_embedding).any():
+        print("infinities found")
+        return None
 
     for file in os.listdir(os.path.join(root, name)):
         path = os.path.join(root, name, file)
@@ -227,7 +236,6 @@ def compute_coordinates(path):
         return
             
 
-
         
     X = np.array([discovery['embedding'] for discovery in discoveries  if 'embedding' in discovery])
 
@@ -258,6 +266,16 @@ def compute_coordinates(path):
     if np.isnan(X).any():
         print("nan found in X")
         return
+    
+    # remove enries with nan
+
+    
+
+
+
+    
+    
+
 
     # normalize X
     X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-6)

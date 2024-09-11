@@ -1,0 +1,40 @@
+{
+        "experiment": {
+            "config": {
+                "save_location": "./",
+                "save_frequency": 1
+            }
+        },
+        "system": {
+            "path": "examples.block_ca.systems.Block.Block",
+            "config": {
+                "height": 400,
+                "width": 400,
+                "num_inference_steps": 200
+            }
+        },
+        "explorer": {
+            "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
+            "config": {
+                "mutator": "specific",
+                "equil_time": 1,
+                "behavior_map": "examples.block_ca.maps.BlockStatistics.BlockStatistics",
+                "parameter_map": "examples.block_ca.maps.BlockParameterMap.BlockParameterMap",
+                "mutator_config": {},
+                "behavior_map_config": {},
+                "parameter_map_config": {  }
+            }
+        },
+        "input_wrappers": [],
+        "output_representations": [],
+        "logger_handlers":[],
+        "callbacks": {
+        "on_discovery":[
+        {"path":"adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+        "config": {}
+        }
+        ]
+        
+    }
+    
+    }

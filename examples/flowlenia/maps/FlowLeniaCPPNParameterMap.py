@@ -158,7 +158,6 @@ class FlowLeniaCPPNParameterMap(Leaf):
         # mutate dynamic parameters
         dp = FlowLeniaDynamicalParameters(**parameter_dict["dynamic_params"])
         dp_tensor = dp.to_tensor()
-        print("dp_tensor", dp_tensor)
         mutated_dp_tensor = self.uniform_mutator(dp_tensor)
 
         # mutate CPPN genome
