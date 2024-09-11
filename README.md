@@ -55,7 +55,7 @@ Available examples are:
 
 - `examples/particlelenia/particlelenia.json` - Discovering particle lenia patterns  
 ![Particlelenia](docs/images/particlelenia.png)  
-- `examples/docking/docking.json` - Minimalist pipeline to discover docking patterns   in a protein pocket  
+- `examples/docking/docking.json` - Minimalist pipeline to discover docking patterns in a protein pocket, with AutoDock Gnina ( [gnina](https://github.com/gnina/gnina) )
 ![Docking](docs/images/docking.jpg)  
 - `examples/kuramoto/kuramoto.json` - 1D Kuramoto base model  
 ![Kuramoto](docs/images/kuramoto.png)
@@ -148,3 +148,6 @@ Same logic as 'parameter_map' but with 'behavior_map' [here](https://github.com/
 
 ## How can I change the way the grayscott simulation operates?
 For this, it's possible to start from the default system definition [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/systems/GrayScott.py), make modifications in a new file, and then update the path to the new system in the configuration file [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/gray_scott.json#L9).
+
+
+## Join the [Discord community](https://discord.gg/yc5jhYM6u5)

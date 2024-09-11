@@ -12,6 +12,8 @@ frames/
 
 gnina
 
+.vscode/    
+
 # Distribution / packaging
 .Python
 build/

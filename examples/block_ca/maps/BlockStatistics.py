@@ -335,10 +335,9 @@ class BlockStatistics(Leaf):
 
     def map(self, input: typing.Dict) -> typing.Dict:
         """
-        Compute statistics on Lenia's output
+        Compute statistics on System's output
         Args:
-            input: Lenia's output
-            is_output_new_discovery: indicates if it is a new discovery
+            input: System's output
         Returns:
             Return a torch tensor in dict
         """
