@@ -28,13 +28,13 @@ class BlockSimulation:
 
     def map(self, input: Dict, fix_seed: bool = True) -> Dict:
         self.params = DraftDynamicParams(**input["params"]["dynamic_params"])
-        # run your simulation with the given parameters and dynamic parameters
+        # TODO: run your simulation with the given parameters and dynamic parameters
 
-        input["output"] =  None# store  the final state of the simulation
+        input["output"] =  None# TODO: store  the final state of the simulation
         return input
 
     def render(self, data_dict, mode: str = "PIL_image") -> Tuple[bytes,str]:
-        # used to render the simulation, return a list of bytes and the format like [(*bytes*, "png"), (*bytes*, "mp4")]
+        # TODO render the simulation, return a list of bytes and the format like [(*bytes*, "png"), (*bytes*, "mp4")]
         return []
 
 

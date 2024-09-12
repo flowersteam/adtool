@@ -22,10 +22,6 @@ class DraftStatistics(Leaf):
         self.postmap_key = postmap_key
 
 
-        # projector for behavior space
-        self.projector = BoxProjector(premap_key=self.postmap_key)
-
-
     def map(self, input: typing.Dict) -> typing.Dict:
         """
         Compute statistics on System output
@@ -46,9 +42,9 @@ class DraftStatistics(Leaf):
         embedding = [] # calculate embedding, must be numpy or list
         intermed_dict[self.postmap_key] = embedding
         
-        intermed_dict = self.projector.map(intermed_dict)
 
         return intermed_dict
 
     def sample(self):
-        return self.projector.sample()
+        # TODO return a sample from the behavior space
+        pass
