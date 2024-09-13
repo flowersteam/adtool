@@ -5,6 +5,8 @@ from functools import partial
 from typing import Dict
 
 import torch
+from crem.crem import mutate_mol, grow_mol, link_mols
+
 import numpy as np
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.wrappers.mutators import add_gaussian_noise
@@ -19,6 +21,8 @@ from rdkit.Chem import AllChem
 
 import random
 
+
+fragments_db="examples/docking/maps/replacements02_sa2.db"
 
 chemical_space=[('[=B+1]', 5.747588886462131e-06),
  ('[=B-1]', 5.747588886462131e-06),
@@ -201,7 +205,7 @@ class DockingParameterMap(Leaf):
         #     return True
         return True
 
-    def mutate(self, parameter_dict: Dict) -> Dict:
+    def old_mutate(self, parameter_dict: Dict) -> Dict:
         intermed_dict = deepcopy(parameter_dict)
         current_smiles = parameter_dict["dynamic_params"]["smiles"]
         selfies = sf.encoder(current_smiles)
@@ -238,5 +242,36 @@ class DockingParameterMap(Leaf):
 
         intermed_dict["dynamic_params"] = {
             "smiles": mutated_smiles
+        }
+        return intermed_dict
+
+
+    def mutate(self, parameter_dict: Dict) -> Dict:
+        intermed_dict = deepcopy(parameter_dict)
+        current_smiles = parameter_dict["dynamic_params"]["smiles"]
+
+        print("current_smiles", current_smiles)
+        
+        mol=Chem.MolFromSmiles(current_smiles)
+        # count number of atoms
+        num_atoms = mol.GetNumAtoms()
+        if 100<num_atoms  or num_atoms<2:
+            new_smiles=  next(grow_mol(Chem.AddHs(mol), db_name=fragments_db))
+            
+        else:
+            # randomly augment or mutate
+            if random.random() < 0.5:
+                new_smiles = next(mutate_mol(mol, db_name=fragments_db))
+            else:
+                new_smiles = next(grow_mol(mol, db_name=fragments_db))
+
+        
+        # convert to canonical smiles
+        new_smiles = Chem.MolToSmiles(Chem.MolFromSmiles(new_smiles))
+
+        print(f"Mutated {current_smiles} to {new_smiles}")
+
+        intermed_dict["dynamic_params"] = {
+            "smiles": new_smiles
         }
         return intermed_dict

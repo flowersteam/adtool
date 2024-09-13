@@ -78,6 +78,7 @@ pip install rdkit
 wget https://github.com/gnina/gnina/releases/download/v1.1/gnina -O examples/docking/systems/gnina
 chmod +x examples/docking/systems/gnina
 ```
+And also move replacements02_sa2.db downloaded here http://www.qsar4u.com/pages/crem.php to the examples/docking/maps/ directory.
 
 ### Reloading
 To reload a previous exploration, simply run the same previous commands but from an existing discoveries directory. Previous discoveries must be generated with the same system and maps.
@@ -150,4 +151,8 @@ Same logic as 'parameter_map' but with 'behavior_map' [here](https://github.com/
 For this, it's possible to start from the default system definition [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/systems/GrayScott.py), make modifications in a new file, and then update the path to the new system in the configuration file [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/gray_scott.json#L9).
 
 
+## What is the execution flow?  
+You can have a look at the [simplified execution flow](/execution_flow) to understand a bit more about the different steps of the exploration.
+
 ## Join the [Discord community](https://discord.gg/yc5jhYM6u5)
+

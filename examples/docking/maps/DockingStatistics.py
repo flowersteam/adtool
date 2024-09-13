@@ -81,7 +81,7 @@ class DockingStatistics(Leaf):
     def __init__(
         self,
         system: Docking,
-        premap_key: str = "input",
+        premap_key: str = "output",
         postmap_key: str = "output",
     ):
         super().__init__()
@@ -110,6 +110,7 @@ class DockingStatistics(Leaf):
 
     def map(self, input: Dict) -> Dict:
         intermed_dict = deepcopy(input)
+    #    print(intermed_dict)
         pdb_file = intermed_dict[self.premap_key]
         intermed_dict["raw_" + self.premap_key] = pdb_file
         del intermed_dict[self.premap_key]

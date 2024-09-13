@@ -8,7 +8,7 @@ from adtool.wrappers.BoxProjector import BoxProjector
 from adtool.utils.misc.torch_utils import roll_n
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
-from examples.flowlenia.systems.FlowLenia import FlowLenia
+from examples.grayscott.systems.GrayScott import GrayScott
 
 EPS = 0.0001
 DISTANCE_WEIGHT = 2  # 1=linear, 2=quadratic, ...
@@ -298,7 +298,7 @@ class GrayScottStatistics(Leaf):
 
     def __init__(
         self,
-        system: FlowLenia,
+        system: GrayScott,
         premap_key: str = "output",
         postmap_key: str = "output",
     ):

@@ -53,7 +53,8 @@ setup(
             "rdkit",
             "selenium",
             "webdriver_manager",
-            "imageio"
+            "imageio",
+            "crem"
         ]
     },
     packages=find_packages(include=[".","adtool","adtool.*"]),
