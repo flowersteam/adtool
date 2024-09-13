@@ -57,6 +57,8 @@ Available examples are:
 ![Particlelenia](docs/images/particlelenia.png)  
 - `examples/docking/docking.json` - Minimalist pipeline to discover docking patterns in a protein pocket, with AutoDock Gnina ( [gnina](https://github.com/gnina/gnina) )
 ![Docking](docs/images/docking.jpg)  
+- `examples/block_ca/block.json` - Extension of single rotation block cellular automata to simulate reversible diffusion patterns
+![Kuramoto](docs/images/sro.png)
 - `examples/kuramoto/kuramoto.json` - 1D Kuramoto base model  
 ![Kuramoto](docs/images/kuramoto.png)
 - `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN
