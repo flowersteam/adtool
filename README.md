@@ -55,7 +55,7 @@ Available examples are:
 
 - `examples/particlelenia/particlelenia.json` - Discovering particle lenia patterns  
 ![Particlelenia](docs/images/particlelenia.png)  
-- `examples/docking/docking.json` - Minimalist pipeline to discover docking patterns in a protein pocket, with AutoDock Gnina ( [gnina](https://github.com/gnina/gnina) )
+- `examples/docking/docking.json` - Minimalist pipeline to discover docking patterns in a protein pocket, with AutoDock Gnina ( [gnina](https://github.com/gnina/gnina) )  
 ![Docking](docs/images/docking.jpg)  
 - `examples/block_ca/block.json` - Extension of single rotation block cellular automata to simulate reversible diffusion patterns
 ![Kuramoto](docs/images/sro.png)
