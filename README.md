@@ -57,14 +57,15 @@ Available examples are:
 ![Particlelenia](docs/images/particlelenia.png)  
 - `examples/docking/docking.json` - Minimalist pipeline to discover docking patterns in a protein pocket, with AutoDock Gnina ( [gnina](https://github.com/gnina/gnina) )  
 ![Docking](docs/images/docking.jpg)  
-- `examples/block_ca/block.json` - Extension of single rotation block cellular automata to simulate reversible diffusion patterns
-![Kuramoto](docs/images/sro.png)
+- `examples/block_ca/block.json` - Extension of single rotation block cellular automata to simulate reversible diffusion patterns  
+![SRO](docs/images/sro.png)  
 - `examples/kuramoto/kuramoto.json` - 1D Kuramoto base model  
-![Kuramoto](docs/images/kuramoto.png)
-- `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN
+![Kuramoto](docs/images/kuramoto.png)  
+- `examples/lenia/lenia_cppn.json` - Discovering lenia patterns
+![Lenia](docs/images/lenia.png)  
 - `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
 - `examples/flowlenia/flow_lenia_noise.json` - Discovering flowlenia patterns initialized with noise
-- `examples/lenia/lenia_cppn.json` - Discovering lenia patterns
+- `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN  
 - `examples/flashlenia/flashlenia.json` - Cuda implementation of lenia to study initial condition sensitivity
 - `examples/stable_diffusion/stable_diffusion.json` - Discovering variations around a stable diffusion inference
 
