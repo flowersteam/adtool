@@ -61,7 +61,7 @@ Available examples are:
 ![SRO](docs/images/sro.png)  
 - `examples/kuramoto/kuramoto.json` - 1D Kuramoto base model  
 ![Kuramoto](docs/images/kuramoto.png)  
-- `examples/lenia/lenia_cppn.json` - Discovering lenia patterns
+- `examples/lenia/lenia_cppn.json` - Discovering lenia patterns  
 ![Lenia](docs/images/lenia.png)  
 - `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
 - `examples/flowlenia/flow_lenia_noise.json` - Discovering flowlenia patterns initialized with noise
