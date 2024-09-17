@@ -250,7 +250,7 @@ class DockingParameterMap(Leaf):
         intermed_dict = deepcopy(parameter_dict)
         current_smiles = parameter_dict["dynamic_params"]["smiles"]
 
-        print("current_smiles", current_smiles)
+    #    print("current_smiles", current_smiles)
         
         mol=Chem.MolFromSmiles(current_smiles)
         # count number of atoms
