@@ -14,6 +14,11 @@ from io import BytesIO
 
 from examples.docking.systems import Docking
 
+
+d_MIN = 1.5
+d_MAX = 3.5
+
+
 def retrieve_plip_interactions(pdb_file):
     protlig = PDBComplex()
 
@@ -131,7 +136,9 @@ class DockingStatistics(Leaf):
         dists = [i[6] for i in interactions]
         protcarbonidxs = [i[8] for i in interactions]
         stats = [
-            1 / float(dists[protcarbonidxs.index(a)]) if a in protcarbonidxs else 0
+            (d_MAX- float(dists[protcarbonidxs.index(a)]))/(d_MAX-d_MIN)
+
+              if a in protcarbonidxs else 0
             for a in atom_indices
         ]
         return np.array(stats)

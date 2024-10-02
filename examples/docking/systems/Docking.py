@@ -29,6 +29,10 @@ logging.getLogger('PIL').setLevel(logging.CRITICAL)
 logging.getLogger('urllib3').setLevel(logging.CRITICAL)
 logging.getLogger('WDM').setLevel(logging.CRITICAL)
 
+# load 3Dmol-min.js from disk
+with open('examples/docking/systems/3Dmol-min.js', 'r') as f:
+    three_d_mol_js = f.read()
+
 def run_gnina(protein, ligand, docked_ligand_pdb,center_x, center_y, center_z, size_x, size_y, size_z):
 
     cmd = [
@@ -150,9 +154,9 @@ class Docking:
         <body style="margin: 0; padding: 0; display: block;">
         <div id="3dmolviewer" style="position: relative; width: 512px; height: 512px;">
         <p id="viewer3dmolwarning" style="background-color:#ffcccc;color:black"><br></p>
-        </div>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.2.0/3Dmol-min.js"></script>
+        </div> 
         <script>
+        {three_d_mol_js}
         var viewer = null;
         var warn = document.getElementById("viewer3dmolwarning");
         if(warn) {{

@@ -194,6 +194,9 @@ class IMGEPExplorerInstance(Leaf):
        #     print("sampled goal", goal)
 
         source_policy = self._vector_search_for_goal(goal, lookback_length)
+     #   source_policy = self._random_history_sample(lookback_length)
+
+        # instead take a random policy
 
         params_trial = self.mutator(source_policy)
 
@@ -271,6 +274,18 @@ class IMGEPExplorerInstance(Leaf):
 
         source_policy_idx = self._find_closest(goal, goal_history)
 
+
+        param_history = self._extract_dict_history(history_buffer, self.postmap_key)
+        source_policy = param_history[source_policy_idx]
+
+        return source_policy
+
+    def _random_history_sample(self, lookback_length: int) -> Dict:
+        history_buffer = self._history_saver.get_history(
+            lookback_length=lookback_length
+        )
+
+        source_policy_idx = np.random.randint(0, len(history_buffer))
 
         param_history = self._extract_dict_history(history_buffer, self.postmap_key)
         source_policy = param_history[source_policy_idx]
