@@ -256,27 +256,23 @@ class DockingParameterMap(Leaf):
         # count number of atoms
         generator=None
         num_atoms = mol.GetNumAtoms()
-        if num_atoms<2:
-            generator=grow_mol   
-        elif num_atoms>100:
-            generator=mutate_mol   
-        else:
-            # randomly augment or mutate
-            if random.random() < 0.5:
-                smiles_generator=  mutate_mol(Chem.AddHs(mol), db_name=fragments_db)
-                if not next(smiles_generator):
-                     generator=grow_mol
-                else:
-                     generator=mutate_mol
 
-            else:
-                generator=grow_mol
-        
-        smiles_generator=  generator(Chem.AddHs(mol), db_name=fragments_db)
+        grow_generator=grow_mol(Chem.AddHs(mol), db_name=fragments_db)
+        mutate_generator=mutate_mol(Chem.AddHs(mol), db_name=fragments_db)
+
         candidates=[]
+        # add 10 candidates of each type
         for _ in range(10):
             try:
-                candidate=next(smiles_generator)
+                candidate=next(grow_generator)
+                if self.minimal_checks(candidate):
+                    candidates.append(candidate)
+            except StopIteration:
+                break
+        
+        for _ in range(10):
+            try:
+                candidate=next(mutate_generator)
                 if self.minimal_checks(candidate):
                     candidates.append(candidate)
             except StopIteration:
