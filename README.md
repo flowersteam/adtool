@@ -30,7 +30,6 @@ The software was designed and maintained with contributions from Chris Reinke,
 Clément Romac, Matthieu Perie, Mayalen Etcheverry, Jesse Lin, and other
 collaborators in the FLOWERS team.
 
-## Summary
 
 ### Installation
 
@@ -68,6 +67,8 @@ Available examples are:
 - `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN  
 - `examples/flashlenia/flashlenia.json` - Cuda implementation of lenia to study initial condition sensitivity
 - `examples/stable_diffusion/stable_diffusion.json` - Discovering variations around a stable diffusion inference
+
+- `examples/draft/` - Empty skeleton if you want to start from scratch
 
 To execute examples, you need to install required dependencies:
 ```bash

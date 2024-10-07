@@ -17,7 +17,7 @@ class RandomPositionGRNNetwork(Scene):
                         font_size=12,  color=WHITE).to_corner(DL)
         self.add(reference)
 
-        title = Text("Example in real life: Gene Regulatory Networks",  font_size=24, color=WHITE).to_edge(UP)
+        title = Text("Example: Gene Regulatory Networks",  font_size=24, color=WHITE).to_edge(UP)
         self.play(Write(title))
 
         self.wait(1)
@@ -204,11 +204,6 @@ class RandomPositionGRNNetwork(Scene):
 
 
 
-    
-
-
-        
-
 
         self.wait(2)
 
@@ -230,6 +225,8 @@ class RandomPositionGRNNetwork(Scene):
 
         # Introduce second text for the perturbation
         text = Text("Starting from the same initial condition,\nsmall changes in gene activities during\ndevelopment lead to a wide range of new trajectories",
+                    
+                    t2c={"during": YELLOW},
                     
                     font_size=24, line_spacing=1, color=WHITE).to_edge(LEFT)
         
