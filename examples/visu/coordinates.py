@@ -60,6 +60,11 @@ def process_discovery(root, name):
             discovery['embedding'] = discovery_embedding
             loaded_json[discovery_path] = discovery
             return discovery
+        if file.endswith('.png'):
+            discovery['visual'] = path
+            discovery['embedding'] = discovery_embedding
+            loaded_json[discovery_path] = discovery
+            return discovery
 
     return None
 
@@ -78,6 +83,7 @@ def list_discoveries(path):
             if result:
                 discoveries.append(result)
 
+    print("Number of discoveries: ", len(discoveries))
     return discoveries
 
 import cv2
@@ -242,9 +248,9 @@ def compute_coordinates(path):
 
 
 
-    if len(discoveries) > 1000:
+    if len(discoveries) > 200:
         # keep only the top 100 most disctinct  discoveries 
-        kmeans = KMeans(n_clusters=1000, random_state=0)
+        kmeans = KMeans(n_clusters=200, random_state=0)
         kmeans.fit(X)
         centers = kmeans.cluster_centers_
         top_discoveries=[]
@@ -280,6 +286,7 @@ def compute_coordinates(path):
     # normalize X
     X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-6)
     
+
 
 
 

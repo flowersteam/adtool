@@ -1,0 +1,40 @@
+{
+    "experiment": {
+      "config": {
+        "save_location": "./",
+        "save_frequency": 1
+      }
+    },
+    "system": {
+      "path": "examples.nbody.systems.NBody.NBodySimulation",
+      "config": {
+        "max_steps": 100000,
+        "max_distance_limit": 10,
+        "pattern_size": 4000,
+        "N": 3
+      }
+    },
+    "explorer": {
+      "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
+      "config": {
+        "mutator": "specific",
+        "equil_time": 1,
+        "behavior_map": "examples.nbody.maps.NBodyStatistics.NBodyStatistics",
+        "parameter_map": "examples.nbody.maps.NBodyParameterMap.NBodyParameterMap",
+        "mutator_config": {},
+        "behavior_map_config": {},
+        "parameter_map_config": {}
+      }
+    },
+    "input_wrappers": [],
+    "output_representations": [],
+    "logger_handlers": [],
+    "callbacks": {
+      "on_discovery": [
+        {
+          "path": "adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+          "config": {}
+        }
+      ]
+    }
+  }

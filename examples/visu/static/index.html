@@ -186,7 +186,7 @@
 
         function createPlane(texture, position, videoSrc) {
             const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-            const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.1), material);
+            const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.2), material);
             plane.position.set(K*position[0], K*position[1], 0);
             plane.userData.videoSrc = videoSrc;
             return plane;

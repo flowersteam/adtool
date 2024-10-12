@@ -142,3 +142,4 @@ class DockingStatistics(Leaf):
             for a in atom_indices
         ]
         return np.array(stats)
+
