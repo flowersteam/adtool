@@ -65,6 +65,7 @@ Available examples are:
 - `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
 - `examples/flowlenia/flow_lenia_noise.json` - Discovering flowlenia patterns initialized with noise
 - `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN  
+- `examples/nbody/nbody.json` - Discovering N-body trajectories
 - `examples/flashlenia/flashlenia.json` - Cuda implementation of lenia to study initial condition sensitivity
 - `examples/stable_diffusion/stable_diffusion.json` - Discovering variations around a stable diffusion inference
 

@@ -55,7 +55,8 @@ setup(
             "webdriver_manager",
             "imageio",
             "crem"
-        ]
+        ],
+
     },
     packages=find_packages(include=[".","adtool","adtool.*"]),
     package_dir={"": "."},

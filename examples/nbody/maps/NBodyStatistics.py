@@ -29,10 +29,7 @@ class NBodyStatistics(Leaf):
         self.premap_key = premap_key
         self.postmap_key = postmap_key
 
-        self._statistic_names = [
-            "timestep",
-            "fft_magnitudes"
-        ]
+
         self._n_latents = 1 + system.pattern_size // 2  # timestep + FFT magnitudes up to 1 Hz
 
         self.projector = BoxProjector(premap_key=self.postmap_key)
@@ -49,7 +46,6 @@ class NBodyStatistics(Leaf):
         intermed_dict[self.postmap_key] = embedding
         intermed_dict = self.projector.map(intermed_dict)
 
-        print("Intermed dict: ", embedding.shape)
 
         return intermed_dict
 

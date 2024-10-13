@@ -17,6 +17,9 @@ class FlashLeniaParams:
 
     def to_tensor(self):
         return torch.tensor(self.kernel, dtype=torch.float32)
+    
+    def to_numpy(self):
+        return np.array(self.kernel)
 
     @classmethod
     def from_tensor(cls, tensor):

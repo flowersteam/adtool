@@ -127,6 +127,9 @@ class FlowLeniaDynamicalParameters:
             tensor = torch.cat((tensor, torch.tensor([KernelGrowth.s])), 0)
 
         return tensor
+    
+    def to_numpy(self) -> ndarray:
+        return self.to_tensor().numpy()
 
     @classmethod
     def from_tensor(cls, tensor: torch.Tensor, ):
@@ -151,6 +154,7 @@ class FlowLeniaDynamicalParameters:
             raise ValueError("tensor size mismatch")
         return cls( R=R, KernelGrowths=KernelGrowths)
     
+
     @classmethod
     def from_numpy(cls, np_array: ndarray):
         return cls.from_tensor(torch.from_numpy(np_array))

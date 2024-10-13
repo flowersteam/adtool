@@ -102,11 +102,12 @@ class KuramotoParameterMap(Leaf):
         pre_params_intra = parameter_dict["dynamic_params"]["pre_params_intra"]
         pre_params_inter = parameter_dict["dynamic_params"]["inter_couplings"]
 
-        mutated_intra_tensor = self.uniform_mutator_intra(torch.tensor(pre_params_intra))
 
-        mutated_inter_tensor = self.uniform_mutator_inter(torch.tensor(pre_params_inter))
+        mutated_intra_tensor = self.uniform_mutator_intra(pre_params_intra)
 
-        mutated_intra_couplings = self.transform_parameters(mutated_intra_tensor.numpy())
+        mutated_inter_tensor = self.uniform_mutator_inter(pre_params_inter)
+
+        mutated_intra_couplings = self.transform_parameters(mutated_intra_tensor)
 
         intermed_dict["dynamic_params"] = asdict(
             KuramotoParams(
@@ -115,7 +116,7 @@ class KuramotoParameterMap(Leaf):
             )
         )
 
-        intermed_dict["dynamic_params"]["pre_params_intra"] = mutated_intra_tensor.numpy()
+        intermed_dict["dynamic_params"]["pre_params_intra"] = mutated_intra_tensor
 
         # Regenerate natural frequencies if needed (or keep the same if they should remain unchanged)
 

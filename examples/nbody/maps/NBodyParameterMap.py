@@ -71,7 +71,7 @@ class NBodyParameterMap(Leaf):
     def mutate(self, parameter_dict: Dict) -> Dict:
         intermed_dict = deepcopy(parameter_dict)
         dp = NBodyParams(**parameter_dict)
-        print("dp", dp)
+ 
         dp_tensor = np.concatenate([dp.speeds.flatten(), dp.positions.flatten()])
         mutated_dp_tensor = self.uniform_mutator(dp_tensor)
         N = len(mutated_dp_tensor) // 4

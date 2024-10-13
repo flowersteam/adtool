@@ -25,6 +25,9 @@ class GrayScottParams:
     def to_tensor(self):
         return torch.tensor([self.F, self.k], dtype=torch.float32)
 
+    def to_numpy(self):
+        return np.array([self.F, self.k])
+
     @classmethod
     def from_tensor(cls, tensor):
         return cls(F=tensor[0].item(), k=tensor[1].item())
@@ -39,6 +42,10 @@ class GrayScottParams:
         # self.params.Dv = 0.08
         # self.params.F = 0.060
         # self.params.k = 0.062
+
+    @classmethod
+    def from_numpy(cls, np_array):
+        return cls(F=np_array[0], k=np_array[1])
 
 class GrayScottParameterMap(Leaf):
     def __init__(
@@ -94,9 +101,9 @@ class GrayScottParameterMap(Leaf):
     def mutate(self, parameter_dict: Dict) -> Dict:
         intermed_dict = deepcopy(parameter_dict)
         dp = GrayScottParams(**parameter_dict["dynamic_params"])
-        dp_tensor = dp.to_tensor()
+        dp_tensor = dp.to_numpy()
         mutated_dp_tensor = self.uniform_mutator(dp_tensor)
         intermed_dict["dynamic_params"] = asdict(
-            GrayScottParams.from_tensor(mutated_dp_tensor)
+            GrayScottParams.from_numpy(mutated_dp_tensor)
         )
         return intermed_dict

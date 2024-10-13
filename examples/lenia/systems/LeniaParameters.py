@@ -69,6 +69,20 @@ class LeniaDynamicalParameters:
         return torch.cat(
             (torch.tensor([self.R, self.T]), torch.tensor([self.m, self.s]), self.b)
         )
+    
+    def to_numpy(self) -> np.ndarray:
+        return np.concatenate(
+            (np.array([self.R, self.T]), np.array([self.m, self.s]), self.b.numpy())
+        )
+    
+    @classmethod
+    def from_numpy(cls, np_array: np.ndarray):
+        r = np_array[0]
+        t = np_array[1]
+        m = np_array[2]
+        s = np_array[3]
+        b = np_array[4:8]
+        return cls(R=r, T=t, m=m, s=s, b=b)
 
     @classmethod
     def from_tensor(cls, tensor: torch.Tensor):

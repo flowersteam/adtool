@@ -38,6 +38,9 @@ class ParticleLeniaDynamicalParameters:
 
     def to_tensor(self) -> torch.Tensor:
         return torch.tensor([self.mu_k, self.sigma_k, self.w_k, self.mu_g, self.sigma_g, self.c_rep])
+    
+    def to_numpy(self) -> np.ndarray:
+        return np.array([self.mu_k, self.sigma_k, self.w_k, self.mu_g, self.sigma_g, self.c_rep])
 
     @classmethod
     def from_tensor(cls, tensor: torch.Tensor):

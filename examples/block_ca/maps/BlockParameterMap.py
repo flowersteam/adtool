@@ -30,6 +30,9 @@ class BlockParams:
 
     def to_tensor(self):
         return torch.tensor([self.a, self.b, self.c, self.d, self.p, self.q, self.r, self.s], dtype=torch.float32)
+    
+    def to_numpy(self):
+        return np.array([self.a, self.b, self.c, self.d, self.p, self.q, self.r, self.s])
 
     @classmethod
     def from_tensor(cls, tensor):
@@ -93,7 +96,7 @@ class BlockParameterMap(Leaf):
 
         # mutate dynamic parameters
         dp = BlockParams(**parameter_dict["dynamic_params"])
-        dp_tensor = dp.to_tensor()
+        dp_tensor = dp.to_numpy()
         mutated_dp_tensor = self.uniform_mutator(dp_tensor)
 
         mutated_dp_tensor = self.normalize(mutated_dp_tensor)

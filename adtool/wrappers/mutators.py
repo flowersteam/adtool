@@ -14,8 +14,10 @@ def add_gaussian_noise(
     if not isinstance(std, np.ndarray):
         std = np.array(std, dtype=float)
     noise_unit = np.random.randn(input_tensor.size)
+    noise_unit = noise_unit.reshape(input_tensor.shape)
     noise = noise_unit * std + mean
     return input_tensor + noise
+
 
 def call_mutate_method(param_dict: Dict, param_map: Any = None) -> Dict:
     """

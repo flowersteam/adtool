@@ -60,7 +60,7 @@ def process_discovery(root, name):
             discovery['embedding'] = discovery_embedding
             loaded_json[discovery_path] = discovery
             return discovery
-        if file.endswith('.png'):
+        elif file.endswith('.png'):
             discovery['visual'] = path
             discovery['embedding'] = discovery_embedding
             loaded_json[discovery_path] = discovery

@@ -125,11 +125,11 @@ class LeniaParameterMap(Leaf):
 
         # mutate dynamic parameters
         dp = LeniaDynamicalParameters(**parameter_dict["dynamic_params"])
-        dp_tensor = dp.to_tensor()
+        dp_tensor = dp.to_numpy()
         mutated_dp_tensor = self.uniform_mutator(dp_tensor)
 
         intermed_dict["dynamic_params"] =   asdict(
-            LeniaDynamicalParameters().from_tensor(mutated_dp_tensor)
+            LeniaDynamicalParameters().from_numpy(mutated_dp_tensor)
         )
 
         return intermed_dict
