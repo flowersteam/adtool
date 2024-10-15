@@ -57,6 +57,7 @@ class WPhysicsStatistics(Leaf):
         flight = nb_steps / self.max_steps
         nodes_edges = 1 / (1 + G.number_of_nodes() / G.number_of_edges())
         avg_degree = sum(d for n, d in G.degree()) / G.number_of_nodes()
+        avg_degree=1/(1+avg_degree)
         density = nx.density(G)
         max_degree_centrality = max(nx.degree_centrality(G).values())
         min_degree_centrality = min(nx.degree_centrality(G).values())

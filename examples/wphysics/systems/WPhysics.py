@@ -86,20 +86,41 @@ class WPhysics:
 
 
 
+        fig, ax = plt.subplots(figsize=(3, 3))
 
-        plt.figure(figsize=(5, 5))
+        ax.set_axis_off()
+
 
 
         num_nodes = G.number_of_nodes()
 
+
+        if num_nodes <15:
+
+            graph_ax = fig.add_axes([0.3, 0.3, 0.4, 0.4])
+
+            graph_ax.set_axis_off()
+        else:
+            # no axes
+            graph_ax = None
+
+
+
+# Remove axis from the graph subplot
+
+
+# Adjust the layout to prevent clipping
+
+
         pos = graphviz_layout(G, prog="sfdp")
 
-        nx.draw(G, pos, node_color='lightblue', 
+        nx.draw(G, pos,
+                ax=graph_ax, with_labels=False,
                 node_size=20 )
+        plt.tight_layout()
      #   edge_labels = {(u, v): f'{u}->{v}' for u, v in G.edges()}
        # nx.draw_networkx_edge_labels(G, pos)
 
-        plt.title(f'WPhysics Simulation Result (Steps: {self.steps})')
         plt.axis('off')
 
         buf = io.BytesIO()
