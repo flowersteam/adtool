@@ -56,6 +56,9 @@ setup(
             "imageio",
             "crem"
         ],
+        "wphysics":[
+            "pygraphviz"
+        ]
 
     },
     packages=find_packages(include=[".","adtool","adtool.*"]),

@@ -60,7 +60,6 @@ class NBodySimulation:
         return distances
 
     def run_simulation(self):
-        print("Running simulation")
         positions = self.params.positions
         velocities = self.params.speeds
 
@@ -69,10 +68,6 @@ class NBodySimulation:
 
         #substract the mean of the velocities
         velocities -= np.mean(velocities, axis=0)
-
-        print("Positions shape", positions)
-        print("Velocities shape", velocities)
-        
         positions_over_time = []
         distances_over_time = []
         saved_step = 0
@@ -103,7 +98,6 @@ class NBodySimulation:
         self.positions_over_time = np.array(positions_over_time)
         self.distances_over_time = np.array(distances_over_time)
         self.timestep = self.max_steps
-        print("ici")
 
     def map(self, input: Dict, fix_seed: bool = True) -> Dict:
         self.params = NBodyParams(**input["params"])
@@ -113,14 +107,11 @@ class NBodySimulation:
             "distances": self.distances_over_time,
             "timestep": self.timestep
         }
-        print("Simulation complete")
-        print(self.distances_over_time.shape)
         return input
 
     def render(self, data_dict: Dict[str, Any]) -> Tuple[bytes, str]:
         plt.figure(figsize=(10, 10))
         colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k', 'orange', 'purple'] 
-        print(self.positions_over_time.shape)
         for i in range(self.N):
             plt.plot(self.positions_over_time[:, i, 0], 
                      self.positions_over_time[:, i, 1], 
@@ -137,10 +128,23 @@ class NBodySimulation:
        # plt.legend()
        # plt.grid(True)
         plt.tight_layout()
+
+        # borders are green or red if self.max_steps is reached
+        if self.timestep == self.max_steps:
+            plt.gca().spines['bottom'].set_color('red')
+            plt.gca().spines['top'].set_color('red')
+            plt.gca().spines['right'].set_color('red')
+            plt.gca().spines['left'].set_color('red')
+        else:
+            plt.gca().spines['bottom'].set_color('green')
+            plt.gca().spines['top'].set_color('green')
+            plt.gca().spines['right'].set_color('green')
+            plt.gca().spines['left'].set_color('green')
+
         # hide axes
         plt.axis('off')
         # add a text below with the number of steps
-        plt.text(0.5, 0.05, f'Steps: {self.timestep}', ha='center', fontsize=12, transform=plt.gcf().transFigure)
+   #     plt.text(0.5, 0.05, f'Steps: {self.timestep}', ha='center', fontsize=12, transform=plt.gcf().transFigure)
         # add text saying the steps range plotted
 
         # Save the plot to a bytes buffer

@@ -51,7 +51,7 @@ class NBodyStatistics(Leaf):
 
     def sample(self):
         sampled = self.projector.sample()
-        # put first element to 1
+        # Allow to optimize for stability and diversity
         sampled[0] = STABILITY_WEIGHT
         return sampled
     
