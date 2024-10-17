@@ -248,9 +248,10 @@ def compute_coordinates(path):
 
 
 
-    if len(discoveries) > 200:
+    NB_CLUSTERS=400
+    if len(discoveries) > NB_CLUSTERS:
         # keep only the top 100 most disctinct  discoveries 
-        kmeans = KMeans(n_clusters=200, random_state=0)
+        kmeans = KMeans(n_clusters=NB_CLUSTERS, random_state=0)
         kmeans.fit(X)
         centers = kmeans.cluster_centers_
         top_discoveries=[]

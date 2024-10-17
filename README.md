@@ -1,5 +1,7 @@
 # adtool: Assisted and Automated Discovery for Complex Systems
 
+![intro](docs/intro.gif)
+
 
 We're pleased to introduce adtool (formerly, Automated Discovery Tool), a
 package assisted and automated discovery of patterns in the exploration of
@@ -106,7 +108,7 @@ such systems for interesting behaviors without knowing a priori the precise
 quantities to look for. As such, a class of algorithms based on intrinsic
 motivation or "curiosity" has been proposed in [Reinke et al.,
 2020](https://arxiv.org/abs/1908.06663) and extended in e.g., [Etcheverry et
-al., 2020](https://arxiv.org/abs/2007.01195) ![Lenia](lenia.png) Such curiosity
+al., 2020](https://arxiv.org/abs/2007.01195) ![Lenia](docs/lenia.png) Such curiosity
 algorithms enable a system to automatically generate a learning curriculum from
 which it learns to explore its behavior space autonomously in search of
 interesting behaviors, originally proposed in the context of robotic agents
@@ -157,7 +159,7 @@ For this, it's possible to start from the default system definition [here](https
 
 
 ## What is the execution flow?  
-You can have a look at the [simplified execution flow](/execution_flow) to understand a bit more about the different steps of the exploration.
+You can have a look at the [simplified execution flow](docs/execution_flow) to understand a bit more about the different steps of the exploration.
 
 ## Join the [Discord community](https://discord.gg/yc5jhYM6u5)
 

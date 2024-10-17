@@ -55,7 +55,7 @@ class WPhysicsStatistics(Leaf):
                     G.add_edge(edge[i], edge[i + 1])
         
         flight = nb_steps / self.max_steps
-        nodes_edges = 1 / (1 + G.number_of_nodes() / G.number_of_edges())
+        nodes_edges = 1 / (1 +  G.number_of_edges()/G.number_of_nodes())
         avg_degree = sum(d for n, d in G.degree()) / G.number_of_nodes()
         avg_degree=1/(1+avg_degree)
         density = nx.density(G)
