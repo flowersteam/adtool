@@ -196,6 +196,9 @@ class ExperimentPipeline(Leaf):
             #     data_dict = self._explorer.map(data_dict)
             # else:
             data_dict = self._explorer.bootstrap()
+
+
+            bootstrap_size = self.config['experiment']['config']['bootstrap_size']
             
 
 
@@ -210,6 +213,9 @@ class ExperimentPipeline(Leaf):
                         # target = replace_lists_with_tensor(target)
                         data_dict['target']=target['target']
 
+                if self.run_idx < bootstrap_size:
+                    data_dict = self._explorer.bootstrap()
+
 
                 # pass trial parameters through system
                 data_dict = self._system.map(data_dict)
@@ -218,6 +224,7 @@ class ExperimentPipeline(Leaf):
                 rendered_outputs = self._system.render(data_dict)
 
                 # exploration phase : emits new trial parameters for next loop
+
                 data_dict = self._explorer.map(data_dict)    
         
 

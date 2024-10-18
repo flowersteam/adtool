@@ -3,15 +3,14 @@
         "config": {
             "save_location": "./",
             "save_frequency": 1,
-            "bootstrap_size": 1
+            "bootstrap_size": 50
         }
     },
     "system": {
-        "path": "examples.kuramoto.systems.Kuramoto.Kuramoto",
+        "path": "examples.reku.systems.ReKu.ReKu",
         "config": {
             "N": 3,
-            "K": 40,
-            "num_inference_steps": 100
+            "total_t": 1000
         }
     },
     "explorer": {
@@ -19,8 +18,8 @@
         "config": {
             "mutator": "specific",
             "equil_time": 1,
-            "behavior_map": "examples.kuramoto.maps.KuramotoStatistics.KuramotoStatistics",
-            "parameter_map": "examples.kuramoto.maps.KuramotoParameterMap.KuramotoParameterMap",
+            "behavior_map": "examples.reku.maps.ReKuStatistics.ReKuStatistics",
+            "parameter_map": "examples.reku.maps.ReKuParameterMap.ReKuParameterMap",
             "mutator_config": {},
             "behavior_map_config": {},
             "parameter_map_config": {  }

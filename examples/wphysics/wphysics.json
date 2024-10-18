@@ -2,7 +2,8 @@
     "experiment": {
         "config": {
             "save_location": "./",
-            "save_frequency": 1
+            "save_frequency": 1,
+            "bootstrap_size": 1
         }
     },
     "system": {
