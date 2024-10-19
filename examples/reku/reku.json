@@ -9,8 +9,8 @@
     "system": {
         "path": "examples.reku.systems.ReKu.ReKu",
         "config": {
-            "N": 3,
-            "total_t": 1000
+            "N": 2,
+            "total_t": 30
         }
     },
     "explorer": {

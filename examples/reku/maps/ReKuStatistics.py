@@ -61,7 +61,26 @@ class ReKuStatistics(Leaf):
             A numpy array with calculated statistics.
         """
 
-        # Calculate the order parameter at each timestep
-        order_parameter = np.abs(np.mean(np.exp(1j * array), axis=1))
+        # order_parameter = np.abs(np.mean(np.exp(1j * array[-50:, :]   ), axis=1))
+        # fft = np.fft.fft(order_parameter)
+        # fft = np.abs(fft)
+        # fft = fft / np.sum(fft)
 
-        return order_parameter
+
+        # sample 50 points in array uniformly from beginning to end
+        sample = array[10::len(array)//50]
+        order_parameter = np.abs(np.mean(np.exp(1j * sample), axis=1))
+        fft = np.fft.fft(order_parameter)
+        fft = np.abs(fft)
+        fft = fft / np.sum(fft)
+
+
+
+
+
+
+       # print("fft", fft.shape)
+
+
+
+        return fft

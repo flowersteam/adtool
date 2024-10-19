@@ -34,10 +34,10 @@ class ReKuParameterMap(Leaf):
         # Uniform parameter maps for angular speeds and phases
         self.uniform_omega = UniformParameterMap(
             premap_key=f"tensor_{self.premap_key}_omega",
-            tensor_low=np.full(self.N, - 2 * np.pi),
-            tensor_high=np.full(self.N, 2 * np.pi),
-            tensor_bound_low=np.full(self.N, -2 * np.pi),
-            tensor_bound_high=np.full(self.N, 2 * np.pi)
+            tensor_low=np.full(self.N, -  np.pi),
+            tensor_high=np.full(self.N,  np.pi),
+            tensor_bound_low=np.full(self.N, - np.pi),
+            tensor_bound_high=np.full(self.N,  np.pi)
         )
 
         self.uniform_phases = UniformParameterMap(
@@ -60,6 +60,20 @@ class ReKuParameterMap(Leaf):
             std=np.ones(self.N) * 0.1
         )
 
+        self.uniform_coupling_factor = UniformParameterMap(
+            premap_key=f"tensor_{self.premap_key}_coupling_factor",
+            tensor_low=np.array([0.1]),
+            tensor_high=np.array([1]),
+            tensor_bound_low=np.array([0.1]),
+            tensor_bound_high=np.array([1])
+        )
+
+        self.uniform_mutator_coupling_factor = partial(
+            add_gaussian_noise,
+            mean=np.zeros(1),
+            std=np.ones(1) * 0.1
+        )
+
     def map(self, input: Dict, override_existing: bool = True) -> Dict:
         intermed_dict = deepcopy(input)
         if (override_existing and self.premap_key in intermed_dict) or (
@@ -72,12 +86,18 @@ class ReKuParameterMap(Leaf):
         pre_omega = self.uniform_omega.sample()
         pre_phases = self.uniform_phases.sample()
 
+
         phases = self.transform_parameters(pre_phases)
+
+        coupling_factor =self.uniform_coupling_factor.sample()
+        coupling_factor = np.clip(coupling_factor, 0.1, 1)
 
         p_dict = {
             "dynamic_params": asdict(ReKuParams(
-                omega=pre_omega,
+           #     omega=pre_omega,
                 initial_phases=phases,
+                coupling_factor=coupling_factor
+
             ))
         }
         return p_dict
@@ -86,21 +106,26 @@ class ReKuParameterMap(Leaf):
         intermed_dict = deepcopy(parameter_dict)
 
 
-        pre_omega =intermed_dict["dynamic_params"]['omega']
+      #  pre_omega =intermed_dict["dynamic_params"]['omega']
         pre_phases =intermed_dict["dynamic_params"]['initial_phases']
+        coupling_factor =intermed_dict["dynamic_params"]['coupling_factor']
 
-        print("pre_omega",pre_omega)
-
-        mutated_omega = self.uniform_mutator_omega(pre_omega)
-        print("mutated_omega",mutated_omega)
+     #   mutated_omega = self.uniform_mutator_omega(pre_omega)
         mutated_phases_tensor = self.uniform_mutator_phases(pre_phases)
+        mutated_phases_tensor = np.clip(mutated_phases_tensor, 0, 1)
+
+
+        coupling_factor = self.uniform_mutator_coupling_factor(coupling_factor)
+
 
         mutated_phases = self.transform_parameters(mutated_phases_tensor)
 
         intermed_dict["dynamic_params"] = asdict(
             ReKuParams(
-                omega=mutated_omega,
+         #       omega=mutated_omega,
                 initial_phases=mutated_phases,
+                coupling_factor=coupling_factor[0]
+                
             )
         )
 
@@ -110,6 +135,7 @@ class ReKuParameterMap(Leaf):
     def transform_parameters(self, pre_params):
         for i in range(1, pre_params.size):
             pre_params[i] *= pre_params[i - 1]
+
 
         params = pre_params * self.SCALING_FACTOR
         return params

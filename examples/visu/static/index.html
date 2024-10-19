@@ -186,7 +186,12 @@
 
         function createPlane(texture, position, videoSrc) {
             const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-            const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.2), material);
+
+            const maxDim = Math.max(texture.image.width, texture.image.height);
+            const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.3 *  (texture.image.width / texture.image.height)
+            
+            , 0.3 * (texture.image.height / texture.image.width) 
+        ), material);
             plane.position.set(K*position[0], K*position[1], 0);
             plane.userData.videoSrc = videoSrc;
             return plane;
@@ -216,8 +221,8 @@
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
                             const context = canvas.getContext('2d');
-                            canvas.width = img.width;
-                            canvas.height = img.height;
+                         canvas.width = img.width;
+                           canvas.height = img.height;
                             context.drawImage(img, 0, 0);
 
                             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
@@ -243,7 +248,6 @@
 
 
                 // } 
-                console.log(imageName)
 
                             context.putImageData(imageData, 0, 0);
                             const processedTexture = new THREE.CanvasTexture(canvas);
