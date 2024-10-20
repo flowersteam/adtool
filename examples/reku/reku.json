@@ -9,8 +9,9 @@
     "system": {
         "path": "examples.reku.systems.ReKu.ReKu",
         "config": {
-            "N": 2,
-            "total_t": 30
+            "perturbators": 2,
+            "sync_pop":20,
+            "total_t": 60
         }
     },
     "explorer": {

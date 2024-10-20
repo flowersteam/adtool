@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 @dataclass
 class ReKuParams:
- #   omega: np.ndarray  # Angular speeds (N,)
+    omega: np.ndarray  # Angular speeds (N,)
     initial_phases: np.ndarray  # Initial phases (N,)
     coupling_factor: float = 1.0  # Coupling factor
 
@@ -17,14 +17,16 @@ class ReKuParams:
 class ReKuSimulation:
     def __init__(
         self,
-        N: int,
+        perturbators: int,
+        sync_pop: int,
         noise_std: float = 0.01,
         dt: float = 0.01,
         total_t: float = 10.0,
         n_skr: int = 10,
         device: str = 'cpu'
     ) -> None:
-        self.N = N  # Number of populations
+        self.perturbators = perturbators  # Number of populations
+        self.sync_pop = sync_pop  # Size of the synchronized population
         self.noise_std = noise_std
         self.dt = dt
         self.total_t = total_t
@@ -41,29 +43,30 @@ class ReKuSimulation:
         counter = 0
 
         for t in times[1:]:
-            dphi = np.zeros(self.N)
+            dphi = np.zeros(len(self.phi))
 
             # Calculate phase changes with angular speed and coupling effect
-            for i in range(self.N):
+            for i in range(len(self.phi)):
                 dphi[i] = self.omega[i]  # Angular speed contribution
 
                 # Add the coupling effect from other oscillators
-                for j in range(self.N):
+                for j in range(len(self.phi)):
                     if i != j:
-                        dphi[i] += coupling_fct(self.phi[i], self.phi[j]) * self.params.coupling_factor
+                        dphi[i] += coupling_fct(self.phi[i], self.phi[j])  * self.params.coupling_factor
 
             # Euler update with noise
             self.phi += dphi * self.dt
-            self.phi += np.random.normal(loc=0., scale=self.noise_std, size=self.N) * np.sqrt(self.dt)
+
+            self.phi += np.random.normal(loc=0., scale=self.noise_std, size= len(self.phi)  ) * np.sqrt(self.dt)
 
             counter += 1
-            if t>9*self.N/10 and counter % self.n_skr == 0:
+            if counter % self.n_skr == 0:
                 self.phi_history.append(self.phi.copy())
 
     def map(self, input: Dict) -> Dict:
         # Update to focus on angular speeds and phases
         self.params = ReKuParams(
-      #      omega=np.array(input["params"]["dynamic_params"]["omega"]),
+            omega=np.array(input["params"]["dynamic_params"]["omega"]),
             initial_phases=np.array(input["params"]["dynamic_params"]["initial_phases"]),
             coupling_factor=input["params"]["dynamic_params"]["coupling_factor"]
         )
@@ -71,9 +74,11 @@ class ReKuSimulation:
 
 
         # Randomly initialize phases and angular speeds
-        self.phi = self.params.initial_phases.copy()
-    #    self.omega = self.params.omega.copy()
-        self.omega=np.ones(self.N)
+        self.phi = np.concatenate([self.params.initial_phases.copy(), np.random.uniform(0, 0.1, self.sync_pop)
+ ]) 
+        self.omega =  np.concatenate([ self.params.omega.copy() ,  np.random.uniform(0.95, 1.05, self.sync_pop)
+                                       ])
+       # self.omega=np.ones(self.perturbators)
         self.phi_history = [self.phi.copy()]
 
 
@@ -125,8 +130,13 @@ class ReKuSimulation:
     # render juste a single plot with time as x-axis and phase as y-axis
     def render(self, data_dict: Dict[str, Any]) -> Tuple[bytes, str]:
 
+
+        to_plot=np.array(data_dict["output"])[:,-self.sync_pop:]
+
+
+
         # compute the derivative of each phase
-        dphi = np.diff(data_dict["output"], axis=0)
+        dphi = np.diff(to_plot, axis=0)
         # sum it's absolute value to get a scalar value
         dphi = np.sum(np.abs(dphi), axis=1)
         # find the maximum value index
@@ -134,16 +144,16 @@ class ReKuSimulation:
         # define an interval around the maximum value, with respect to the total number of frames
         nb_visu_frames=400
         start_idx = max(0, max_idx - nb_visu_frames // 2)
-        end_idx = min(len(data_dict["output"]), max_idx + nb_visu_frames // 2)
+        end_idx = min(len(to_plot), max_idx + nb_visu_frames // 2)
 
         start_idx=0
-        end_idx=len(data_dict["output"])
+        end_idx=len(to_plot)
 
         # return a png
         fig, ax = plt.subplots()
       #  ax.plot(data_dict["output"])
       # don't plot the phase directly, but the sin of the phase
-        ax.plot(np.sin(data_dict["output"][start_idx:end_idx]
+        ax.plot(np.sin(to_plot[start_idx:end_idx]
                        ))
         # ax.set_xlabel("Time")
         # ax.set_ylabel("Phase")
@@ -152,14 +162,21 @@ class ReKuSimulation:
 
         buf = io.BytesIO()
         plt.savefig(buf, format='png')
+
+        plt.close(fig)
+        plt.clf()
+
+
         buf.seek(0)
+
         return [(buf.getvalue(), "png")]
 
 
 
 
 class GenerationParams(BaseModel):
-    N: int = Field(2, ge=1, le=100)
+    perturbators: int = Field(2, ge=1, le=100)
+    sync_pop: int = Field(10, ge=1, le=100)
     noise_std: float = Field(0.01, ge=0.0, le=1.0)
     dt: float = Field(0.01, ge=0.001, le=1.0)
     total_t: float = Field(10.0, ge=0.1, le=10000.0)
@@ -172,14 +189,17 @@ class ReKu(ReKuSimulation):
 
     def __init__(
         self,
-        N: int,
+        perturbators: int,
+        sync_pop: int,
+
         noise_std: float=0.01,
         dt: float=0.01,
         total_t: float=10.0,
         device: str = 'cpu'
     ) -> None:
         super().__init__(
-            N=N,
+            perturbators=perturbators,
+            sync_pop=sync_pop,
             noise_std=noise_std,
             dt=dt,
             total_t=total_t,

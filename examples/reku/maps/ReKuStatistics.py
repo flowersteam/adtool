@@ -18,6 +18,7 @@ class ReKuStatistics(Leaf):
         postmap_key: str = "output",
     ):
         super().__init__()
+        self.sync_pop=system.sync_pop
         self.locator = BlobLocator()
         self.premap_key = premap_key
         self.postmap_key = postmap_key
@@ -68,11 +69,34 @@ class ReKuStatistics(Leaf):
 
 
         # sample 50 points in array uniformly from beginning to end
-        sample = array[10::len(array)//50]
+        # sample = array[]
+        # sample=array
+
+        # keep only the last 10 timeseries
+        sample = array[len(array)//2::len(array)//200, -self.sync_pop:]
+        print(sample.shape)
+
+
         order_parameter = np.abs(np.mean(np.exp(1j * sample), axis=1))
         fft = np.fft.fft(order_parameter)
         fft = np.abs(fft)
-        fft = fft / np.sum(fft)
+        fft = fft / np.max(fft)
+        # keep only the first half of the fft
+        fft = fft[:len(fft)//2]
+
+
+        # find the max difference between the phases
+        diff = np.diff(array[len(array)//2:, -self.sync_pop:], axis=0)
+        print("diff.shape", diff.shape)
+        diff = np.abs(diff)
+        diff = np.sum(diff, axis=1)
+        print("diff.shape", diff.shape)
+        max_diff = np.max(diff)
+        print("max_diff", max_diff)
+
+
+
+
 
 
 
@@ -83,4 +107,7 @@ class ReKuStatistics(Leaf):
 
 
 
-        return fft
+        return np.concatenate([fft, [
+         1/(1+np.sqrt(   max_diff))
+            
+            ]])

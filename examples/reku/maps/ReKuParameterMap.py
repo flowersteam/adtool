@@ -23,7 +23,7 @@ class ReKuParameterMap(Leaf):
     ):
         super().__init__()
 
-        self.N = system.N
+        self.perturbators = system.perturbators
         self.SCALING_FACTOR = 2*np.pi  # Define the scaling factor as needed
         self.locator = BlobLocator()
         if len(config_decorator_kwargs) > 0:
@@ -34,30 +34,30 @@ class ReKuParameterMap(Leaf):
         # Uniform parameter maps for angular speeds and phases
         self.uniform_omega = UniformParameterMap(
             premap_key=f"tensor_{self.premap_key}_omega",
-            tensor_low=np.full(self.N, -  np.pi),
-            tensor_high=np.full(self.N,  np.pi),
-            tensor_bound_low=np.full(self.N, - np.pi),
-            tensor_bound_high=np.full(self.N,  np.pi)
+            tensor_low=np.full(self.perturbators, -  np.pi),
+            tensor_high=np.full(self.perturbators,  np.pi),
+            tensor_bound_low=np.full(self.perturbators, - np.pi),
+            tensor_bound_high=np.full(self.perturbators,  np.pi)
         )
 
         self.uniform_phases = UniformParameterMap(
             premap_key=f"tensor_{self.premap_key}_phases",
-            tensor_low=np.zeros(self.N),
-            tensor_high= np.ones(self.N), 
-            tensor_bound_low=np.zeros(self.N),
-            tensor_bound_high= np.ones(self.N)
+            tensor_low=np.zeros(self.perturbators),
+            tensor_high= np.ones(self.perturbators), 
+            tensor_bound_low=np.zeros(self.perturbators),
+            tensor_bound_high= np.ones(self.perturbators)
         )
 
         self.uniform_mutator_omega = partial(
             add_gaussian_noise,
-            mean=np.zeros(self.N),
-            std=np.ones(self.N) * 0.1
+            mean=np.zeros(self.perturbators),
+            std=np.ones(self.perturbators) * 0.1
         )
 
         self.uniform_mutator_phases = partial(
             add_gaussian_noise,
-            mean=np.zeros(self.N),
-            std=np.ones(self.N) * 0.1
+            mean=np.zeros(self.perturbators),
+            std=np.ones(self.perturbators) * 0.1
         )
 
         self.uniform_coupling_factor = UniformParameterMap(
@@ -74,6 +74,9 @@ class ReKuParameterMap(Leaf):
             std=np.ones(1) * 0.1
         )
 
+
+        
+
     def map(self, input: Dict, override_existing: bool = True) -> Dict:
         intermed_dict = deepcopy(input)
         if (override_existing and self.premap_key in intermed_dict) or (
@@ -89,14 +92,13 @@ class ReKuParameterMap(Leaf):
 
         phases = self.transform_parameters(pre_phases)
 
-        coupling_factor =self.uniform_coupling_factor.sample()
-        coupling_factor = np.clip(coupling_factor, 0.1, 1)
+  
 
         p_dict = {
             "dynamic_params": asdict(ReKuParams(
-           #     omega=pre_omega,
+                omega=pre_omega,
                 initial_phases=phases,
-                coupling_factor=coupling_factor
+                coupling_factor=1#np.random.uniform(0.1, 1)
 
             ))
         }
@@ -106,25 +108,26 @@ class ReKuParameterMap(Leaf):
         intermed_dict = deepcopy(parameter_dict)
 
 
-      #  pre_omega =intermed_dict["dynamic_params"]['omega']
+        pre_omega =intermed_dict["dynamic_params"]['omega']
         pre_phases =intermed_dict["dynamic_params"]['initial_phases']
-        coupling_factor =intermed_dict["dynamic_params"]['coupling_factor']
 
-     #   mutated_omega = self.uniform_mutator_omega(pre_omega)
+        mutated_omega = self.uniform_mutator_omega(pre_omega)
         mutated_phases_tensor = self.uniform_mutator_phases(pre_phases)
         mutated_phases_tensor = np.clip(mutated_phases_tensor, 0, 1)
 
 
-        coupling_factor = self.uniform_mutator_coupling_factor(coupling_factor)
+        # coupling_factor =intermed_dict["dynamic_params"]['coupling_factor']
+        # coupling_factor += np.random.normal(0, 0.1)
+        # coupling_factor = np.clip(coupling_factor, 0.1, 1)
 
 
         mutated_phases = self.transform_parameters(mutated_phases_tensor)
 
         intermed_dict["dynamic_params"] = asdict(
             ReKuParams(
-         #       omega=mutated_omega,
+                omega=mutated_omega,
                 initial_phases=mutated_phases,
-                coupling_factor=coupling_factor[0]
+                coupling_factor=1#coupling_factor
                 
             )
         )

@@ -307,24 +307,69 @@ class FinalScene(Scene):
 
 from manim import *
 
-class FinalScene2(Scene):
+# class FinalScene2(Scene):
+#     def construct(self):
+#         # Title
+#         title = Text("Implemented algorithms", font_size=36)
+#         title.to_edge(UP)
+
+#         # List of examples
+#         examples = VGroup(
+#             Text("• IMGEP", font_size=24),
+#             Text("• Curiosity Driven IMGEP", font_size=24),
+#             Text("• IMGEP Interpolation", font_size=24),
+#             Text("• and more coming soon", font_size=24),
+#             Text("▶ https://github.com/flowersteam/adtool", font_size=24)
+#         ).arrange(DOWN, aligned_edge=LEFT).next_to(title, DOWN, buff=0.5)
+
+#         # show them
+#         self.play(FadeIn(title))
+#         self.play(Write(examples))
+
+
+#         # wait
+#         self.wait(4)
+
+# same but with :
+
+class FinalScene3(Scene):
     def construct(self):
-        # Title
-        title = Text("Implemented algorithms", font_size=36)
-        title.to_edge(UP)
+        # Texts to display
+        t1 = "ADTool implemented various diversity search algorithms"
+        t2 = "within the family of IMGEPs (Intrinsically Motivated Goal Exploration Processes)."
+        t3 = "IMGEPs are curiosity-driven exploration algorithms"
+        t4 = "that work by sampling continuously new goals in a behavioural space"
+        t5 = "leading to open-ended discovery of new behaviours"
+        t6 = "▶ https://github.com/flowersteam/adtool"
 
-        # List of examples
-        examples = VGroup(
-            Text("• IMGEP", font_size=24),
-            Text("• Curiosity Driven IMGEP", font_size=24),
-            Text("• IMGEP Interpolation", font_size=24),
-            Text("• and more coming soon", font_size=24)
-        ).arrange(DOWN, aligned_edge=LEFT).next_to(title, DOWN, buff=0.5)
+        # First group of texts (t1 and t2)
+        group1 = VGroup(
+            Text(t1, font_size=24),
+            Text(t2, font_size=24, t2c={"IMGEPs": BLUE})
+        )
 
-        # show them
-        self.play(FadeIn(title))
-        self.play(Write(examples))
+        # Second group of texts (t3, t4, t5)
+        group2 = VGroup(
+            Text(t3, font_size=24, t2c={"IMGEPs": BLUE}),
+            Text(t4, font_size=24),
+            Text(t5, font_size=24, t2c={"open-ended": BLUE})
+        )
 
 
-        # wait
+
+        # Arrange the groups separately with reduced space between lines
+        group1.arrange(DOWN, buff=0.2)
+        group2.arrange(DOWN, buff=0.2)
+
+        # Position group1 at the top and group2 below it
+        group1.to_edge(UP)
+        group2.next_to(group1, DOWN, buff=0.5)
+        
+        group3=Text(t6, font_size=24, t2c={"adtool": BLUE})
+
+        # Display group1 first, then group2
+        self.play(FadeIn(group1))
+     #   self.wait(1)  # Wait for 2 seconds before showing the next group
+        self.play(FadeIn(group2))
+        self.play(FadeIn(group3))
         self.wait(4)

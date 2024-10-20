@@ -245,12 +245,16 @@ def compute_coordinates(path):
         
     X = np.array([discovery['embedding'] for discovery in discoveries  if 'embedding' in discovery])
 
+    X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-6)
+
+  #  X = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0) + 1e-6)
+
 
 
 
     NB_CLUSTERS=400
     if len(discoveries) > NB_CLUSTERS:
-        # keep only the top 100 most disctinct  discoveries 
+    #    keep only the top 100 most disctinct  discoveries 
         kmeans = KMeans(n_clusters=NB_CLUSTERS, random_state=0)
         kmeans.fit(X)
         centers = kmeans.cluster_centers_
@@ -264,6 +268,11 @@ def compute_coordinates(path):
                     min_distance=distance
                     top_discovery=discovery
             top_discoveries.append(top_discovery)
+
+
+        # same but also consider cluster of size 1
+
+
 
         discoveries=top_discoveries
 
@@ -285,7 +294,10 @@ def compute_coordinates(path):
 
 
     # normalize X
-    X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-6)
+   # 
+
+   # min_max normalize
+    
     
 
 
