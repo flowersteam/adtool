@@ -62,48 +62,24 @@ class ReKuStatistics(Leaf):
             A numpy array with calculated statistics.
         """
 
-        # order_parameter = np.abs(np.mean(np.exp(1j * array[-50:, :]   ), axis=1))
-        # fft = np.fft.fft(order_parameter)
-        # fft = np.abs(fft)
-        # fft = fft / np.sum(fft)
 
-
-        # sample 50 points in array uniformly from beginning to end
-        # sample = array[]
-        # sample=array
-
-        # keep only the last 10 timeseries
         sample = array[len(array)//2::len(array)//200, -self.sync_pop:]
-        print(sample.shape)
 
 
         order_parameter = np.abs(np.mean(np.exp(1j * sample), axis=1))
         fft = np.fft.fft(order_parameter)
+        fft = fft[:len(fft)//2]
         fft = np.abs(fft)
         fft = fft / np.max(fft)
         # keep only the first half of the fft
-        fft = fft[:len(fft)//2]
+        
 
 
         # find the max difference between the phases
         diff = np.diff(array[len(array)//2:, -self.sync_pop:], axis=0)
-        print("diff.shape", diff.shape)
         diff = np.abs(diff)
         diff = np.sum(diff, axis=1)
-        print("diff.shape", diff.shape)
         max_diff = np.max(diff)
-        print("max_diff", max_diff)
-
-
-
-
-
-
-
-
-
-
-       # print("fft", fft.shape)
 
 
 
