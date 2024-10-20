@@ -11,7 +11,7 @@
         "config": {
             "perturbators": 2,
             "sync_pop":20,
-            "total_t": 60
+            "total_t": 40
         }
     },
     "explorer": {

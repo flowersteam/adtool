@@ -62,6 +62,8 @@ Available examples are:
 ![SRO](docs/images/sro.png)  
 - `examples/kuramoto/kuramoto.json` - 1D Kuramoto base model  
 ![Kuramoto](docs/images/kuramoto.png)  
+- `examples/reku/reku.json` - Discovering Rectified Kuramoto interference patterns 
+- `examples/wphysics/wphysics.json` - Exploring the rule space of hypergraph rewriting systems for Wolfram Physics
 - `examples/lenia/lenia_cppn.json` - Discovering lenia patterns  
 ![Lenia](docs/images/lenia.png)  
 - `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
