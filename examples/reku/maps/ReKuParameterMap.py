@@ -98,7 +98,7 @@ class ReKuParameterMap(Leaf):
             "dynamic_params": asdict(ReKuParams(
                 omega=pre_omega,
                 initial_phases=phases,
-                coupling_factor=1#np.random.uniform(0.1, 1)
+                coupling_factor=1 #np.random.uniform(0.1, 1)
 
             ))
         }

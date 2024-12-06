@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 import cv2
 from sklearn.cluster import KMeans
+
 import umap
 
 
@@ -53,18 +54,27 @@ def process_discovery(root, name):
         print("infinities found")
         return None
 
-    for file in os.listdir(os.path.join(root, name)):
+    files=os.listdir(os.path.join(root, name))
+    # get first file ending with mp4 , only the first one
+    mp4_files= [file for file in files if file.endswith('.mp4')]
+    if len(mp4_files):
+        file=mp4_files[0]
+        
         path = os.path.join(root, name, file)
-        if file.endswith('.mp4'):
-            discovery['visual'] = path
-            discovery['embedding'] = discovery_embedding
-            loaded_json[discovery_path] = discovery
-            return discovery
-        elif file.endswith('.png'):
-            discovery['visual'] = path
-            discovery['embedding'] = discovery_embedding
-            loaded_json[discovery_path] = discovery
-            return discovery
+        discovery['visual'] = path
+        discovery['embedding'] = discovery_embedding
+        loaded_json[discovery_path] = discovery
+        return discovery
+        
+    png_files= [file for file in files if file.endswith('.png')]
+    if len(png_files):
+        file=png_files[0]
+
+        path = os.path.join(root, name, file)
+        discovery['visual'] = path
+        discovery['embedding'] = discovery_embedding
+        loaded_json[discovery_path] = discovery
+        return discovery
 
     return None
 
@@ -305,7 +315,7 @@ def compute_coordinates(path):
 
 
    # pca = PCA(n_components=2, random_state=0, whiten=True)
-    pca = umap.UMAP(n_components=2, random_state=0, n_neighbors=min(10, len(X)))    
+    pca = umap.UMAP(n_components=2, random_state=0, n_neighbors=min(10, len(X)))  
     pca.fit(X)
 
 
