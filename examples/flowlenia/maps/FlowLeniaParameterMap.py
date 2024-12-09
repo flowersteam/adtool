@@ -10,7 +10,6 @@ from adtool.systems import System
 from examples.flowlenia.systems.FlowLenia import FlowLenia
 from examples.flowlenia.systems.FlowLeniaParameters import FlowLeniaDynamicalParameters, FlowLeniaHyperParameters, FlowLeniaKernelGrowthDynamicalParameters
 from adtool.maps.UniformParameterMap import UniformParameterMap
-from adtool.wrappers.CPPNWrapper import CPPNWrapper
 from adtool.wrappers.mutators import add_gaussian_noise
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
@@ -137,9 +136,6 @@ class FlowLeniaParameterMap(Leaf):
         p_dict = {
             "dynamic_params": replace_torch_with_numpy(asdict(dp)),
         }
-
-
-
 
         return p_dict
 

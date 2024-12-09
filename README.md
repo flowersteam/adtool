@@ -62,6 +62,8 @@ Available examples are:
 ![SRO](docs/images/sro.png)  
 - `examples/kuramoto/kuramoto.json` - 1D Kuramoto base model  
 ![Kuramoto](docs/images/kuramoto.png)  
+- `examples/nbody/nbody.json` - Discovering N-body trajectories
+![NBody](docs/images/3body.png)  
 - `examples/reku/reku.json` - Discovering Rectified Kuramoto interference patterns 
 - `examples/wphysics/wphysics.json` - Exploring the rule space of hypergraph rewriting systems for Wolfram Physics
 - `examples/lenia/lenia_cppn.json` - Discovering lenia patterns  
@@ -69,7 +71,6 @@ Available examples are:
 - `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
 - `examples/flowlenia/flow_lenia_noise.json` - Discovering flowlenia patterns initialized with noise
 - `examples/flowlenia/flow_lenia_cppn.json` - Discovering flowlenia patterns initialized with CPPN  
-- `examples/nbody/nbody.json` - Discovering N-body trajectories
 - `examples/flashlenia/flashlenia.json` - Cuda implementation of lenia to study initial condition sensitivity
 - `examples/stable_diffusion/stable_diffusion.json` - Discovering variations around a stable diffusion inference
 
