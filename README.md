@@ -62,7 +62,7 @@ Available examples are:
 ![SRO](docs/images/sro.png)  
 - `examples/kuramoto/kuramoto.json` - 1D Kuramoto base model  
 ![Kuramoto](docs/images/kuramoto.png)  
-- `examples/nbody/nbody.json` - Discovering N-body trajectories
+- `examples/nbody/nbody.json` - Discovering N-body trajectories  
 ![NBody](docs/images/3body.png)  
 - `examples/reku/reku.json` - Discovering Rectified Kuramoto interference patterns 
 - `examples/wphysics/wphysics.json` - Exploring the rule space of hypergraph rewriting systems for Wolfram Physics
@@ -79,7 +79,9 @@ Available examples are:
 To execute examples, you need to install required dependencies:
 ```bash
 pip install .[examples]
-```
+```  
+First launch video [Grayscott example](https://youtu.be/5iHzTO7yhuQ)
+
 For the docking example, you need to install the `rdkit` package and download the `gnina` executable:
 ```bash
 sudo apt install openbabel libxml2-dev libxslt-dev libopenbabel-dev swig
@@ -164,7 +166,7 @@ For this, it's possible to start from the default system definition [here](https
 ## What is the execution flow?  
 You can have a look at the [simplified execution flow](docs/execution_flow) to understand a bit more about the different steps of the exploration.
 
-## Join the [Discord community](https://discord.gg/yc5jhYM6u5)
+### Join the [Discord community](https://discord.gg/yc5jhYM6u5)
 
 
 
