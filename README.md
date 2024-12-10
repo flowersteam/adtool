@@ -65,7 +65,8 @@ Available examples are:
 - `examples/nbody/nbody.json` - Discovering N-body trajectories  
 ![NBody](docs/images/3body.png)  
 - `examples/reku/reku.json` - Discovering Rectified Kuramoto interference patterns 
-- `examples/wphysics/wphysics.json` - Exploring the rule space of hypergraph rewriting systems for Wolfram Physics
+- `examples/wphysics/wphysics.json` - Exploring the rule space of hypergraph rewriting systems for Wolfram Physics  
+![NBody](docs/images/graph.png) 
 - `examples/lenia/lenia_cppn.json` - Discovering lenia patterns  
 ![Lenia](docs/images/lenia.png)  
 - `examples/flowlenia/flow_lenia_noise_small.json` - Discovering flowlenia patterns with restricted hardware
