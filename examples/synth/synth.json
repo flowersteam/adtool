@@ -1,0 +1,38 @@
+{
+    "experiment": {
+        "config": {
+            "save_location": "./",
+            "save_frequency": 1,
+            "bootstrap_size": 1
+        }
+    },
+    "system": {
+        "path": "examples.synth.systems.Synth.SynthSimulation",
+        "config": {
+            "max_generators": 3
+        }
+    },
+    "explorer": {
+        "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
+        "config": {
+            "mutator": "specific",
+            "equil_time": 1,
+            "behavior_map": "examples.synth.maps.SynthStatistics.SynthStatistics",
+            "parameter_map": "examples.synth.maps.SynthParameterMap.SynthParameterMap",
+            "mutator_config": {},
+            "behavior_map_config": {},
+            "parameter_map_config": {  }
+        }
+    },
+    "input_wrappers": [],
+    "output_representations": [],
+    "logger_handlers": [],
+    "callbacks": {
+        "on_discovery": [
+            {
+                "path": "adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+                "config": {}
+            }
+        ]
+    }
+}
