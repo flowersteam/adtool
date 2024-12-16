@@ -34,6 +34,8 @@ class SynthSimulation:
 
         self.synth=Synth.from_json(input["params"]["dynamic_params"])
 
+        print('input["params"]["dynamic_params"]',input["params"]["dynamic_params"])
+
         signal=self.synth.generate()
 
      #   sf.write("synth_output.wav", signal, sample_rate)

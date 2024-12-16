@@ -1,4 +1,3 @@
-import dataclasses
 from copy import deepcopy
 from typing import Dict
 from adtool.utils.leaf.Leaf import Leaf
@@ -38,7 +37,7 @@ class SynthParameterMap(Leaf):
 
         synth=Synth(output=Generator(
         waveform= random.choice(list(WaveformType)),
-        frequency= random.uniform(1, 20) if random.random() < 0.5 else random.uniform(100, 1000),
+        frequency= random.uniform(1, 20) if random.random() < 0.5 else random.uniform(400, 1000),
         amplitude=1.0,
     ))
          

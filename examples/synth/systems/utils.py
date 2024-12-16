@@ -20,12 +20,15 @@ class Generator:
     def __init__(
         self, 
         waveform: WaveformType, 
-        frequency: Union[float, 'Generator', 'Filter'], 
-        amplitude: Union[float, 'Generator', 'Filter']
+        frequency: float,
+        amplitude: Union[float, 'Generator', 'Filter'],
+        fm: Union[ 'Generator', 'Filter', float]=0.0,
+
     ):
         self.waveform = waveform
         self.frequency = frequency
         self.amplitude = amplitude
+        self.fm = fm
 
     def evaluate(self, duration: float, sample_rate: int = 44100) -> np.ndarray:
         time = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
@@ -43,7 +46,13 @@ class Generator:
         else:
             signal = np.zeros_like(time)
 
-        return signal * amp_values
+        result_signal= signal * amp_values
+
+        if self.fm:
+            fm_values = self._resolve(self.fm, duration, sample_rate)
+            result_signal = result_signal * np.sin(2 * np.pi * fm_values * time)
+
+        return result_signal
 
     def _resolve(self, value: Union[float, 'Generator', 'Filter'], duration: float, sample_rate: int) -> np.ndarray:
         if isinstance(value, (Generator, Filter)):
@@ -54,11 +63,12 @@ class Generator:
     def to_json(self) -> Dict:
         return {
             "waveform": self.waveform.value,
-            "frequency": self._serialize_value(self.frequency),
+            "frequency": self.frequency,
             "amplitude": self._serialize_value(self.amplitude),
+            "fm": self._serialize_value(self.fm)
         }
 
-    def _serialize_value(self, value: Union[float, 'Generator', 'Filter']):
+    def _serialize_value(self, value: Union[float, int,'Generator', 'Filter']):
         if isinstance(value, (Generator, Filter)):
             return value.to_json()
         else:
@@ -66,11 +76,13 @@ class Generator:
 
     @staticmethod
     def from_json(data: Dict) -> 'Generator':
-        waveform = WaveformType(data["waveform"])
-        frequency = Generator._deserialize_value(data["frequency"])
-        amplitude = Generator._deserialize_value(data["amplitude"])
-        return Generator(waveform, frequency, amplitude)
 
+        waveform = WaveformType(data["waveform"])
+        frequency = data["frequency"]
+        amplitude = Generator._deserialize_value(data["amplitude"])
+        fm = Generator._deserialize_value(data["fm"])
+        return Generator(waveform, frequency, amplitude, fm)
+    
     @staticmethod
     def _deserialize_value(value):
         if isinstance(value, dict):
@@ -124,6 +136,7 @@ class Filter:
         
         # Return the filtered signal
         filtered_signal = np.fft.ifft(filtered_fft).real
+
         return filtered_signal
 
 
@@ -153,7 +166,6 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from io import BytesIO
 from PIL import Image
-import base64
 import random
 
 class Synth:
@@ -172,14 +184,15 @@ class Synth:
         connections = []
 
         def add_module(node):
-            node_id = id(node)
+            node_id = str(id(node))
             if node_id not in modules:
                 if isinstance(node, Generator):
                     modules[node_id] = {
                         "type": "Generator",
                         "waveform": node.waveform.value,
-                        "frequency": self._serialize_reference(node.frequency),
-                        "amplitude": self._serialize_reference(node.amplitude)
+                        "frequency": node.frequency,
+                        "amplitude": self._serialize_reference(node.amplitude),
+                        "fm": self._serialize_reference(node.fm)
                     }
                 elif isinstance(node, Filter):
                     modules[node_id] = {
@@ -191,18 +204,18 @@ class Synth:
 
                 # Handle connections
                 if isinstance(node, Generator):
-                    if isinstance(node.frequency, (Generator, Filter)):
-                        connections.append({"from": id(node.frequency), "to": node_id, "type": "frequency"})
+                    if isinstance(node.fm, (Generator, Filter)):
+                        connections.append({"from": str(id(node.frequency)), "to": node_id, "type": "fm"})
                     if isinstance(node.amplitude, (Generator, Filter)):
-                        connections.append({"from": id(node.amplitude), "to": node_id, "type": "amplitude"})
+                        connections.append({"from": str(id(node.amplitude)), "to": node_id, "type": "amplitude"})
                 elif isinstance(node, Filter):
-                    connections.append({"from": id(node.input), "to": node_id, "type": "input"})
+                    connections.append({"from": str(id(node.input)), "to": node_id, "type": "input"})
 
         def traverse(node):
             if isinstance(node, Generator):
                 add_module(node)
-                if isinstance(node.frequency, (Generator, Filter)):
-                    traverse(node.frequency)
+                if isinstance(node.fm, (Generator, Filter)):
+                    traverse(node.fm)
                 if isinstance(node.amplitude, (Generator, Filter)):
                     traverse(node.amplitude)
             elif isinstance(node, Filter):
@@ -216,12 +229,12 @@ class Synth:
         return {
             "modules": modules,
             "connections": connections,
-            "output": id(self.output)
+            "output": str(id(self.output))
         }
 
     def _serialize_reference(self, value):
         if isinstance(value, (Generator, Filter)):
-            return id(value)
+            return str(id(value))
         return value
 
     @staticmethod
@@ -232,13 +245,13 @@ class Synth:
         def create_module(module_id):
             if module_id in module_objects:
                 return module_objects[module_id]
-        #    print("modules", modules,"module_id", module_id)
             module_data = modules[module_id]
             if module_data["type"] == "Generator":
                 module = Generator(
                     waveform=WaveformType(module_data["waveform"]),
-                    frequency=create_module(module_data["frequency"]) if isinstance(module_data["frequency"], int) else module_data["frequency"],
-                    amplitude=create_module(module_data["amplitude"]) if isinstance(module_data["amplitude"], int) else module_data["amplitude"]
+                    frequency=module_data["frequency"],
+                    amplitude=create_module(module_data["amplitude"]) if isinstance(module_data["amplitude"], str) else module_data["amplitude"],
+                    fm=create_module(module_data["fm"]) if isinstance(module_data["fm"], str) else module_data["fm"]
                 )
             elif module_data["type"] == "Filter":
                 module = Filter(
@@ -282,26 +295,24 @@ class Synth:
 
 
         def add_node_edges(node, parent_id=None):
-            node_id = id(node)
+            node_id = str(id(node))
             if isinstance(node, Generator):
                 graph.add_node(node_id, label=create_label(node),
-                               type="Generator"
-
-
-                               
+                                
+                               type="Generator",
                                ) #Generator\nWaveform: 
-                if isinstance(node.frequency, (Generator, Filter)):
-                    add_node_edges(node.frequency, node_id)
-                    graph.add_edge(id(node.frequency), node_id, label="frequency")
+                if isinstance(node.fm, (Generator, Filter)):
+                    add_node_edges(node.fm, node_id)
+                    graph.add_edge(str(id(node.fm)), node_id, label="fm")
                 if isinstance(node.amplitude, (Generator, Filter)):
                     add_node_edges(node.amplitude, node_id)
-                    graph.add_edge(id(node.amplitude), node_id, label="amplitude")
+                    graph.add_edge(str(id(node.amplitude)), node_id, label="amplitude")
             elif isinstance(node, Filter):
                 graph.add_node(node_id, label=create_label(node),
-                                 type="Filter"
+                                 type="Filter",
                                ) #Filter\nType:  Cutoff: 
                 add_node_edges(node.input, node_id)
-                graph.add_edge(id(node.input), node_id, label="input")
+                graph.add_edge(str(id(node.input)), node_id, label="input")
 
             if parent_id is not None:
                 graph.add_edge(node_id, parent_id)
@@ -326,8 +337,9 @@ class Synth:
 
         # Plot waveforms for generators
         for node_id, data in graph.nodes(data=True):
+            node_id=str(node_id)
             if "Generator" in data.get("label", ""):
-                node = next((n for n in [self.output] if id(n) == node_id), None)
+                node = next((n for n in [self.output] if str(id(n)) == node_id), None)
                 if node:
                     signal = node.evaluate(duration=0.1, sample_rate=44100)  # Short waveform for visualization
                     time = [i / 44100 for i in range(len(signal))]
@@ -357,8 +369,8 @@ class Synth:
 
         def collect_mutable_nodes(node):
             if isinstance(node, Generator):
-                if isinstance(node.frequency, (float, int)):
-                    mutable_nodes.append((node, 'frequency'))
+                if isinstance(node.fm, (float, int)):
+                    mutable_nodes.append((node, 'fm'))
                 # if isinstance(node.amplitude, (float, int)):
                 #     mutable_nodes.append((node, 'amplitude'))
             elif isinstance(node, Filter):
@@ -366,8 +378,8 @@ class Synth:
                     mutable_nodes.append((node, 'cutoff_ratio'))
 
             if isinstance(node, Generator):
-                if isinstance(node.frequency, (Generator, Filter)):
-                    collect_mutable_nodes(node.frequency)
+                if isinstance(node.fm, (Generator, Filter)):
+                    collect_mutable_nodes(node.fm)
                 if isinstance(node.amplitude, (Generator, Filter)):
                     collect_mutable_nodes(node.amplitude)
             elif isinstance(node, Filter):
@@ -396,7 +408,7 @@ class Synth:
 
 
     def mutate(self):
-        if random.random() < 0.9:
+        if random.random() < 0.95:
             self.add_noise()
         else:
             self.mutate_graph()           
@@ -418,8 +430,8 @@ def mutate_graph(self):
     def collect_nodes(node):
         nodes.append(node)
         if isinstance(node, Generator):
-            if isinstance(node.frequency, (Generator, Filter)):
-                collect_nodes(node.frequency)
+            if isinstance(node.fm, (Generator, Filter)):
+                collect_nodes(node.fm)
             if isinstance(node.amplitude, (Generator, Filter)):
                 collect_nodes(node.amplitude)
         elif isinstance(node, Filter):
@@ -443,9 +455,6 @@ def mutate_graph(self):
 
     mutation_type = random.choice(mutation_types)
 
-    print(f"{mutation_type} Num generators: {num_generators}, Num filters: {num_filters}")
-
-
 
     if mutation_type == "add_filter":
         # Add a filter after a random filter or generator
@@ -461,8 +470,8 @@ def mutate_graph(self):
         else:
             for node in nodes:
                 if isinstance(node, Generator):
-                    if node.frequency == target:
-                        node.frequency = new_filter
+                    if node.fm == target:
+                        node.fm = new_filter
                     if node.amplitude == target:
                         node.amplitude = new_filter
                 elif isinstance(node, Filter):
@@ -471,15 +480,22 @@ def mutate_graph(self):
 
     elif mutation_type == "add_generator":
         # Add a generator modulating a currently float fixed attribute
-        target = random.choice([n for n in nodes if isinstance(n, Generator)])
-        attr = random.choice(["frequency", "amplitude"])
-        if isinstance(getattr(target, attr), float):
-            new_generator = Generator(
-                waveform=random.choice(list(WaveformType)),
-                frequency=random.uniform(1, 20) if random.random() < 0.5 else random.uniform(100, 1000),
-                amplitude=1.0
-            )
-            setattr(target, attr, new_generator)
+        generators=[n for n in nodes if isinstance(n, Generator)]
+        random.shuffle(generators)
+        fixed_attributes=['fm','amplitude']
+        for target in generators:
+            for attr in fixed_attributes:
+
+
+                if isinstance(getattr(target, attr), (float, int)):
+                    new_generator = Generator(
+                        waveform=random.choice(list(WaveformType)),
+                        frequency=random.uniform(1, 20) if random.random() < 0.5 else random.uniform(100, 1000),
+                        amplitude=1.0
+                    )
+                    setattr(target, attr, new_generator)
+
+            random.shuffle(fixed_attributes)
 
     elif mutation_type == "remove_filter":
         # Remove a filter and reconnect its input to its output
@@ -490,8 +506,8 @@ def mutate_graph(self):
         else:
             for node in nodes:
                 if isinstance(node, Generator):
-                    if node.frequency == target:
-                        node.frequency = input_node
+                    if node.fm == target:
+                        node.fm = input_node
                     if node.amplitude == target:
                         node.amplitude = input_node
                 elif isinstance(node, Filter):
@@ -503,7 +519,7 @@ def mutate_graph(self):
         generators_with_generators = []
         for node in nodes:
             if isinstance(node, Generator):
-                if isinstance(node.frequency, Generator) or isinstance(node.amplitude, Generator):
+                if isinstance(node.fm, Generator) or isinstance(node.amplitude, Generator):
                     generators_with_generators.append(node)
 
         if generators_with_generators:
@@ -511,8 +527,8 @@ def mutate_graph(self):
             # Remove a generator and clean up its dependents
             for node in nodes:
                 if isinstance(node, Generator):
-                    if node.frequency == target:
-                        node.frequency = target.frequency
+                    if node.fm == target:
+                        node.fm = target.fm
                     if node.amplitude == target:
                         node.amplitude = target.amplitude
 
