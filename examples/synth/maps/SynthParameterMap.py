@@ -1,20 +1,21 @@
 from copy import deepcopy
 from typing import Dict
 from adtool.utils.leaf.Leaf import Leaf
-from examples.synth.systems.Synth import Synth
-from examples.synth.systems.utils import Synth, WaveformType, Generator
+from examples.synth.systems.Synth import SynthSimulation
 import random
 
 class SynthParameterMap(Leaf):
     def __init__(
         self,
-        system: Synth,
+        system: SynthSimulation,
 
         premap_key: str = "params",
      #   param_obj: SynthParams = None,
         **config_decorator_kwargs,
     ):
         super().__init__()
+
+        self.nb_freqs = system.nb_freqs
 
 
         # if len(config_decorator_kwargs) > 0:
@@ -34,21 +35,19 @@ class SynthParameterMap(Leaf):
     def sample(self) -> Dict:
 
         # just generator
-
-        synth=Synth(output=Generator(
-        waveform= random.choice(list(WaveformType)),
-        frequency= random.uniform(1, 20) if random.random() < 0.5 else random.uniform(400, 1000),
-        amplitude=1.0,
-    ))
-         
-        json=synth.to_json()
+        
+        # random frequencies and amplitudes
+        frequencies = [random.uniform(80, 10_000) for _ in range(self.nb_freqs)]
+        amplitudes = [random.uniform(0, 1) for _ in range(self.nb_freqs)]
 
 
+        json = {
+            "frequencies": frequencies,
+            "amplitudes": amplitudes,
+        }
 
         p_dict = {
             "dynamic_params": json
-
-
         }
 
         return p_dict
@@ -56,11 +55,20 @@ class SynthParameterMap(Leaf):
     def mutate(self, parameter_dict: Dict) -> Dict:
         intermed_dict = deepcopy(parameter_dict)
 
-        synth=Synth.from_json(intermed_dict["dynamic_params"])
+        # intermed_dict["dynamic_params"]
 
-        synth.mutate()
+        json = intermed_dict["dynamic_params"]
 
-        json=synth.to_json()
+        # mutate frequencies by adding a random noise as a ratio of the frequency
+        frequencies = json["frequencies"]
+        for i in range(len(frequencies)):
+            frequencies[i] += random.uniform(-0.1, 0.1) * frequencies[i]
+
+        # mutate amplitudes by adding a random noise as a ratio of the amplitude
+        amplitudes = json["amplitudes"]
+        for i in range(len(amplitudes)):
+            amplitudes[i] += random.uniform(-0.1, 0.1) * amplitudes[i]
+
 
         intermed_dict["dynamic_params"] = json
 

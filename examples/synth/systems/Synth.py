@@ -1,22 +1,23 @@
 import numpy as np
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Tuple
-from dataclasses import dataclass
-import imageio
 import io
-import matplotlib.pyplot as plt
 
-from examples.synth.systems.utils import Synth
 
 
 import soundfile as sf
 
 
 class GenerationParams(BaseModel):
-    max_generators: int = Field(5, ge=1, le=20)
+    nb_freqs: int = Field(10, ge=3, le=1000)
 
 from adtool.utils.expose_config.expose_config import expose
 
+
+def additive_synthesis(frequencies, amplitudes, duration=2, samplerate=16000):
+    t = np.linspace(0, duration, int(samplerate * duration), endpoint=False)
+    signal = sum(a * np.sin(2 * np.pi * f * t) for f, a in zip(frequencies, amplitudes))
+    return signal
 
 @expose
 class SynthSimulation:
@@ -24,40 +25,32 @@ class SynthSimulation:
 
     def __init__(
         self,
-        max_generators: int,
+        nb_freqs: int,
     ) -> None:
-        self.max_generators = max_generators
+        self.nb_freqs = nb_freqs
 
 
 
     def map(self, input: Dict, fix_seed: bool = True) -> Dict:
 
-        self.synth=Synth.from_json(input["params"]["dynamic_params"])
 
-        print('input["params"]["dynamic_params"]',input["params"]["dynamic_params"])
+        frequencies = input["params"]['dynamic_params']['frequencies']
+        amplitudes = input["params"]['dynamic_params']['amplitudes']
 
-        signal=self.synth.generate()
+        self.signal = additive_synthesis(frequencies, amplitudes)
 
      #   sf.write("synth_output.wav", signal, sample_rate)
 
-        input["output"] = signal
+        input["output"] = self.signal
         return input
 
     def render(self, data_dict: Dict[str, Any]) -> Tuple[bytes, str]:
 
-        signal=self.synth.generate()
-        
-        image=self.synth.image()
-        # get byte array of image
-        byte_img = io.BytesIO()
-        imageio.imwrite(byte_img, image, format="png")
-
-
         byte_signal = io.BytesIO()
 
-        sf.write(byte_signal, signal, 44100, format="wav")
+        sf.write(byte_signal, self.signal, 16000, format="wav")
 
 
-        return [(byte_img.getvalue(), "png"),
+        return [
                 (byte_signal.getvalue(), "wav")]
                 

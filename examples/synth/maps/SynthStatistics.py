@@ -5,7 +5,23 @@ from copy import deepcopy
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 from adtool.wrappers.BoxProjector import BoxProjector
-from examples.synth.systems.Synth import Synth
+from examples.synth.systems.Synth import SynthSimulation
+
+
+from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2FeatureExtractor
+import librosa
+import torch
+
+
+model = Wav2Vec2ForSequenceClassification.from_pretrained("gastonduault/music-classifier")
+feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained("facebook/wav2vec2-large")
+
+# Function for preprocessing audio for prediction
+def preprocess_audio(audio_array):
+   # audio_array, sampling_rate = librosa.load(audio_path, sr=16000)
+
+    return feature_extractor(audio_array, sampling_rate=16000, return_tensors="pt", padding=True)
+
 
 class SynthStatistics(Leaf):
     """
@@ -14,7 +30,7 @@ class SynthStatistics(Leaf):
 
     def __init__(
         self,
-        system: Synth,
+        system: SynthSimulation,
         premap_key: str = "output",
         postmap_key: str = "output",
     ):
@@ -51,18 +67,32 @@ class SynthStatistics(Leaf):
         return intermed_dict
 
     def sample(self):
-        return self.projector.sample()
+        # projection= self.projector.sample()
+        # # sum to 1
+        # projection = projection / np.sum(projection)
+        # return projection
+        # random dimension
+
+        shape=self.projector.tensor_shape
+        projection = np.zeros(shape)
+        projection[np.random.randint(0, shape[0])] = 1
+
+        return projection
+
+
     
 
     def _calc_static_statistics(self, array: np.ndarray) -> np.ndarray:
 
 
-        sample = array[::len(array)//200]
 
 
-        fft = np.fft.fft(sample)
-        fft = fft[:len(fft)//2]
-        fft = np.abs(fft)
-        fft = fft / np.max(fft)
+        inputs = preprocess_audio(array)
 
-        return fft
+        # Predict
+        with torch.no_grad():
+            logits = model(**inputs).logits
+            # compute probabilities
+            probs = logits.softmax(dim=-1).flatten().numpy()
+
+        return probs

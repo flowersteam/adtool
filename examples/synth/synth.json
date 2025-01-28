@@ -9,7 +9,7 @@
     "system": {
         "path": "examples.synth.systems.Synth.SynthSimulation",
         "config": {
-            "max_generators": 3
+            "nb_freqs": 20
         }
     },
     "explorer": {
