@@ -62,12 +62,12 @@ class SynthParameterMap(Leaf):
         # mutate frequencies by adding a random noise as a ratio of the frequency
         frequencies = json["frequencies"]
         for i in range(len(frequencies)):
-            frequencies[i] += random.uniform(-0.1, 0.1) * frequencies[i]
+            frequencies[i] += random.uniform(-0.05, 0.05) * frequencies[i]
 
         # mutate amplitudes by adding a random noise as a ratio of the amplitude
         amplitudes = json["amplitudes"]
         for i in range(len(amplitudes)):
-            amplitudes[i] += random.uniform(-0.1, 0.1) * amplitudes[i]
+            amplitudes[i] += random.uniform(-0.05, 0.05) * amplitudes[i]
 
 
         intermed_dict["dynamic_params"] = json

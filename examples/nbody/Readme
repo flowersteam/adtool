@@ -1,0 +1,2 @@
+Example to search for stable trajectories of N bodies in a 2D space, exploring initial conditions.
+Example of both search for diversity and bias towards more stable trajectories.
