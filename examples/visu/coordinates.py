@@ -185,12 +185,13 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
 
 
 def export_last_frame(discoveries):
-    # extract last frame of each video and save them in respective folder
+    # Extract a lightweight preview frame for each video to speed up point
+    # texture loading in the web UI.
     for discovery in discoveries:
         if not os.path.exists(discovery['visual']):
             continue
 
-        img_path = f"{discovery['visual'][:-4]}.png"
+        img_path = f"{discovery['visual'][:-4]}.jpg"
         if os.path.exists(img_path):
             continue
         video = cv2.VideoCapture(discovery['visual'])
@@ -199,21 +200,34 @@ def export_last_frame(discoveries):
         ret, frame = video.read()
         video.release()
 
-        # replace .mp4 with .jpg
-        cv2.imwrite(img_path, frame)
+        if not ret or frame is None:
+            continue
+
+        # Keep previews small and compressed since they are only thumbnails for
+        # scatter points, not full-fidelity inspection media.
+        target_width = 320
+        h, w = frame.shape[:2]
+        if w > target_width:
+            target_height = int(h * (target_width / max(1, w)))
+            frame = cv2.resize(frame, (target_width, max(1, target_height)))
+
+        cv2.imwrite(img_path, frame, [int(cv2.IMWRITE_JPEG_QUALITY), 55])
 
 
-def compute_coordinates(path):
+def compute_coordinates(path, static_dir='static'):
     global pca
     print("computing coordinates", path)
     discoveries = list_discoveries(path)
+    static_discoveries_path = os.path.join(static_dir, 'discoveries.json')
+    static_concatenated_path = os.path.join(static_dir, 'concatenated.webm')
+
     if len(discoveries) == 0:
         # touch discoveries.json
-        with open('static/discoveries.json', 'w') as f:
+        with open(static_discoveries_path, 'w') as f:
             f.write('[]')
             # rm static/concatenated.webm if exists
-        if os.path.exists('static/concatenated.webm'):
-            os.remove('static/concatenated.webm')
+        if os.path.exists(static_concatenated_path):
+            os.remove(static_concatenated_path)
 
         return
 
@@ -221,7 +235,7 @@ def compute_coordinates(path):
     if len(discoveries) == 0:
         return
     if len(discoveries) < 3:
-        with open('static/discoveries.json', 'w') as f:
+        with open(static_discoveries_path, 'w') as f:
             json.dump([{
                 'x': 0,
                 'y': 0,
@@ -230,7 +244,7 @@ def compute_coordinates(path):
         return
 
     if len(discoveries) == 2:
-        with open('static/discoveries.json', 'w') as f:
+        with open(static_discoveries_path, 'w') as f:
             json.dump([{
                 'x': -1,
                 'y': 0,
@@ -242,43 +256,18 @@ def compute_coordinates(path):
             }], f)
         return
 
-    X = np.array([discovery['embedding']
-                 for discovery in discoveries if 'embedding' in discovery])
+    discoveries = [
+        discovery for discovery in discoveries if 'embedding' in discovery]
+    X = np.array([discovery['embedding'] for discovery in discoveries])
 
     X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-6)
 
   #  X = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0) + 1e-6)
 
-    NB_CLUSTERS = 400
-    if len(discoveries) > NB_CLUSTERS:
-        #    keep only the top 100 most disctinct  discoveries
-        kmeans = KMeans(n_clusters=NB_CLUSTERS, random_state=0)
-        kmeans.fit(X)
-        centers = kmeans.cluster_centers_
-        top_discoveries = []
-        for center in centers:
-            min_distance = float('inf')
-            top_discovery = None
-            for discovery in discoveries:
-                distance = np.linalg.norm(discovery['embedding']-center)
-                if distance < min_distance and discovery not in top_discoveries:
-                    min_distance = distance
-                    top_discovery = discovery
-            top_discoveries.append(top_discovery)
-
-        # same but also consider cluster of size 1
-
-        discoveries = top_discoveries
-
     # check if there is nan values
     if np.isnan(X).any():
         print("nan found in X")
         return
-
-    # remove enries with nan
-
-    # normalize X
-    # min_max normalize
 
     # pca = PCA(n_components=2, random_state=0, whiten=True)
     pca = umap.UMAP(n_components=2, random_state=0,
@@ -289,6 +278,28 @@ def compute_coordinates(path):
     # check if there is nan values
     if np.isnan(embedding).any():
         print("nan found in embedding")
+
+    # Cap rendered points after UMAP so the 2D manifold is preserved before
+    # downsampling for visualization.
+    NB_CLUSTERS = 500
+    if len(discoveries) > NB_CLUSTERS:
+        kmeans = KMeans(n_clusters=NB_CLUSTERS, random_state=0)
+        labels = kmeans.fit_predict(embedding)
+        centers = kmeans.cluster_centers_
+
+        selected_indices = []
+        for cluster_idx, center in enumerate(centers):
+            members = np.where(labels == cluster_idx)[0]
+            if len(members) == 0:
+                continue
+
+            cluster_points = embedding[members]
+            nearest_member = members[np.argmin(
+                np.linalg.norm(cluster_points - center, axis=1))]
+            selected_indices.append(nearest_member)
+
+        discoveries = [discoveries[i] for i in selected_indices]
+        embedding = embedding[selected_indices]
 
     saved_coordinates = []
 
@@ -336,7 +347,7 @@ def compute_coordinates(path):
         # discovery['width'] = width
         # discovery['height'] = height
 
-    with open('static/discoveries.json', 'w') as f:
+    with open(static_discoveries_path, 'w') as f:
         json.dump(saved_coordinates, f)
 
     return pca
