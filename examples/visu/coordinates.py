@@ -1,5 +1,6 @@
-
-
+import math
+from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import json
 import numpy as np
@@ -9,24 +10,14 @@ from sklearn.cluster import KMeans
 
 import umap
 
-
-#from pydub import AudioSegment
-
-
-loaded_json={
+loaded_json = {
 
 }
 
 
-import os
-import json
-import numpy as np
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
 def process_discovery(root, name):
     global loaded_json
     discovery = {}
-
 
     discovery_path = os.path.join(root, name, 'discovery.json')
 
@@ -48,27 +39,27 @@ def process_discovery(root, name):
     if None in discovery_embedding:
         print("None found")
         return None
-    
+
     # same for infinities
     if np.isinf(discovery_embedding).any():
         print("infinities found")
         return None
 
-    files=os.listdir(os.path.join(root, name))
+    files = os.listdir(os.path.join(root, name))
     # get first file ending with mp4 , only the first one
-    mp4_files= [file for file in files if file.endswith('.mp4')]
+    mp4_files = [file for file in files if file.endswith('.mp4')]
     if len(mp4_files):
-        file=mp4_files[0]
-        
+        file = mp4_files[0]
+
         path = os.path.join(root, name, file)
         discovery['visual'] = path
         discovery['embedding'] = discovery_embedding
         loaded_json[discovery_path] = discovery
         return discovery
-        
-    png_files= [file for file in files if file.endswith('.png')]
+
+    png_files = [file for file in files if file.endswith('.png')]
     if len(png_files):
-        file=png_files[0]
+        file = png_files[0]
 
         path = os.path.join(root, name, file)
         discovery['visual'] = path
@@ -77,6 +68,7 @@ def process_discovery(root, name):
         return discovery
 
     return None
+
 
 def list_discoveries(path):
     discoveries = []
@@ -96,21 +88,13 @@ def list_discoveries(path):
     print("Number of discoveries: ", len(discoveries))
     return discoveries
 
-import cv2
-import numpy as np
-from multiprocessing import Pool
 
 def concatenate_photos(discoveries, output_file='static/concatenated.webm'):
-    #make a single photo from all photos
+    # make a single photo from all photos
     photos = [cv2.imread(discovery['visual']) for discovery in discoveries]
     concatenated_photo = cv2.hconcat(photos)
     cv2.imwrite(output_file, concatenated_photo)
 
-
-import cv2
-import numpy as np
-from multiprocessing import Pool
-import math
 
 def process_frame(args):
     i, video_path, frame_positions, frame_counts, black_frame = args
@@ -122,6 +106,7 @@ def process_frame(args):
         frame = black_frame
     return i, frame
 
+
 def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
     video_paths = [discovery['visual'] for discovery in discoveries]
 
@@ -132,7 +117,8 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
     video.release()
 
     # Calculate the number of frames in each video
-    frame_counts = [int(cv2.VideoCapture(video_path).get(cv2.CAP_PROP_FRAME_COUNT)) for video_path in video_paths]
+    frame_counts = [int(cv2.VideoCapture(video_path).get(
+        cv2.CAP_PROP_FRAME_COUNT)) for video_path in video_paths]
     max_frame_count = max(frame_counts)
 
     # Calculate the number of rows and columns needed to form a grid
@@ -146,7 +132,8 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
     # Create a VideoWriter object with the output file name, fourcc code, frames per second, and frame size
     total_width = width * cols
     total_height = height * rows
-    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'VP90'), 5, (total_width, total_height))
+    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(
+        *'VP90'), 5, (total_width, total_height))
 
     # Initialize frame positions
     frame_positions = [0] * num_videos
@@ -154,7 +141,8 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
     with Pool() as p:
         while True:
             # Prepare arguments for process_frame function
-            args = [(i, video_path, frame_positions, frame_counts, black_frame) for i, video_path in enumerate(video_paths)]
+            args = [(i, video_path, frame_positions, frame_counts, black_frame)
+                    for i, video_path in enumerate(video_paths)]
 
             # Process frames in parallel
             results = p.map(process_frame, args)
@@ -171,7 +159,8 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
             frames = [result[1] for result in results]
 
             # Create an empty frame for the grid
-            grid_frame = np.zeros((total_height, total_width, 3), dtype=np.uint8)
+            grid_frame = np.zeros(
+                (total_height, total_width, 3), dtype=np.uint8)
 
             # Place each frame in the correct position in the grid
             for idx, frame in enumerate(frames):
@@ -179,7 +168,8 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
                 col = idx % cols
                 y_offset = row * height
                 x_offset = col * width
-                grid_frame[y_offset:y_offset + height, x_offset:x_offset + width] = frame
+                grid_frame[y_offset:y_offset + height,
+                           x_offset:x_offset + width] = frame
 
             # Write the grid frame to the output video
             out.write(grid_frame)
@@ -212,12 +202,13 @@ def export_last_frame(discoveries):
         # replace .mp4 with .jpg
         cv2.imwrite(img_path, frame)
 
+
 def compute_coordinates(path):
     global pca
     print("computing coordinates", path)
     discoveries = list_discoveries(path)
     if len(discoveries) == 0:
-        #touch discoveries.json
+        # touch discoveries.json
         with open('static/discoveries.json', 'w') as f:
             f.write('[]')
             # rm static/concatenated.webm if exists
@@ -229,7 +220,7 @@ def compute_coordinates(path):
     # if less than 2 discoveries, return
     if len(discoveries) == 0:
         return
-    if len(discoveries) <3:
+    if len(discoveries) < 3:
         with open('static/discoveries.json', 'w') as f:
             json.dump([{
                 'x': 0,
@@ -237,7 +228,7 @@ def compute_coordinates(path):
                 'visual': discoveries[0]['visual'][len(path):]
             }], f)
         return
-    
+
     if len(discoveries) == 2:
         with open('static/discoveries.json', 'w') as f:
             json.dump([{
@@ -250,75 +241,49 @@ def compute_coordinates(path):
                 'visual': discoveries[1]['visual'][len(path):]
             }], f)
         return
-            
 
-        
-    X = np.array([discovery['embedding'] for discovery in discoveries  if 'embedding' in discovery])
+    X = np.array([discovery['embedding']
+                 for discovery in discoveries if 'embedding' in discovery])
 
     X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-6)
 
   #  X = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0) + 1e-6)
 
-
-
-
-    NB_CLUSTERS=400
+    NB_CLUSTERS = 400
     if len(discoveries) > NB_CLUSTERS:
-    #    keep only the top 100 most disctinct  discoveries 
+        #    keep only the top 100 most disctinct  discoveries
         kmeans = KMeans(n_clusters=NB_CLUSTERS, random_state=0)
         kmeans.fit(X)
         centers = kmeans.cluster_centers_
-        top_discoveries=[]
+        top_discoveries = []
         for center in centers:
-            min_distance=float('inf')
-            top_discovery=None
+            min_distance = float('inf')
+            top_discovery = None
             for discovery in discoveries:
-                distance=np.linalg.norm(discovery['embedding']-center)
-                if distance<min_distance and discovery not in top_discoveries:
-                    min_distance=distance
-                    top_discovery=discovery
+                distance = np.linalg.norm(discovery['embedding']-center)
+                if distance < min_distance and discovery not in top_discoveries:
+                    min_distance = distance
+                    top_discovery = discovery
             top_discoveries.append(top_discovery)
-
 
         # same but also consider cluster of size 1
 
-
-
-        discoveries=top_discoveries
-
-
+        discoveries = top_discoveries
 
     # check if there is nan values
     if np.isnan(X).any():
         print("nan found in X")
         return
-    
+
     # remove enries with nan
 
-    
-
-
-
-    
-    
-
-
     # normalize X
-   # 
+    # min_max normalize
 
-   # min_max normalize
-    
-    
-
-
-
-
-
-   # pca = PCA(n_components=2, random_state=0, whiten=True)
-    pca = umap.UMAP(n_components=2, random_state=0, n_neighbors=min(10, len(X)))  
+    # pca = PCA(n_components=2, random_state=0, whiten=True)
+    pca = umap.UMAP(n_components=2, random_state=0,
+                    n_neighbors=min(10, len(X)))
     pca.fit(X)
-
-
 
     embedding = pca.transform(X)
     # check if there is nan values
@@ -326,8 +291,6 @@ def compute_coordinates(path):
         print("nan found in embedding")
 
     saved_coordinates = []
-
-
 
     for i, discovery in enumerate(discoveries):
         # if nan in embedding, skip
@@ -338,10 +301,6 @@ def compute_coordinates(path):
             'y': embedding[i][1].item(),
             'visual': discovery['visual']
         })
-
-
-
-
 
     min_x = min(discovery['x'] for discovery in saved_coordinates)
     max_x = max(discovery['x'] for discovery in saved_coordinates)
@@ -368,12 +327,12 @@ def compute_coordinates(path):
         with open(f"{path}/target.json", "w") as f:
             json.dump(target, f)
 
-   # width, height=concatenate_videos(discoveries)
+    # width, height=concatenate_videos(discoveries)
     export_last_frame(discoveries)
 
-    #remove path from visual
+    # remove path from visual
     for discovery in saved_coordinates:
-        discovery['visual'] = discovery['visual'][1+ len(path):]
+        discovery['visual'] = discovery['visual'][1 + len(path):]
         # discovery['width'] = width
         # discovery['height'] = height
 
