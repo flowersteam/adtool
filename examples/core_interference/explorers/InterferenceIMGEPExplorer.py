@@ -20,8 +20,8 @@ from examples.core_interference.helpers.modifiers.mix_preserving_time_strucuture
 
 
 class InterferenceIMGEPConfig(BaseModel):
-    # Number of pure random/sampled steps before switching to goal-directed policy.
-    equil_time: int = Field(1, ge=1, le=100000)
+    # equil_time was removed from this explorer since it seems there was no use
+    # to it, we instead kept and use bootstrap_size
     # Goal refresh period.
     periode: int = Field(1, ge=1, le=100000)
     # Number of nearest neighbors used by policy before optional program mixing.
@@ -49,7 +49,6 @@ class InterferenceIMGEPInstance(Leaf):
         postmap_key: str = "params",
         parameter_map: Leaf = IdentityWrapper(),
         behavior_map: Leaf = IdentityWrapper(),
-        equil_time: int = 1,
         periode: int = 1,
         k: int = 1,
         num_parts: int = 2,
@@ -60,7 +59,6 @@ class InterferenceIMGEPInstance(Leaf):
         self.postmap_key = postmap_key
         self.parameter_map = parameter_map
         self.behavior_map = behavior_map
-        self.equil_time = equil_time
         self.periode = max(1, int(periode))
         self.k = max(1, int(k))
         self.num_parts = max(1, int(num_parts))
@@ -87,21 +85,15 @@ class InterferenceIMGEPInstance(Leaf):
         new_trial_data = self.observe_results(system_output)
         trial_data_reset = self._history_saver.map(new_trial_data)
 
-        if self.timestep < self.equil_time:
-            trial_data_reset = self.parameter_map.map(
-                trial_data_reset, override_existing=True
-            )
-            trial_data_reset["equil"] = 1
-        else:
-            # External targeting can override explorer-generated goals by placing
-            # a `target` key in the pipeline payload.
-            goal = system_output.get("target", None)
-            params_trial = self.suggest_trial(goal=goal)
-            trial_data_reset[self.postmap_key] = params_trial
-            trial_data_reset = self.parameter_map.map(
-                trial_data_reset, override_existing=False
-            )
-            trial_data_reset["equil"] = 0
+        # External targeting can override explorer-generated goals by placing
+        # a `target` key in the pipeline payload.
+        goal = system_output.get("target", None)
+        params_trial = self.suggest_trial(goal=goal)
+        trial_data_reset[self.postmap_key] = params_trial
+        trial_data_reset = self.parameter_map.map(
+            trial_data_reset, override_existing=False
+        )
+        trial_data_reset["equil"] = 0
 
         self.timestep += 1
         return trial_data_reset
@@ -157,8 +149,7 @@ class InterferenceIMGEPInstance(Leaf):
     def _should_refresh_goal(self) -> bool:
         if self._current_goal is None:
             return True
-        exploration_step = max(0, self.timestep - self.equil_time)
-        return exploration_step % self.periode == 0
+        return self.timestep % self.periode == 0
 
     def _get_valid_history(
         self, lookback_length: int
@@ -282,7 +273,6 @@ class InterferenceIMGEPExplorer:
         return InterferenceIMGEPInstance(
             parameter_map=param_map,
             behavior_map=behavior_map,
-            equil_time=self.config.equil_time,
             periode=self.config.periode,
             k=self.config.k,
             num_parts=self.config.num_parts,
