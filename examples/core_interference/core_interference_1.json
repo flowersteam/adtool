@@ -11,7 +11,9 @@
         "config": {
             "cycles": 512,
             "num_banks": 4,
-            "num_addr": 96
+            "num_addr": 96,
+            "simulator_runner": "examples.core_interference.simulator_runners.DefaultEnvSimulatorRunner",
+            "simulator_runner_config": {}
         }
     },
     "explorer": {
