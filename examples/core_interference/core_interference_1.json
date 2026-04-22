@@ -25,7 +25,9 @@
             "parameter_map": "examples.core_interference.maps.InterferenceParameterMap.InterferenceParameterMap",
             "behavior_map_config": {
                 "goal_sampler": "examples.core_interference.goal_samplers.RandomMinMaxGoalSampler",
-                "goal_sampler_config": {}
+                "goal_sampler_config": {},
+                "behavior_encoder": "examples.core_interference.behavior_encoders.InterferenceMetricEncoder",
+                "behavior_encoder_config": {}
             },
             "parameter_map_config": {
                 "generator": "examples.core_interference.generators.RandomInstructionGenerator",
