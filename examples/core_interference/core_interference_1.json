@@ -19,8 +19,8 @@
         "config": {
             "periode": 100,
             "k": 2,
-            "num_parts": 2,
-            "mix_type": "interleaving",
+            "mixer": "examples.core_interference.mixers.InterleavingProgramMixer",
+            "mixer_config": {},
             "behavior_map": "examples.core_interference.maps.InterferenceBehaviorMap.InterferenceBehaviorMap",
             "parameter_map": "examples.core_interference.maps.InterferenceParameterMap.InterferenceParameterMap",
             "behavior_map_config": {},

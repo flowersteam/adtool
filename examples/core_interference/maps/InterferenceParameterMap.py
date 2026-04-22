@@ -10,7 +10,7 @@ from examples.core_interference.helpers.codegeneration import (
 from examples.core_interference.helpers.modifiers.mutation import (
 	mutate_instruction_sequence,
 )
-from examples.core_interference.helpers.modifiers.normalization import (
+from examples.core_interference.helpers.normalization import (
 	normalize_instruction_program,
 )
 from examples.core_interference.systems.InterferenceSystem import InterferenceSystem

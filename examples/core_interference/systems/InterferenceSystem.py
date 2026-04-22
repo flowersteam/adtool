@@ -12,7 +12,7 @@ from examples.core_interference.helpers.envi import Env
 from examples.core_interference.helpers.interference_visualizer import (
 	render_interference_dashboard,
 )
-from examples.core_interference.helpers.modifiers.normalization import (
+from examples.core_interference.helpers.normalization import (
 	normalize_instruction_program,
 )
 from examples.core_interference.types import (

@@ -10,16 +10,10 @@ from adtool.utils.expose_config.expose_config import expose
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.SaveWrapper import SaveWrapper
-from examples.core_interference.helpers.modifiers.mix import mix_sequences
-from examples.core_interference.helpers.modifiers.mix_interleaving import (
-    mix_sequences_interleaved,
-)
-from examples.core_interference.helpers.modifiers.mix_preserving_time_strucuture import (
-    mix_sequences as mix_sequences_preserv,
-)
 from examples.core_interference.types import (
     InstructionProgram,
     InterferenceParamsPayload,
+    ProgramMixer,
 )
 
 
@@ -30,10 +24,11 @@ class InterferenceIMGEPConfig(BaseModel):
     periode: int = Field(1, ge=1, le=100000)
     # Number of nearest neighbors used by policy before optional program mixing.
     k: int = Field(1, ge=1, le=1000)
-    # Number of chunks used by chunk/preserv mix operators.
-    num_parts: int = Field(2, ge=1, le=64)
-    # One of: chunks | preserv | interleaving.
-    mix_type: str = Field("chunks")
+    # Mixer class path used to combine parent programs.
+    mixer: str = Field(
+        "examples.core_interference.mixers.chunk_mixer.ChunkProgramMixer"
+    )
+    mixer_config: Dict = Field(default_factory=lambda: {"num_parts": 2})
     behavior_map: str = Field(
         "examples.core_interference.maps.InterferenceBehaviorMap.InterferenceBehaviorMap"
     )
@@ -55,8 +50,7 @@ class InterferenceIMGEPInstance(Leaf):
         behavior_map: Leaf = IdentityWrapper(),
         periode: int = 1,
         k: int = 1,
-        num_parts: int = 2,
-        mix_type: str = "chunks",
+        mixer: Optional[ProgramMixer] = None,
     ) -> None:
         super().__init__()
         self.premap_key = premap_key
@@ -65,8 +59,7 @@ class InterferenceIMGEPInstance(Leaf):
         self.behavior_map = behavior_map
         self.periode = max(1, int(periode))
         self.k = max(1, int(k))
-        self.num_parts = max(1, int(num_parts))
-        self.mix_type = mix_type
+        self.mixer = mixer
 
         self.timestep = 0
         self._history_saver = SaveWrapper()
@@ -233,33 +226,18 @@ class InterferenceIMGEPInstance(Leaf):
         param_obj = getattr(self.parameter_map, "param_obj", None)
         max_cycle = getattr(param_obj, "max_cycle", 400)
 
-        if self.mix_type == "chunks":
-            # Splits programs into temporal chunks and recombines them.
-            core0 = mix_sequences(
-                core0_pool, max_cycle=max_cycle, num_parts=self.num_parts
+        if self.mixer is not None:
+            core0 = self.mixer.mix(
+                core0_pool,
+                max_cycle=max_cycle,
             )
-            core1 = mix_sequences(
-                core1_pool, max_cycle=max_cycle, num_parts=self.num_parts
-            )
-            return core0, core1
-
-        if self.mix_type == "preserv":
-            # Preserves temporal structure constraints while mixing chunks.
-            core0 = mix_sequences_preserv(
-                core0_pool, max_cycle=max_cycle, num_parts=self.num_parts
-            )
-            core1 = mix_sequences_preserv(
-                core1_pool, max_cycle=max_cycle, num_parts=self.num_parts
+            core1 = self.mixer.mix(
+                core1_pool,
+                max_cycle=max_cycle,
             )
             return core0, core1
 
-        if self.mix_type == "interleaving":
-            # Interleaves instructions from candidate programs in time order.
-            core0 = mix_sequences_interleaved(core0_pool, max_cycle=max_cycle)
-            core1 = mix_sequences_interleaved(core1_pool, max_cycle=max_cycle)
-            return core0, core1
-
-        # Fallback to first candidate if a custom mix type is not recognized.
+        # Fallback when no mixer is configured.
         return deepcopy(core0_pool[0]), deepcopy(core1_pool[0])
 
 
@@ -276,14 +254,14 @@ class InterferenceIMGEPExplorer:
         # this explorer can stay fully configuration-driven.
         behavior_map = self.make_behavior_map(system)
         param_map = self.make_parameter_map(system)
+        mixer = self.make_mixer()
 
         return InterferenceIMGEPInstance(
             parameter_map=param_map,
             behavior_map=behavior_map,
             periode=self.config.periode,
             k=self.config.k,
-            num_parts=self.config.num_parts,
-            mix_type=self.config.mix_type,
+            mixer=mixer,
         )
 
     def make_behavior_map(self, system: System):
@@ -303,3 +281,13 @@ class InterferenceIMGEPExplorer:
                 f"Could not retrieve parameter map class from path: {self.config.parameter_map}."
             )
         return parameter_map_cls(system, **kwargs)
+
+    def make_mixer(self) -> ProgramMixer:
+        mixer_path = self.config.mixer
+        mixer_cls = locate(mixer_path)
+        if mixer_cls is None:
+            raise ValueError(
+                f"Could not retrieve mixer class from path: {mixer_path}."
+            )
+
+        return mixer_cls(**self.config.mixer_config)

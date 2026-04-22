@@ -28,7 +28,6 @@ class ProgramMixer(Protocol):
         sequences: List[InstructionProgram],
         *,
         max_cycle: int,
-        num_parts: int,
     ) -> InstructionProgram:
         ...
 
