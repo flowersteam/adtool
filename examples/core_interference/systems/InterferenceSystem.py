@@ -18,17 +18,19 @@ from examples.core_interference.helpers.normalization import (
 from examples.core_interference.types import (
     InterferenceDynamicParams,
     InterferenceParamsPayload,
+    InterferenceSimulatorRunnerConfig,
 )
 
 
 class InterferenceConfig(BaseModel):
-    cycles: int = Field(80, ge=1, le=100000)
-    num_banks: int = Field(4, ge=1, le=64)
-    num_addr: int = Field(41, ge=4, le=4096)
-    simulator_runner: str = Field(
-        "examples.core_interference.simulator_runners.DefaultEnvSimulatorRunner"
+    simulator_runner_config: InterferenceSimulatorRunnerConfig = Field(
+        default_factory=lambda: {
+            "path": "examples.core_interference.simulator_runners.DefaultEnvSimulatorRunner",
+            "cycles": 80,
+            "num_banks": 4,
+            "num_addr": 41,
+        }
     )
-    simulator_runner_config: Dict[str, Any] = Field(default_factory=dict)
 
 
 @expose
@@ -39,19 +41,14 @@ class InterferenceSystem(System):
 
     def __init__(
             self,
-            simulator_runner_config: Optional[Dict[str, Any]] = {
-                "path": "examples.core_interference.simulator_runners.DefaultEnvSimulatorRunner",
-                "cycles": 80,
-                "num_banks": 4,
-                "num_addr": 41,
-            },
+            simulator_runner_config: Optional[InterferenceSimulatorRunnerConfig] = None,
             *args,
             **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
-        self.cycles = simulator_runner_config.get("cycles", 80)
-        self.num_banks = simulator_runner_config.get("num_banks", 4)
-        self.num_addr = simulator_runner_config.get("num_addr", 41)
+        if simulator_runner_config is None:
+            simulator_runner_config = dict(self.config.simulator_runner_config)
+
         self.simulator_runner = make_module(
             "simulator_runner",
             **simulator_runner_config)

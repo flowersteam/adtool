@@ -17,6 +17,13 @@ class InterferenceParamsPayload(TypedDict):
     dynamic_params: InterferenceDynamicParams
 
 
+class InterferenceSimulatorRunnerConfig(TypedDict):
+    path: str
+    cycles: int
+    num_banks: int
+    num_addr: int
+
+
 class GoalSampler(Protocol):
     def sample(self, history: List[np.ndarray], feature_size: int | None) -> np.ndarray:
         ...
