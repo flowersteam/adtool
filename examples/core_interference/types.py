@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Protocol, Tuple, TypedDict
+from typing_extensions import Any, Dict, List, Literal, Protocol, Tuple, TypedDict
 
 import numpy as np
 
