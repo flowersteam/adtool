@@ -46,6 +46,18 @@ class ProgramMutator(Protocol):
         ...
 
 
+class ProgramGenerator(Protocol):
+    def generate(
+        self,
+        *,
+        num_instructions: int,
+        max_cycle: int,
+        min_address: int,
+        max_address: int,
+    ) -> InstructionProgram:
+        ...
+
+
 class BehaviorEncoder(Protocol):
     def encode(self, raw_output: Dict[str, Any]) -> np.ndarray:
         ...

@@ -5,9 +5,6 @@ from typing import Any, Dict, Optional
 from pydoc import locate
 
 from adtool.utils.leaf.Leaf import Leaf
-from examples.core_interference.helpers.codegeneration import (
-	generate_instruction_sequence,
-)
 from examples.core_interference.helpers.normalization import (
 	normalize_instruction_program,
 )
@@ -15,6 +12,7 @@ from examples.core_interference.systems.InterferenceSystem import InterferenceSy
 from examples.core_interference.types import (
 	InstructionProgram,
 	InterferenceParamsPayload,
+	ProgramGenerator,
 	ProgramMutator,
 )
 
@@ -38,6 +36,10 @@ class InterferenceParameterMap(Leaf):
 		system: InterferenceSystem,
 		premap_key: str = "params",
 		param_obj: InterferenceParams = None,
+		generator: str = (
+			"examples.core_interference.generators.RandomInstructionGenerator"
+		),
+		generator_config: Optional[Dict[str, Any]] = None,
 		mutator: str = (
 			"examples.core_interference.mutators.RandomInstructionMutator"
 		),
@@ -55,19 +57,20 @@ class InterferenceParameterMap(Leaf):
 
 		self.premap_key = premap_key
 		self.param_obj = param_obj
+		self.generator = self.make_generator(generator, generator_config or {})
 		self.mutator = self.make_mutator(mutator, mutator_config or {})
 
 	def sample(self) -> InterferenceParamsPayload:
 		# RANDOM exploration: generate two independent programs,
 		# one per core, within their respective address domains.
 		p = self.param_obj
-		core0: InstructionProgram = generate_instruction_sequence(
+		core0: InstructionProgram = self.generator.generate(
 			num_instructions=p.num_instructions,
 			min_address=p.min_address_core0,
 			max_address=p.max_address_core0,
 			max_cycle=p.max_cycle,
 		)
-		core1: InstructionProgram = generate_instruction_sequence(
+		core1: InstructionProgram = self.generator.generate(
 			num_instructions=p.num_instructions,
 			min_address=p.min_address_core1,
 			max_address=p.max_address_core1,
@@ -130,6 +133,18 @@ class InterferenceParameterMap(Leaf):
 		# If override is disabled and params already exist, they pass through
 		# untouched so explorer-selected candidates are preserved.
 		return intermed
+
+	def make_generator(
+		self,
+		generator_path: str,
+		generator_config: Dict[str, Any],
+	) -> ProgramGenerator:
+		generator_cls = locate(generator_path)
+		if generator_cls is None:
+			raise ValueError(
+				f"Could not retrieve generator class from path: {generator_path}."
+			)
+		return generator_cls(**generator_config)
 
 	def make_mutator(
 		self,

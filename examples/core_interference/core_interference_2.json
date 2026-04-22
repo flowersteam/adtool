@@ -26,6 +26,8 @@
             "parameter_map": "examples.core_interference.maps.InterferenceParameterMap.InterferenceParameterMap",
             "behavior_map_config": {},
             "parameter_map_config": {
+                "generator": "examples.core_interference.generators.RandomInstructionGenerator",
+                "generator_config": {},
                 "mutator": "examples.core_interference.mutators.RandomInstructionMutator",
                 "mutator_config": {},
                 "num_mutations": 8,
