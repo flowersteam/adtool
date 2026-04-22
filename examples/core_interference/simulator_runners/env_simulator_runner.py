@@ -143,7 +143,7 @@ class Experiment:
                     self.miss_tab[type2id(self.ddr_stats['current_type'][j]),
                                   self.ddr_stats['row'][j], self.ddr_stats['bank'][j]] += 1
                 else:
-                    hits[self.ddr_stats['bank']] += 1
+                    hits[self.ddr_stats['bank'][j]] += 1
                     self.hits_tab[type2id(self.ddr_stats['current_type'][j]),
                                   self.ddr_stats['row'][j], self.ddr_stats['bank'][j]] += 1
 
