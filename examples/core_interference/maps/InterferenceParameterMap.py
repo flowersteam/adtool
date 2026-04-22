@@ -14,6 +14,10 @@ from examples.core_interference.helpers.modifiers.normalization import (
 	normalize_instruction_program,
 )
 from examples.core_interference.systems.InterferenceSystem import InterferenceSystem
+from examples.core_interference.types import (
+	InstructionProgram,
+	InterferenceParamsPayload,
+)
 
 
 @dataclass
@@ -49,17 +53,17 @@ class InterferenceParameterMap(Leaf):
 		self.premap_key = premap_key
 		self.param_obj = param_obj
 
-	def sample(self) -> Dict:
+	def sample(self) -> InterferenceParamsPayload:
 		# RANDOM exploration: generate two independent programs,
 		# one per core, within their respective address domains.
 		p = self.param_obj
-		core0 = generate_instruction_sequence(
+		core0: InstructionProgram = generate_instruction_sequence(
 			num_instructions=p.num_instructions,
 			min_address=p.min_address_core0,
 			max_address=p.max_address_core0,
 			max_cycle=p.max_cycle,
 		)
-		core1 = generate_instruction_sequence(
+		core1: InstructionProgram = generate_instruction_sequence(
 			num_instructions=p.num_instructions,
 			min_address=p.min_address_core1,
 			max_address=p.max_address_core1,
@@ -75,7 +79,7 @@ class InterferenceParameterMap(Leaf):
 		# Returned shape is intentionally nested to match System.map expectations:
 		# input["params"]["dynamic_params"]["core0"|"core1"].
 
-	def mutate(self, parameter_dict: Dict) -> Dict:
+	def mutate(self, parameter_dict: InterferenceParamsPayload) -> InterferenceParamsPayload:
 		intermed = deepcopy(parameter_dict)
 
 		p = self.param_obj
@@ -112,7 +116,7 @@ class InterferenceParameterMap(Leaf):
 
 		return intermed
 
-	def map(self, input: Dict, override_existing: bool = True) -> Dict:
+	def map(self, input: Dict[str, Any], override_existing: bool = True) -> Dict[str, Any]:
 		intermed = deepcopy(input)
 		# Inject a fresh sample only when requested or when params are missing.
 		if (override_existing and self.premap_key in intermed) or (

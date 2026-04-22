@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import io
-from dataclasses import dataclass
 from typing import Any, Dict, Tuple
 
 import imageio
@@ -16,13 +15,10 @@ from examples.core_interference.helpers.interference_visualizer import (
 from examples.core_interference.helpers.modifiers.normalization import (
 	normalize_instruction_program,
 )
-
-
-@dataclass
-class InterferenceDynamicParams:
-	core0: Dict[int, Tuple[str, int]]
-	core1: Dict[int, Tuple[str, int]]
-
+from examples.core_interference.types import (
+	InterferenceDynamicParams,
+	InterferenceParamsPayload,
+)
 
 class InterferenceConfig(BaseModel):
 	cycles: int = Field(80, ge=1, le=100000)
@@ -53,20 +49,21 @@ class InterferenceSystem(System):
 	def map(self, input: Dict) -> Dict:
 		# Copy input dict to avoid mutating upstream payload references.
 		data = dict(input)
-		dynamic_params = data["params"]["dynamic_params"]
+		params_payload: InterferenceParamsPayload = data["params"]
+		dynamic_params = params_payload["dynamic_params"]
 
-		params = InterferenceDynamicParams(
-			core0=normalize_instruction_program(
+		params: InterferenceDynamicParams = {
+			"core0": normalize_instruction_program(
 				dynamic_params["core0"],
 				strict=True,
 				context="InterferenceSystem.core0",
 			),
-			core1=normalize_instruction_program(
+			"core1": normalize_instruction_program(
 				dynamic_params["core1"],
 				strict=True,
 				context="InterferenceSystem.core1",
 			),
-		)
+		}
 
 		env = Env(
 			cycles=self.cycles,
@@ -77,7 +74,7 @@ class InterferenceSystem(System):
 		# simulator side effects/state.
 		# Env execution produces the structured observation consumed by
 		# InterferenceBehaviorMap.
-		output = env({"core0": params.core0, "core1": params.core1})
+		output = env(params)
 		data["output"] = output
 
 		return data

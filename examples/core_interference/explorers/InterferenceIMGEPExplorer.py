@@ -17,6 +17,10 @@ from examples.core_interference.helpers.modifiers.mix_interleaving import (
 from examples.core_interference.helpers.modifiers.mix_preserving_time_strucuture import (
     mix_sequences as mix_sequences_preserv,
 )
+from examples.core_interference.types import (
+    InstructionProgram,
+    InterferenceParamsPayload,
+)
 
 
 class InterferenceIMGEPConfig(BaseModel):
@@ -70,8 +74,8 @@ class InterferenceIMGEPInstance(Leaf):
         # goals are not resampled at every step.
         self._current_goal: Optional[np.ndarray] = None
 
-    def bootstrap(self) -> Dict:
-        data_dict = {}
+    def bootstrap(self) -> Dict[str, Any]:
+        data_dict: Dict[str, Any] = {}
         # Random initialization: policy does not reuse
         # history yet and simply samples a fresh program pair.
         data_dict[self.postmap_key] = self.parameter_map.sample()
@@ -113,7 +117,7 @@ class InterferenceIMGEPInstance(Leaf):
         self,
         lookback_length: int = -1,
         goal: Optional[np.ndarray] = None,
-    ) -> Dict:
+    ) -> InterferenceParamsPayload:
         # History is filtered to remove malformed/NaN observations before policy
         # selection to avoid unstable distance computations.
         feature_matrix, param_history = self._get_valid_history(lookback_length)
@@ -153,7 +157,7 @@ class InterferenceIMGEPInstance(Leaf):
 
     def _get_valid_history(
         self, lookback_length: int
-    ) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
+    ) -> Tuple[np.ndarray, List[InterferenceParamsPayload]]:
         history_buffer = self._history_saver.get_history(lookback_length=lookback_length)
 
         feature_history = []
@@ -196,7 +200,10 @@ class InterferenceIMGEPInstance(Leaf):
         k_eff = min(self.k, len(distances))
         return np.argsort(distances)[:k_eff]
 
-    def _compose_base_policy(self, selected_params: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _compose_base_policy(
+        self,
+        selected_params: List[InterferenceParamsPayload],
+    ) -> InterferenceParamsPayload:
         if not selected_params:
             return self.parameter_map.sample()
 
@@ -218,9 +225,9 @@ class InterferenceIMGEPInstance(Leaf):
 
     def _mix_cores(
         self,
-        core0_pool: List[Any],
-        core1_pool: List[Any],
-    ) -> Tuple[Any, Any]:
+        core0_pool: List[InstructionProgram],
+        core1_pool: List[InstructionProgram],
+    ) -> Tuple[InstructionProgram, InstructionProgram]:
         # Read max_cycle from parameter map config to keep mixing aligned with
         # the same temporal constraints used by generation/mutation.
         param_obj = getattr(self.parameter_map, "param_obj", None)
