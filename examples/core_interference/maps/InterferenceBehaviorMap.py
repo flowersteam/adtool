@@ -1,11 +1,13 @@
 from copy import deepcopy
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
+
+from pydoc import locate
 
 import numpy as np
 
 from adtool.utils.leaf.Leaf import Leaf
-from examples.core_interference.helpers.goal_sampling import sample_goal_from_history
 from examples.core_interference.systems.InterferenceSystem import InterferenceSystem
+from examples.core_interference.types import GoalSampler
 
 
 class InterferenceBehaviorMap(Leaf):
@@ -34,6 +36,10 @@ class InterferenceBehaviorMap(Leaf):
 		system: InterferenceSystem,
 		premap_key: str = "output",
 		postmap_key: str = "output",
+		goal_sampler: str = (
+			"examples.core_interference.goal_samplers.RandomMinMaxGoalSampler"
+		),
+		goal_sampler_config: Optional[Dict[str, Any]] = None,
 	) -> None:
 		super().__init__()
 		_ = system
@@ -41,6 +47,10 @@ class InterferenceBehaviorMap(Leaf):
 		self.postmap_key = postmap_key
 		self._history: List[np.ndarray] = []
 		self._feature_size = None
+		self.goal_sampler = self.make_goal_sampler(
+			goal_sampler,
+			goal_sampler_config or {},
+		)
 
 	def _extract_metrics(self, sim_output: Dict) -> np.ndarray:
 		mutual = sim_output.get("mutual", {})
@@ -81,4 +91,16 @@ class InterferenceBehaviorMap(Leaf):
 
 	def sample(self) -> np.ndarray:
 		"""Sample goals from behavior history."""
-		return sample_goal_from_history(self._history, self._feature_size)
+		return self.goal_sampler.sample(self._history, self._feature_size)
+
+	def make_goal_sampler(
+		self,
+		goal_sampler_path: str,
+		goal_sampler_config: Dict[str, Any],
+	) -> GoalSampler:
+		goal_sampler_cls = locate(goal_sampler_path)
+		if goal_sampler_cls is None:
+			raise ValueError(
+				f"Could not retrieve goal sampler class from path: {goal_sampler_path}."
+			)
+		return goal_sampler_cls(**goal_sampler_config)

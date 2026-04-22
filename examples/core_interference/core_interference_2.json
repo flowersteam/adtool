@@ -24,7 +24,10 @@
             "mixer_config": {},
             "behavior_map": "examples.core_interference.maps.InterferenceBehaviorMap.InterferenceBehaviorMap",
             "parameter_map": "examples.core_interference.maps.InterferenceParameterMap.InterferenceParameterMap",
-            "behavior_map_config": {},
+            "behavior_map_config": {
+                "goal_sampler": "examples.core_interference.goal_samplers.RandomMinMaxGoalSampler",
+                "goal_sampler_config": {}
+            },
             "parameter_map_config": {
                 "generator": "examples.core_interference.generators.RandomInstructionGenerator",
                 "generator_config": {},
