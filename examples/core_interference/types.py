@@ -33,7 +33,16 @@ class ProgramMixer(Protocol):
 
 
 class ProgramMutator(Protocol):
-    def mutate(self, program: InstructionProgram) -> InstructionProgram:
+    def mutate(
+        self,
+        instructions: InstructionProgram,
+        *,
+        num_mutations: int,
+        max_cycle: int,
+        min_address: int,
+        max_address: int,
+        num_instructions: int,
+    ) -> InstructionProgram:
         ...
 
 

@@ -1,14 +1,12 @@
 import dataclasses
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+from pydoc import locate
 
 from adtool.utils.leaf.Leaf import Leaf
 from examples.core_interference.helpers.codegeneration import (
 	generate_instruction_sequence,
-)
-from examples.core_interference.helpers.modifiers.mutation import (
-	mutate_instruction_sequence,
 )
 from examples.core_interference.helpers.normalization import (
 	normalize_instruction_program,
@@ -17,6 +15,7 @@ from examples.core_interference.systems.InterferenceSystem import InterferenceSy
 from examples.core_interference.types import (
 	InstructionProgram,
 	InterferenceParamsPayload,
+	ProgramMutator,
 )
 
 
@@ -39,6 +38,10 @@ class InterferenceParameterMap(Leaf):
 		system: InterferenceSystem,
 		premap_key: str = "params",
 		param_obj: InterferenceParams = None,
+		mutator: str = (
+			"examples.core_interference.mutators.RandomInstructionMutator"
+		),
+		mutator_config: Optional[Dict[str, Any]] = None,
 		**config_decorator_kwargs,
 	) -> None:
 		super().__init__()
@@ -52,6 +55,7 @@ class InterferenceParameterMap(Leaf):
 
 		self.premap_key = premap_key
 		self.param_obj = param_obj
+		self.mutator = self.make_mutator(mutator, mutator_config or {})
 
 	def sample(self) -> InterferenceParamsPayload:
 		# RANDOM exploration: generate two independent programs,
@@ -97,7 +101,7 @@ class InterferenceParameterMap(Leaf):
 
 		# Mutation is intentionally asymmetric by address range: each core keeps
 		# its own address constraints to preserve interference structure.
-		dyn["core0"] = mutate_instruction_sequence(
+		dyn["core0"] = self.mutator.mutate(
 			instructions=core0,
 			num_mutations=p.num_mutations,
 			max_cycle=p.max_cycle,
@@ -105,7 +109,7 @@ class InterferenceParameterMap(Leaf):
 			max_address=p.max_address_core0,
 			num_instructions=p.num_instructions,
 		)
-		dyn["core1"] = mutate_instruction_sequence(
+		dyn["core1"] = self.mutator.mutate(
 			instructions=core1,
 			num_mutations=p.num_mutations,
 			max_cycle=p.max_cycle,
@@ -126,3 +130,15 @@ class InterferenceParameterMap(Leaf):
 		# If override is disabled and params already exist, they pass through
 		# untouched so explorer-selected candidates are preserved.
 		return intermed
+
+	def make_mutator(
+		self,
+		mutator_path: str,
+		mutator_config: Dict[str, Any],
+	) -> ProgramMutator:
+		mutator_cls = locate(mutator_path)
+		if mutator_cls is None:
+			raise ValueError(
+				f"Could not retrieve mutator class from path: {mutator_path}."
+			)
+		return mutator_cls(**mutator_config)
