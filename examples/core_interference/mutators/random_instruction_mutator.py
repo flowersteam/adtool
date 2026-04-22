@@ -8,14 +8,15 @@ from examples.core_interference.types import InstructionProgram
 class RandomInstructionMutator:
     """Random add/delete/modify mutator for instruction programs."""
 
-    def __init__(self, seed: Optional[int] = None) -> None:
+    def __init__(self, seed: Optional[int] = None,
+                 num_mutations: int = 5) -> None:
         self.seed = seed
+        self.num_mutations = num_mutations
 
     def mutate(
         self,
         instructions: InstructionProgram,
         *,
-        num_mutations: int,
         max_cycle: int,
         min_address: int,
         max_address: int,
@@ -23,31 +24,30 @@ class RandomInstructionMutator:
     ) -> InstructionProgram:
         """
         Mutate an instruction sequence by adding, deleting, or modifying instructions.
-        
+
         Args:
-            instructions: Original instruction dictionary
-            num_mutations: Number of mutations to perform
+            instructions: Original instruction dictionary   
             max_cycle: Maximum cycle number (default: 60)
             max_address: Maximum memory address (default: 19)
-        
+
         Returns:
             New mutated dictionary
         """
         # Create a deep copy to avoid modifying the original
         mutated = copy.deepcopy(instructions)
         instruction_types = ['read', 'write']
-        
+
         # Get all possible cycles (0 to max_cycle)
         all_cycles = set(range(0, max_cycle + 1))
         used_cycles = set(mutated.keys())
         available_cycles = list(all_cycles - used_cycles)
-        
-        for _ in range(num_mutations):
-            if len(mutated)>1:
+
+        for _ in range(self.num_mutations):
+            if len(mutated) > 1:
                 mutation_type = random.choice(['add', 'delete', 'modify'])
             else:
                 mutation_type = random.choice(['add', 'modify'])
-            
+
             if mutation_type == 'add' and available_cycles:
                 # Add a new instruction at an available cycle
                 new_cycle = random.choice(available_cycles)
@@ -55,21 +55,21 @@ class RandomInstructionMutator:
                 address = random.randint(min_address, max_address)
                 mutated[new_cycle] = (instr_type, address)
                 available_cycles.remove(new_cycle)
-                
+
             elif mutation_type == 'delete' and mutated:
                 # Delete a random existing instruction
                 cycle_to_delete = random.choice(list(mutated.keys()))
                 del mutated[cycle_to_delete]
                 available_cycles.append(cycle_to_delete)
-                
+
             elif mutation_type == 'modify' and mutated:
                 # Modify an existing instruction
                 cycle_to_modify = random.choice(list(mutated.keys()))
                 old_type, old_address = mutated[cycle_to_modify]
-                
+
                 # Choose what to modify: type, address, or both
                 modify_choice = random.choice(['type', 'address', 'both'])
-                
+
                 if modify_choice == 'type':
                     # Change instruction type only
                     new_type = 'write' if old_type == 'read' else 'read'
@@ -83,8 +83,9 @@ class RandomInstructionMutator:
                     new_type = 'write' if old_type == 'read' else 'read'
                     new_address = random.randint(min_address, max_address)
                     mutated[cycle_to_modify] = (new_type, new_address)
-        if len(mutated)>num_instructions:
-            to_del = random.sample(list(mutated.keys()),len(mutated)- num_instructions)
+        if len(mutated) > num_instructions:
+            to_del = random.sample(list(mutated.keys()),
+                                   len(mutated) - num_instructions)
             for k in to_del:
                 del mutated[k]
         return mutated

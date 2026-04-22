@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from pydantic import BaseModel, Field
-from pydoc import locate
 
 from adtool.systems import System
 from adtool.utils.expose_config.expose_config import expose
@@ -15,6 +14,7 @@ from examples.core_interference.types import (
     InterferenceParamsPayload,
     ProgramMixer,
 )
+from examples.core_interference.helpers.module_factory import make_module
 
 
 class InterferenceIMGEPConfig(BaseModel):
@@ -29,14 +29,12 @@ class InterferenceIMGEPConfig(BaseModel):
         "examples.core_interference.mixers.chunk_mixer.ChunkProgramMixer"
     )
     mixer_config: Dict = Field(default_factory=lambda: {"num_parts": 2})
-    behavior_map: str = Field(
-        "examples.core_interference.maps.InterferenceBehaviorMap.InterferenceBehaviorMap"
-    )
-    behavior_map_config: Dict = Field(default_factory=dict)
-    parameter_map: str = Field(
-        "examples.core_interference.maps.InterferenceParameterMap.InterferenceParameterMap"
-    )
-    parameter_map_config: Dict = Field(default_factory=dict)
+    behavior_map_config: Dict = Field(default_factory=lambda: {
+        "path": "examples.core_interference.maps.InterferenceBehaviorMap.InterferenceBehaviorMap"
+    })
+    parameter_map_config: Dict = Field(default_factory=lambda: {
+        "path": "examples.core_interference.maps.InterferenceParameterMap.InterferenceParameterMap"
+    })
 
 
 class InterferenceIMGEPInstance(Leaf):
@@ -113,7 +111,8 @@ class InterferenceIMGEPInstance(Leaf):
     ) -> InterferenceParamsPayload:
         # History is filtered to remove malformed/NaN observations before policy
         # selection to avoid unstable distance computations.
-        feature_matrix, param_history = self._get_valid_history(lookback_length)
+        feature_matrix, param_history = self._get_valid_history(
+            lookback_length)
 
         if feature_matrix.shape[0] == 0:
             return self.parameter_map.sample()
@@ -151,12 +150,14 @@ class InterferenceIMGEPInstance(Leaf):
     def _get_valid_history(
         self, lookback_length: int
     ) -> Tuple[np.ndarray, List[InterferenceParamsPayload]]:
-        history_buffer = self._history_saver.get_history(lookback_length=lookback_length)
+        history_buffer = self._history_saver.get_history(
+            lookback_length=lookback_length)
 
         feature_history = []
         param_history = []
         for item in history_buffer:
-            feature = np.asarray(item.get(self.premap_key, []), dtype=float).reshape(-1)
+            feature = np.asarray(
+                item.get(self.premap_key, []), dtype=float).reshape(-1)
             params = item.get(self.postmap_key, None)
             # Keep parameter and feature histories aligned by filtering both at
             # the same time. This avoids index mismatches during parent lookup.
@@ -252,9 +253,11 @@ class InterferenceIMGEPExplorer:
     def __call__(self, system: System) -> InterferenceIMGEPInstance:
         # Factory role: instantiate behavior/parameter maps from config paths so
         # this explorer can stay fully configuration-driven.
-        behavior_map = self.make_behavior_map(system)
-        param_map = self.make_parameter_map(system)
-        mixer = self.make_mixer()
+        behavior_map = make_module(
+            "behavior_map", system, **self.config.behavior_map_config)
+        param_map = make_module("parameter_map", system,
+                                **self.config.parameter_map_config)
+        mixer = make_module("mixer", **self.config.mixer_config)
 
         return InterferenceIMGEPInstance(
             parameter_map=param_map,
@@ -263,31 +266,3 @@ class InterferenceIMGEPExplorer:
             k=self.config.k,
             mixer=mixer,
         )
-
-    def make_behavior_map(self, system: System):
-        kwargs = self.config.behavior_map_config
-        behavior_map_cls = locate(self.config.behavior_map)
-        if behavior_map_cls is None:
-            raise ValueError(
-                f"Could not retrieve behavior map class from path: {self.config.behavior_map}."
-            )
-        return behavior_map_cls(system, **kwargs)
-
-    def make_parameter_map(self, system: System):
-        kwargs = self.config.parameter_map_config
-        parameter_map_cls = locate(self.config.parameter_map)
-        if parameter_map_cls is None:
-            raise ValueError(
-                f"Could not retrieve parameter map class from path: {self.config.parameter_map}."
-            )
-        return parameter_map_cls(system, **kwargs)
-
-    def make_mixer(self) -> ProgramMixer:
-        mixer_path = self.config.mixer
-        mixer_cls = locate(mixer_path)
-        if mixer_cls is None:
-            raise ValueError(
-                f"Could not retrieve mixer class from path: {mixer_path}."
-            )
-
-        return mixer_cls(**self.config.mixer_config)

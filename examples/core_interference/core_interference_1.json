@@ -9,11 +9,12 @@
     "system": {
         "path": "examples.core_interference.systems.InterferenceSystem.InterferenceSystem",
         "config": {
-            "cycles": 512,
-            "num_banks": 4,
-            "num_addr": 96,
-            "simulator_runner": "examples.core_interference.simulator_runners.DefaultEnvSimulatorRunner",
-            "simulator_runner_config": {}
+            "simulator_runner_config": {
+                "path": "examples.core_interference.simulator_runners.DefaultEnvSimulatorRunner",
+                "cycles": 512,
+                "num_banks": 4,
+                "num_addr": 96
+            }
         }
     },
     "explorer": {
@@ -21,22 +22,27 @@
         "config": {
             "periode": 5,
             "k": 2,
-            "mixer": "examples.core_interference.mixers.InterleavingProgramMixer",
-            "mixer_config": {},
-            "behavior_map": "examples.core_interference.maps.InterferenceBehaviorMap.InterferenceBehaviorMap",
-            "parameter_map": "examples.core_interference.maps.InterferenceParameterMap.InterferenceParameterMap",
+            "mixer_config": {
+                "path": "examples.core_interference.mixers.InterleavingProgramMixer"
+            },
             "behavior_map_config": {
-                "goal_sampler": "examples.core_interference.goal_samplers.RandomMinMaxGoalSampler",
-                "goal_sampler_config": {},
-                "behavior_encoder": "examples.core_interference.behavior_encoders.InterferenceMetricEncoder",
-                "behavior_encoder_config": {}
+                "path": "examples.core_interference.maps.InterferenceBehaviorMap.InterferenceBehaviorMap",
+                "goal_sampler_config": {
+                    "path": "examples.core_interference.goal_samplers.RandomMinMaxGoalSampler"
+                },
+                "behavior_encoder_config": {
+                    "path": "examples.core_interference.behavior_encoders.InterferenceMetricEncoder"
+                }
             },
             "parameter_map_config": {
-                "generator": "examples.core_interference.generators.RandomInstructionGenerator",
-                "generator_config": {},
-                "mutator": "examples.core_interference.mutators.RandomInstructionMutator",
-                "mutator_config": {},
-                "num_mutations": 2,
+                "path": "examples.core_interference.maps.InterferenceParameterMap.InterferenceParameterMap",
+                "generator_config": {
+                    "path": "examples.core_interference.generators.RandomInstructionGenerator"
+                },
+                "mutator_config": {
+                    "path": "examples.core_interference.mutators.RandomInstructionMutator",
+                    "num_mutations": 2
+                },
                 "num_instructions": 10,
                 "min_address_core0": 0,
                 "max_address_core0": 47,

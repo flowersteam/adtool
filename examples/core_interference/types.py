@@ -37,7 +37,6 @@ class ProgramMutator(Protocol):
         self,
         instructions: InstructionProgram,
         *,
-        num_mutations: int,
         max_cycle: int,
         min_address: int,
         max_address: int,
