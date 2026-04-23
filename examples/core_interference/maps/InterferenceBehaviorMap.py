@@ -29,6 +29,8 @@ class InterferenceBehaviorMap(Leaf):
         self.postmap_key = postmap_key
         self._history: List[np.ndarray] = []
         self._feature_size = None
+        self._history_min: Optional[np.ndarray] = None
+        self._history_max: Optional[np.ndarray] = None
         self.goal_sampler = make_module(
             "goal_sampler",
             **goal_sampler_config,
@@ -55,8 +57,19 @@ class InterferenceBehaviorMap(Leaf):
         # history has accumulated.
         if self._feature_size is None:
             self._feature_size = embedding.size
+        if self._history_min is None or self._history_max is None:
+            self._history_min = embedding.copy()
+            self._history_max = embedding.copy()
+        else:
+            np.minimum(self._history_min, embedding, out=self._history_min)
+            np.maximum(self._history_max, embedding, out=self._history_max)
         return intermed
 
     def sample(self) -> np.ndarray:
         """Sample goals from behavior history."""
-        return self.goal_sampler.sample(self._history, self._feature_size)
+        return self.goal_sampler.sample(
+            self._history,
+            self._feature_size,
+            min_=self._history_min,
+            max_=self._history_max,
+        )

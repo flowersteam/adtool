@@ -15,6 +15,8 @@ class QMCMinMaxGoalSampler:
         self,
         history: List[np.ndarray],
         feature_size: Optional[int],
+        min_: Optional[np.ndarray] = None,
+        max_: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Sample goal vector from behavior history using min/max scaling and QMC."""
         if not history:
@@ -22,9 +24,10 @@ class QMCMinMaxGoalSampler:
                 return np.zeros(1, dtype=float)
             return np.zeros(feature_size, dtype=float)
 
-        tab = np.vstack(history)
-        min_ = tab.min(axis=0)
-        max_ = tab.max(axis=0)
+        if min_ is None or max_ is None:
+            tab = np.vstack(history)
+            min_ = tab.min(axis=0)
+            max_ = tab.max(axis=0)
 
         low = (1 - 0.4 * np.sign(min_)) * min_
         high = 1.4 * max_

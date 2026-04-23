@@ -2,7 +2,7 @@
     "experiment": {
         "config": {
             "save_location": "./discoveries/config_qmc/",
-            "save_frequency": 5,
+            "save_frequency": 100,
             "bootstrap_size": 10
         }
     },
@@ -20,8 +20,8 @@
     "explorer": {
         "path": "examples.core_interference.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
         "config": {
-            "periode": 5,
-            "k": 2,
+            "periode": 25,
+            "k": 3,
             "mixer_config": {
                 "path": "examples.core_interference.mixers.InterleavingProgramMixer"
             },
@@ -41,7 +41,7 @@
                 },
                 "mutator_config": {
                     "path": "examples.core_interference.mutators.RandomInstructionMutator",
-                    "num_mutations": 2
+                    "num_mutations": 3
                 },
                 "num_instructions": 10,
                 "min_address_core0": 0,
