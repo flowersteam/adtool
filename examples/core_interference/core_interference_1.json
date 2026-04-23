@@ -2,8 +2,8 @@
     "experiment": {
         "config": {
             "save_location": "./discoveries/config_1/",
-            "save_frequency": 5,
-            "bootstrap_size": 10
+            "save_frequency": 50,
+            "bootstrap_size": 200
         }
     },
     "system": {
@@ -20,8 +20,8 @@
     "explorer": {
         "path": "examples.core_interference.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
         "config": {
-            "periode": 5,
-            "k": 2,
+            "periode": 25,
+            "k": 3,
             "mixer_config": {
                 "path": "examples.core_interference.mixers.InterleavingProgramMixer"
             },

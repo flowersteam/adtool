@@ -61,6 +61,11 @@ class InterferenceIMGEPInstance(Leaf):
 
         self.timestep = 0
         self._history_saver = SaveWrapper()
+        # Incremental caches to avoid re-reading full history every iteration.
+        self._feature_cache: List[np.ndarray] = []
+        self._param_cache: List[InterferenceParamsPayload] = []
+        # Number of SaveWrapper entries already ingested into caches.
+        self._history_cursor = 0
         # Keep a goal between iterations to have a `periode` behavior:
         # goals are not resampled at every step.
         self._current_goal: Optional[np.ndarray] = None
@@ -79,6 +84,7 @@ class InterferenceIMGEPInstance(Leaf):
         # to internal explorer history before selecting the next trial.
         new_trial_data = self.observe_results(system_output)
         trial_data_reset = self._history_saver.map(new_trial_data)
+        self._sync_history_cache()
 
         # External targeting can override explorer-generated goals by placing
         # a `target` key in the pipeline payload.
@@ -102,6 +108,7 @@ class InterferenceIMGEPInstance(Leaf):
         return system_output
 
     def read_last_discovery(self) -> Dict:
+        # Last item is still owned by SaveWrapper and used as discovery payload.
         return self._history_saver.buffer[-1]
 
     def suggest_trial(
@@ -109,9 +116,9 @@ class InterferenceIMGEPInstance(Leaf):
         lookback_length: int = -1,
         goal: Optional[np.ndarray] = None,
     ) -> InterferenceParamsPayload:
-        # History is filtered to remove malformed/NaN observations before policy
-        # selection to avoid unstable distance computations.
-        feature_matrix, param_history = self._get_valid_history(
+        # The history cache is updated incrementally from the SaveWrapper buffer
+        # so we do not need to rebuild or deserialize the full history here.
+        feature_matrix, param_history = self._get_cached_history(
             lookback_length)
 
         if feature_matrix.shape[0] == 0:
@@ -147,15 +154,23 @@ class InterferenceIMGEPInstance(Leaf):
             return True
         return self.timestep % self.periode == 0
 
-    def _get_valid_history(
-        self, lookback_length: int
-    ) -> Tuple[np.ndarray, List[InterferenceParamsPayload]]:
-        history_buffer = self._history_saver.get_history(
-            lookback_length=lookback_length)
+    def _sync_history_cache(self) -> None:
+        """Ingest only new SaveWrapper entries into local caches.
 
-        feature_history = []
-        param_history = []
-        for item in history_buffer:
+        This keeps per-step work proportional to newly added discoveries.
+        """
+        buffer = self._history_saver.buffer
+        if self._history_cursor > len(buffer):
+            # SaveWrapper may clear its in-memory buffer after persistence.
+            # Reset local cursor and caches to stay consistent.
+            self._feature_cache = []
+            self._param_cache = []
+            self._history_cursor = 0
+
+        while self._history_cursor < len(buffer):
+            item = buffer[self._history_cursor]
+            self._history_cursor += 1
+
             feature = np.asarray(
                 item.get(self.premap_key, []), dtype=float).reshape(-1)
             params = item.get(self.postmap_key, None)
@@ -165,8 +180,20 @@ class InterferenceIMGEPInstance(Leaf):
                 continue
             if np.isnan(feature).any() or np.isinf(feature).any():
                 continue
-            feature_history.append(feature)
-            param_history.append(params)
+
+            self._feature_cache.append(feature)
+            self._param_cache.append(params)
+
+    def _get_cached_history(
+        self, lookback_length: int
+    ) -> Tuple[np.ndarray, List[InterferenceParamsPayload]]:
+        """Return cached history slice without touching on-disk retrieval."""
+        if lookback_length > 0:
+            feature_history = self._feature_cache[-lookback_length:]
+            param_history = self._param_cache[-lookback_length:]
+        else:
+            feature_history = self._feature_cache
+            param_history = self._param_cache
 
         if not feature_history:
             return np.zeros((0, 0), dtype=float), []
