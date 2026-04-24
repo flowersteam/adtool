@@ -4,11 +4,11 @@ import numpy as np
 
 
 class ZScoreMetricEncoder:
-    """Encode interference simulator output and z-score the selected metrics.
+    """Encode interference simulator output with running global z-score.
 
-    This is a lightweight, per-observation normalization step. It keeps the
-    same output contract as the existing encoder while centering and scaling
-    the selected metrics to comparable magnitudes.
+    Mean and variance are updated online across all observations seen so far,
+    so normalization uses training-history statistics rather than per-sample
+    statistics.
     """
 
     def __init__(self, selection: Optional[List[str]] = None) -> None:
@@ -29,9 +29,12 @@ class ZScoreMetricEncoder:
                 for core in ["core0", "core1"]
             ]
         self.selection = selection
+        self._count = 0
+        self._mean: Optional[np.ndarray] = None
+        self._m2: Optional[np.ndarray] = None
 
     def encode(self, raw_output: Dict[str, Any]) -> np.ndarray:
-        """Convert mutual statistics to a single standardized feature vector."""
+        """Convert mutual statistics to a globally standardized feature vector."""
         mutual = raw_output.get("mutual", {})
         observation_vec = []
 
@@ -46,9 +49,26 @@ class ZScoreMetricEncoder:
         metrics = np.nan_to_num(
             metrics, nan=0.0, posinf=1.0, neginf=-1.0)
 
-        mean, std = metrics.mean(), metrics.std() or 1.0
-        if std == 0.0:
-            return np.zeros_like(metrics, dtype=float)
-        
-        normalized = (metrics - mean) / std
+        if self._mean is None or self._m2 is None:
+            self._mean = np.zeros_like(metrics, dtype=float)
+            self._m2 = np.zeros_like(metrics, dtype=float)
+        elif metrics.shape != self._mean.shape:
+            raise ValueError(
+                "ZScoreMetricEncoder received a metric vector with a different shape "
+                f"({metrics.shape}) than previous observations ({self._mean.shape})."
+            )
+
+        # Vectorized Welford update for numerically stable online variance.
+        self._count += 1
+        delta = metrics - self._mean
+        self._mean += delta / self._count
+        delta2 = metrics - self._mean
+        self._m2 += delta * delta2
+
+        if self._count < 2:
+            return np.zeros_like(metrics, dtype=np.float32)
+
+        variance = self._m2 / self._count
+        std = np.sqrt(np.maximum(variance, 1e-12))
+        normalized = (metrics - self._mean) / std
         return np.clip(normalized, -3.0, 3.0).astype(np.float32)
