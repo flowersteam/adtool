@@ -46,6 +46,9 @@ class SmokeSpec:
     experiment_id: int
     output_key: str
     dynamic_params_path: str
+    enabled: bool
+    skip_reason: str
+    compare_metrics: List[str]
 
 
 def _load_specs(tests_root: Path) -> List[SmokeSpec]:
@@ -73,6 +76,12 @@ def _load_specs(tests_root: Path) -> List[SmokeSpec]:
                 dynamic_params_path=str(
                     raw.get("dynamic_params_path", "params.dynamic_params")
                 ),
+                enabled=bool(raw.get("enabled", True)),
+                skip_reason=str(raw.get("skip_reason", "")).strip(),
+                compare_metrics=[
+                    str(metric_name)
+                    for metric_name in raw.get("compare_metrics", [])
+                ],
             )
         )
 
@@ -424,6 +433,29 @@ def _run_single_test(
 
         baseline = json.loads(baseline_file.read_text(encoding="utf-8"))
         ranges = baseline.get("ranges", {})
+
+        if spec.compare_metrics:
+            filtered_ranges: Dict[str, Dict[str, float]] = {}
+            missing_metric_ranges: List[str] = []
+            for metric_name in spec.compare_metrics:
+                if metric_name not in ranges:
+                    missing_metric_ranges.append(metric_name)
+                    continue
+                filtered_ranges[metric_name] = ranges[metric_name]
+
+            if missing_metric_ranges:
+                missing = ", ".join(sorted(missing_metric_ranges))
+                return (
+                    False,
+                    [
+                        "Requested compare_metrics are missing in baseline "
+                        f"for '{spec.name}': {missing}",
+                        "Run with --refresh-baseline after updating metrics.",
+                    ],
+                )
+
+            ranges = filtered_ranges
+
         failures = _compare_metrics(metrics, ranges)
         return len(failures) == 0, failures if failures else ["All checks passed"]
     finally:
@@ -479,6 +511,11 @@ def main() -> int:
 
     all_passed = True
     for spec in selected_specs:
+        if not spec.enabled:
+            reason = spec.skip_reason or "disabled in test_spec.json"
+            print(f"[SKIP] {spec.name} - {reason}")
+            continue
+
         print(f"[RUN] {spec.name}")
         passed, details = _run_single_test(
             spec,
