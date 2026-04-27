@@ -1,0 +1,60 @@
+{
+  "name": "kuramoto",
+  "generated_at_utc": "2026-04-27T09:08:11.718318+00:00",
+  "reference": {
+    "discovery_count": 3.0,
+    "output_dim": 16.0,
+    "output_mean": 0.44199622875197636,
+    "output_std": 0.14376848694041883,
+    "output_last_l2": 1.3886137078250915,
+    "output_finite_ratio": 1.0,
+    "output_first_mean": 0.29526331438645903,
+    "runtime_seconds": 3.690480152999953,
+    "seconds_per_iteration": 1.2301600509999844,
+    "param_numeric_mean": 0.38489748888070957,
+    "param_numeric_std": 0.4007770454759828
+  },
+  "ranges": {
+    "discovery_count": {
+      "min": 3.0,
+      "max": 3.0
+    },
+    "output_dim": {
+      "min": 16.0,
+      "max": 16.0
+    },
+    "output_mean": {
+      "min": -0.5580037712480237,
+      "max": 1.4419962287519763
+    },
+    "output_std": {
+      "min": 0.0,
+      "max": 1.1437684869404188
+    },
+    "output_last_l2": {
+      "min": 0.0,
+      "max": 3.3886137078250913
+    },
+    "output_finite_ratio": {
+      "min": 0.85,
+      "max": 1.0
+    },
+    "output_first_mean": {
+      "min": -0.704736685613541,
+      "max": 1.295263314386459
+    },
+    "seconds_per_iteration": {
+      "min": 0.0,
+      "max": 5.4206402039999375
+    },
+    "param_numeric_mean": {
+      "min": 0.15395899555228384,
+      "max": 0.6158359822091353
+    },
+    "param_numeric_std": {
+      "min": 0.16031081819039314,
+      "max": 0.6412432727615724
+    }
+  },
+  "notes": "Loose acceptance ranges for smoke testing. Regenerate when intentionally changing behavior."
+}
