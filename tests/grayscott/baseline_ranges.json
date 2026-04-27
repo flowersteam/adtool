@@ -1,59 +1,59 @@
 {
   "name": "grayscott",
-  "generated_at_utc": "2026-04-27T09:24:51.171823+00:00",
+  "generated_at_utc": "2026-04-27T13:39:33.190402+00:00",
   "reference": {
-    "discovery_count": 4.0,
+    "discovery_count": 5.0,
     "output_dim": 17.0,
-    "output_mean": 57.67084415640643,
-    "output_std": 157.71658060175253,
-    "output_last_l2": 694.2391370106636,
+    "output_mean": 57.60506950865505,
+    "output_std": 157.53584162793942,
+    "output_last_l2": 693.7569721239912,
     "output_finite_ratio": 1.0,
-    "output_first_mean": 489.5875549316406,
-    "runtime_seconds": 2.2648697280001215,
-    "seconds_per_iteration": 0.5662174320000304,
-    "param_numeric_mean": 0.057333357002672954,
-    "param_numeric_std": 0.01497065469168579
+    "output_first_mean": 489.0287292480469,
+    "runtime_seconds": 2.423546128000453,
+    "seconds_per_iteration": 0.48470922560009055,
+    "param_numeric_mean": 0.05819817230387817,
+    "param_numeric_std": 0.015056924044305938
   },
   "ranges": {
     "discovery_count": {
-      "min": 4.0,
-      "max": 4.0
+      "min": 5.0,
+      "max": 5.0
     },
     "output_dim": {
       "min": 17.0,
       "max": 17.0
     },
     "output_mean": {
-      "min": 37.48604870166418,
-      "max": 77.85563961114869
+      "min": 37.44329518062578,
+      "max": 77.76684383668432
     },
     "output_std": {
-      "min": 102.51577739113915,
-      "max": 212.9173838123659
+      "min": 102.39829705816062,
+      "max": 212.67338619771823
     },
     "output_last_l2": {
-      "min": 416.54348220639815,
-      "max": 971.9347918149291
+      "min": 416.25418327439473,
+      "max": 971.2597609735876
     },
     "output_finite_ratio": {
       "min": 0.85,
       "max": 1.0
     },
     "output_first_mean": {
-      "min": 318.2319107055664,
-      "max": 660.9431991577148
+      "min": 317.8686740112305,
+      "max": 660.1887844848633
     },
     "seconds_per_iteration": {
       "min": 0.0,
-      "max": 2.7648697280001215
+      "max": 2.438836902400362
     },
     "param_numeric_mean": {
-      "min": 0.022933342801069186,
-      "max": 0.09173337120427671
+      "min": 0.02327926892155127,
+      "max": 0.09311707568620507
     },
     "param_numeric_std": {
       "min": 0.0,
-      "max": 0.03497065469168579
+      "max": 0.03505692404430594
     }
   },
   "notes": "Loose acceptance ranges for smoke testing. Regenerate when intentionally changing behavior."

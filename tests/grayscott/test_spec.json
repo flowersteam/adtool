@@ -1,7 +1,7 @@
 {
   "name": "grayscott",
   "config_file": "smoke_config.json",
-  "nb_iterations": 4,
+  "nb_iterations": 5,
   "seed": 42,
   "experiment_id": 9101,
   "output_key": "output",

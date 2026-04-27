@@ -1,7 +1,7 @@
 {
   "name": "wphysics",
   "config_file": "smoke_config.json",
-  "nb_iterations": 1,
+  "nb_iterations": 5,
   "seed": 42,
   "experiment_id": 9410,
   "output_key": "output",

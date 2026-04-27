@@ -1,7 +1,7 @@
 {
   "name": "block_ca",
   "config_file": "smoke_config.json",
-  "nb_iterations": 3,
+  "nb_iterations": 5,
   "seed": 42,
   "experiment_id": 9401,
   "output_key": "output",

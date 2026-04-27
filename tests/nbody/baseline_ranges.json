@@ -1,39 +1,39 @@
 {
   "name": "nbody",
-  "generated_at_utc": "2026-04-27T09:24:59.147736+00:00",
+  "generated_at_utc": "2026-04-27T13:39:42.590246+00:00",
   "reference": {
-    "discovery_count": 3.0,
+    "discovery_count": 5.0,
     "output_dim": 21.0,
-    "output_mean": 0.4809885992961015,
-    "output_std": 2.1286003692305564,
-    "output_last_l2": 10.000630249012506,
+    "output_mean": 0.48165130495473046,
+    "output_std": 2.128459328638895,
+    "output_last_l2": 10.000617242537563,
     "output_finite_ratio": 1.0,
     "output_first_mean": 10.0,
-    "runtime_seconds": 2.152639470000395,
-    "seconds_per_iteration": 0.7175464900001316,
-    "param_numeric_mean": -0.25809837293392923,
-    "param_numeric_std": 0.38807533467693756
+    "runtime_seconds": 2.4822836780003854,
+    "seconds_per_iteration": 0.4964567356000771,
+    "param_numeric_mean": -0.2528640763741861,
+    "param_numeric_std": 0.39585035171157235
   },
   "ranges": {
     "discovery_count": {
-      "min": 3.0,
-      "max": 3.0
+      "min": 5.0,
+      "max": 5.0
     },
     "output_dim": {
       "min": 21.0,
       "max": 21.0
     },
     "output_mean": {
-      "min": -0.5190114007038985,
-      "max": 1.4809885992961016
+      "min": -0.5183486950452696,
+      "max": 1.4816513049547304
     },
     "output_std": {
-      "min": 1.1286003692305564,
-      "max": 3.1286003692305564
+      "min": 1.128459328638895,
+      "max": 3.128459328638895
     },
     "output_last_l2": {
-      "min": 6.000378149407504,
-      "max": 14.000882348617509
+      "min": 6.000370345522538,
+      "max": 14.00086413955259
     },
     "output_finite_ratio": {
       "min": 0.85,
@@ -45,15 +45,15 @@
     },
     "seconds_per_iteration": {
       "min": 0.0,
-      "max": 3.3701859600005264
+      "max": 2.4858269424003083
     },
     "param_numeric_mean": {
-      "min": -0.41295739669428677,
-      "max": -0.10323934917357169
+      "min": -0.4045825221986978,
+      "max": -0.10114563054967446
     },
     "param_numeric_std": {
-      "min": 0.15523013387077503,
-      "max": 0.6209205354831001
+      "min": 0.15834014068462895,
+      "max": 0.6333605627385157
     }
   },
   "notes": "Loose acceptance ranges for smoke testing. Regenerate when intentionally changing behavior."
