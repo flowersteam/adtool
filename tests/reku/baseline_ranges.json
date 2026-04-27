@@ -1,0 +1,60 @@
+{
+  "name": "reku",
+  "generated_at_utc": "2026-04-27T09:26:54.398295+00:00",
+  "reference": {
+    "discovery_count": 3.0,
+    "output_dim": 63.0,
+    "output_mean": 0.02410583781588775,
+    "output_std": 0.13986151497595756,
+    "output_last_l2": 1.1260601318544785,
+    "output_finite_ratio": 1.0,
+    "output_first_mean": 1.0,
+    "runtime_seconds": 2.303982466999514,
+    "seconds_per_iteration": 0.7679941556665048,
+    "param_numeric_mean": 0.03797637990551233,
+    "param_numeric_std": 2.2646589386080214
+  },
+  "ranges": {
+    "discovery_count": {
+      "min": 3.0,
+      "max": 3.0
+    },
+    "output_dim": {
+      "min": 63.0,
+      "max": 63.0
+    },
+    "output_mean": {
+      "min": -0.9758941621841123,
+      "max": 1.0241058378158878
+    },
+    "output_std": {
+      "min": 0.0,
+      "max": 1.1398615149759577
+    },
+    "output_last_l2": {
+      "min": 0.0,
+      "max": 3.1260601318544783
+    },
+    "output_finite_ratio": {
+      "min": 0.85,
+      "max": 1.0
+    },
+    "output_first_mean": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "seconds_per_iteration": {
+      "min": 0.0,
+      "max": 3.571976622666019
+    },
+    "param_numeric_mean": {
+      "min": 0.015190551962204934,
+      "max": 0.06076220784881972
+    },
+    "param_numeric_std": {
+      "min": 0.9058635754432085,
+      "max": 3.623454301772834
+    }
+  },
+  "notes": "Loose acceptance ranges for smoke testing. Regenerate when intentionally changing behavior."
+}

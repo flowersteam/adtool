@@ -1,0 +1,60 @@
+{
+  "name": "particlelenia",
+  "generated_at_utc": "2026-04-27T09:26:52.090154+00:00",
+  "reference": {
+    "discovery_count": 3.0,
+    "output_dim": 7.0,
+    "output_mean": 23.4003233238443,
+    "output_std": 34.0732951310951,
+    "output_last_l2": 109.37256552150323,
+    "output_finite_ratio": 1.0,
+    "output_first_mean": 0.9101009239871626,
+    "runtime_seconds": 25.6888248639998,
+    "seconds_per_iteration": 8.562941621333266,
+    "param_numeric_mean": 1.1026337783712148,
+    "param_numeric_std": 1.1363556007522935
+  },
+  "ranges": {
+    "discovery_count": {
+      "min": 3.0,
+      "max": 3.0
+    },
+    "output_dim": {
+      "min": 7.0,
+      "max": 7.0
+    },
+    "output_mean": {
+      "min": 15.210210160498796,
+      "max": 31.590436487189805
+    },
+    "output_std": {
+      "min": 22.147641835211815,
+      "max": 45.99894842697839
+    },
+    "output_last_l2": {
+      "min": 65.62353931290194,
+      "max": 153.1215917301045
+    },
+    "output_finite_ratio": {
+      "min": 0.85,
+      "max": 1.0
+    },
+    "output_first_mean": {
+      "min": -0.08989907601283742,
+      "max": 1.9101009239871627
+    },
+    "seconds_per_iteration": {
+      "min": 0.0,
+      "max": 34.751766485333064
+    },
+    "param_numeric_mean": {
+      "min": 0.4410535113484859,
+      "max": 1.7642140453939437
+    },
+    "param_numeric_std": {
+      "min": 0.4545422403009174,
+      "max": 1.8181689612036696
+    }
+  },
+  "notes": "Loose acceptance ranges for smoke testing. Regenerate when intentionally changing behavior."
+}

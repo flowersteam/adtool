@@ -1,0 +1,9 @@
+{
+  "name": "reku",
+  "config_file": "smoke_config.json",
+  "nb_iterations": 3,
+  "seed": 42,
+  "experiment_id": 9407,
+  "output_key": "output",
+  "dynamic_params_path": "params.dynamic_params"
+}

@@ -1,6 +1,6 @@
 {
   "name": "kuramoto",
-  "generated_at_utc": "2026-04-27T09:08:11.718318+00:00",
+  "generated_at_utc": "2026-04-27T09:24:54.902937+00:00",
   "reference": {
     "discovery_count": 3.0,
     "output_dim": 16.0,
@@ -9,8 +9,8 @@
     "output_last_l2": 1.3886137078250915,
     "output_finite_ratio": 1.0,
     "output_first_mean": 0.29526331438645903,
-    "runtime_seconds": 3.690480152999953,
-    "seconds_per_iteration": 1.2301600509999844,
+    "runtime_seconds": 3.7287001730001066,
+    "seconds_per_iteration": 1.2429000576667022,
     "param_numeric_mean": 0.38489748888070957,
     "param_numeric_std": 0.4007770454759828
   },
@@ -45,7 +45,7 @@
     },
     "seconds_per_iteration": {
       "min": 0.0,
-      "max": 5.4206402039999375
+      "max": 5.471600230666809
     },
     "param_numeric_mean": {
       "min": 0.15395899555228384,
