@@ -1,0 +1,9 @@
+{
+  "name": "particlelenia",
+  "config_file": "smoke_config.json",
+  "nb_iterations": 5,
+  "seed": 42,
+  "experiment_id": 9406,
+  "output_key": "output",
+  "dynamic_params_path": "params.dynamic_params"
+}

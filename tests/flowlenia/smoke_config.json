@@ -1,0 +1,25 @@
+{
+  "experiment": {"config": {"save_location": "./", "save_frequency": 10, "bootstrap_size": 1}},
+  "system": {
+    "path": "examples.flowlenia.systems.FlowLeniaNoise.FlowLeniaNoise",
+    "config": {"SX": 24, "SY": 24, "final_step": 12, "scale_init_state": 2, "C": 1, "nb_k": 2}
+  },
+  "explorer": {
+    "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
+    "config": {
+      "mutator": "specific",
+      "equil_time": 1,
+      "behavior_map": "examples.flowlenia.maps.FlowLeniaStatistics.FlowLeniaStatistics",
+      "parameter_map": "examples.flowlenia.maps.FlowLeniaParameterMap.FlowLeniaParameterMap",
+      "mutator_config": {},
+      "behavior_map_config": {},
+      "parameter_map_config": {}
+    }
+  },
+  "input_wrappers": [],
+  "output_representations": [],
+  "logger_handlers": [],
+  "callbacks": {
+    "on_discovery": [{"path": "adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk", "config": {}}]
+  }
+}
