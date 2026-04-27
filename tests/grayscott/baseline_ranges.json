@@ -1,0 +1,60 @@
+{
+  "name": "grayscott",
+  "generated_at_utc": "2026-04-27T09:08:08.025382+00:00",
+  "reference": {
+    "discovery_count": 4.0,
+    "output_dim": 17.0,
+    "output_mean": 57.600685015331706,
+    "output_std": 157.5236311128924,
+    "output_last_l2": 693.1186171347438,
+    "output_finite_ratio": 1.0,
+    "output_first_mean": 488.9915084838867,
+    "runtime_seconds": 2.1554099610002595,
+    "seconds_per_iteration": 0.5388524902500649,
+    "param_numeric_mean": 0.057333357002672954,
+    "param_numeric_std": 0.01497065469168579
+  },
+  "ranges": {
+    "discovery_count": {
+      "min": 4.0,
+      "max": 4.0
+    },
+    "output_dim": {
+      "min": 17.0,
+      "max": 17.0
+    },
+    "output_mean": {
+      "min": 37.440445259965614,
+      "max": 77.7609247706978
+    },
+    "output_std": {
+      "min": 102.39036022338006,
+      "max": 212.6569020024047
+    },
+    "output_last_l2": {
+      "min": 415.87117028084623,
+      "max": 970.3660639886414
+    },
+    "output_finite_ratio": {
+      "min": 0.85,
+      "max": 1.0
+    },
+    "output_first_mean": {
+      "min": 317.84448051452637,
+      "max": 660.1385364532471
+    },
+    "seconds_per_iteration": {
+      "min": 0.0,
+      "max": 2.6554099610002595
+    },
+    "param_numeric_mean": {
+      "min": 0.022933342801069186,
+      "max": 0.09173337120427671
+    },
+    "param_numeric_std": {
+      "min": 0.0,
+      "max": 0.03497065469168579
+    }
+  },
+  "notes": "Loose acceptance ranges for smoke testing. Regenerate when intentionally changing behavior."
+}
