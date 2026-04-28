@@ -79,7 +79,7 @@ Available examples are:
 
 To execute examples, you need to install required dependencies:
 ```bash
-pip install ".[examples]"
+pip install .[examples]
 ```  
 First launch video [Grayscott example](https://youtu.be/5iHzTO7yhuQ)
 
@@ -100,7 +100,7 @@ To reload a previous exploration, simply run the same previous commands but from
 ### Visualization
 The tool provides a web interface to visualize the progression of the exploration. To start the web interface, run the following commands:
 ```bash
-pip install ".[visu]"
+pip install .[visu]
 cd examples/visu
 python3 server.py --discoveries PATH_TO_DISCOVERIES
 ```
