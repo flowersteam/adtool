@@ -6,7 +6,7 @@ Implementation is split under tests/smoke_runner for maintainability.
 
 from __future__ import annotations
 
-from tests.smoke_runner.cli import main as run_cli
+from smoke_runner.cli import main as run_cli
 
 
 def main() -> int:
