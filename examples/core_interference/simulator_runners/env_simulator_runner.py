@@ -1,47 +1,26 @@
-import numpy as np
-from examples.core_interference.simulator.sim3 import *
 from typing import Any, Dict
-from examples.core_interference.types import InterferenceDynamicParams
+
+import numpy as np
+
+from examples.core_interference.types import (
+    InterferenceDynamicParams,
+    Simulator,
+    SimulatorRunner,
+)
 
 
-class DefaultEnvSimulatorRunner:
-    """Simulator runner backed by the legacy Env implementation."""
-
-    def __init__(
-        self,
-        cycles: int,
-        num_banks: int,
-        num_addr: int,
-    ) -> None:
-        self.cycles = cycles
-        self.num_banks = num_banks
-        self.num_addr = num_addr
-
-    def run(self, params: InterferenceDynamicParams) -> Dict[str, Any]:
-        env = Env(
-            cycles=self.cycles,
-            num_banks=self.num_banks,
-            num_addr=self.num_addr,
-        )
-        return env(params)
-
-
-# Simulation setup
 class Experiment:
-    def __init__(self,
-                 num_banks=4,
-                 num_addr=20,
-                 ):
+    def __init__(self, backend: Simulator, num_banks: int, num_addr: int) -> None:
         self.num_banks = num_banks
         self.num_addr = num_addr
-        self.num_rows = self.num_addr//16+1
+        self.num_rows = self.num_addr // 16 + 1
         self.ddr_stats = {}
         self.time_values = {'core0': [0], 'core1': [0]}
         # Instantiate the DDR Memory
-        self.ddr_memory_physical = DDRMemory(num_banks=self.num_banks)
+        self.ddr_memory_physical = backend.DDRMemory(num_banks=self.num_banks)
 
         # Instantiate the DDR Memory Controller, connected to the physical DDR
-        self.ddr_controller = DDRMemoryController(
+        self.ddr_controller = backend.DDRMemoryController(
             self.ddr_memory_physical,
             tRCD=15,    # Row to Column Delay
             tRP=15,     # Row Precharge
@@ -52,7 +31,7 @@ class Experiment:
             tCCD=4)     # Column to Column Delay
 
         # Create interconnect, connected to the DDR Memory Controller
-        self.interconnect = Interconnect(
+        self.interconnect = backend.Interconnect(
             self.ddr_controller, delay=5, bandwidth=4)
 
         # Create cache configurations
@@ -60,21 +39,20 @@ class Experiment:
         l2_conf = {'size': 512, 'line_size': 4, 'assoc': 16}
 
         # Create shared L2 Cache, connected to the Interconnect
-        shared_l2 = CacheLevel("L2", core_id="anycore",
-                               memory=self.interconnect, **l2_conf)
+        shared_l2 = backend.CacheLevel("L2", core_id="anycore",
+                                       memory=self.interconnect, **l2_conf)
 
         self.num_set = shared_l2.num_sets
         self._index = shared_l2._index
-        # shared_l2.num_tags = shared_l2._tag(self.num_addr)
-        # shared_l2.tab_miss = self.
 
         # Create Core-specific Multi-Level Caches, connected to the shared L2
-        self.mem_core0 = MultiLevelCache(0, l1_conf, shared_l2)
-        self.mem_core1 = MultiLevelCache(1, l1_conf, shared_l2)
+        self.mem_core0 = backend.MultiLevelCache(0, l1_conf, shared_l2)
+        self.mem_core1 = backend.MultiLevelCache(1, l1_conf, shared_l2)
 
         # Create cores
-        self.core0 = Core(0, self.mem_core0)
-        self.core1 = Core(1, self.mem_core1)
+        self.core0 = backend.Core(0, self.mem_core0)
+        self.core1 = backend.Core(1, self.mem_core1)
+        self._backend = backend
 
     def add_time_values(self, values: dict[list]):
         if type(values['core0']) != type(None):
@@ -98,7 +76,7 @@ class Experiment:
         self.core1.load_instr(core1_inst)
 
     def simulate(self, cycles, display_stats=False):
-        GlobalVar.global_cycle = 0
+        self._backend.GlobalVar.global_cycle = 0
         for cycle in range(cycles):
             # /!\ All components tick at the same frequency
             time0 = self.core0.tick()
@@ -109,7 +87,7 @@ class Experiment:
             self.add_time_values({'core0': time0, 'core1': time1})
             self.ddr_memory_physical.tick()
             # Update global clock (shared variable)
-            GlobalVar.global_cycle += 1
+            self._backend.GlobalVar.global_cycle += 1
 
         self.cache_stats_core_0 = self.mem_core0.stats()
         self.cache_stats_core_1 = self.mem_core1.stats()
@@ -151,7 +129,6 @@ class Experiment:
         denominator[denominator == 0] = -1
         self.ratios = miss/(denominator)
         self.ratios[self.ratios <= 0] = -1
-        # self.analyze_interference_events = analyze_shared_resource_contention()
         if (np.sum(miss)+np.sum(hits)) == 0:
             self.miss_ratio_global = -1
         else:
@@ -168,7 +145,6 @@ class Experiment:
         denominator_tab_read[denominator_tab_read == 0] = -1
         denominator_tab_write[denominator_tab_write == 0] = -1
 
-        # self.ratios_tab = self.miss_tab/(denominator_tab)
         self.ratios_tab = self.miss_tab.sum(axis=0)/(denominator_tab)
         self.ratios_tab[self.ratios_tab < 0] = -1
 
@@ -177,8 +153,6 @@ class Experiment:
         self.ratios_tab_read[self.ratios_tab_read < 0] = -1
         self.ratios_tab_write[self.ratios_tab_write < 0] = -1
 
-        # details for shared cache miss ratio
-        # self.cache_miss_ratio_tab = sel
     def output_data(self):
         return {'time_core0': max(self.time_values['core0']),
                 'time_core1': max(self.time_values['core1']),
@@ -198,35 +172,32 @@ class Experiment:
                 'L2_miss_read': self.cache_stats_core_0['L2']['misses_read'],
                 'L2_hit_write': self.cache_stats_core_0['L2']['hits_write'],
                 'L2_hit_read': self.cache_stats_core_0['L2']['hits_read'],
-                # 'shared_ressource_events':GlobalVar.shared_resource_events,
                 }
 
 
 class Env:
-    def __init__(self, cycles,
-                 num_banks=4,
-                 num_addr=20,
-                 ):
+    def __init__(self, backend: Simulator, cycles: int, num_banks: int, num_addr: int) -> None:
         self.num_banks = num_banks
         self.num_addr = num_addr
         self.num_rows = self.num_addr//16  # +1
         self.cycles = cycles
+        self._backend = backend
 
     def __call__(self, parameter: dict) -> dict:
-        program = Experiment(num_banks=self.num_banks, num_addr=self.num_addr)
-        program0 = Experiment(num_banks=self.num_banks, num_addr=self.num_addr)
-        program1 = Experiment(num_banks=self.num_banks, num_addr=self.num_addr)
+        program = Experiment(self._backend, self.num_banks, self.num_addr)
+        program0 = Experiment(self._backend, self.num_banks, self.num_addr)
+        program1 = Experiment(self._backend, self.num_banks, self.num_addr)
         program.load_instr(parameter["core0"], parameter["core1"])
         program0.load_instr(parameter["core0"], [])
         program1.load_instr([], parameter["core1"])
         out = {}
-        GlobalVar.clear_history()
+        self._backend.GlobalVar.clear_history()
         out['core0'] = program0.simulate(self.cycles)
-        GlobalVar.clear_history()
+        self._backend.GlobalVar.clear_history()
         out['core1'] = program1.simulate(self.cycles)
-        GlobalVar.clear_history()
+        self._backend.GlobalVar.clear_history()
         out['mutual'] = program.simulate(self.cycles)
-        GlobalVar.clear_history()
+        self._backend.GlobalVar.clear_history()
         del out['core0']['time_core1']
         del out['core1']['time_core0']
         # ddr targets
@@ -274,6 +245,7 @@ class Env:
             out['core1']['L2_miss_read']
         out['mutual']['L2_hit_read_core1'] = out['mutual']['L2_hit_read'] - \
             out['core1']['L2_hit_read']
+
         out['mutual']['L2_miss_write_core0'] = out['mutual']['L2_miss_write'] - \
             out['core0']['L2_miss_write']
         out['mutual']['L2_hit_write_core0'] = out['mutual']['L2_hit_write'] - \
@@ -283,3 +255,18 @@ class Env:
         out['mutual']['L2_hit_write_core1'] = out['mutual']['L2_hit_write'] - \
             out['core1']['L2_hit_write']
         return out
+
+class DefaultEnvSimulatorRunner(SimulatorRunner):
+    """Simulator runner delegating execution to a simulator module."""
+
+    def __init__(self, simulator: Simulator) -> None:
+        self.simulator = simulator
+
+    def run(self, params: InterferenceDynamicParams) -> Dict[str, Any]:
+        env = Env(
+            self.simulator,
+            cycles=self.simulator.cycles,
+            num_banks=self.simulator.num_banks,
+            num_addr=self.simulator.num_addr,
+        )
+        return env(params)

@@ -13,6 +13,9 @@ import random
 import heapq
 from enum import Enum, auto
 import numpy as np
+from typing import Any, Dict
+
+from examples.core_interference.types import Simulator
 
 # ==========================================================
 # Global clock
@@ -857,5 +860,21 @@ class Core:
              # IDLE cycle, do nothing.
             #print(f"{GlobalVar.global_cycle}: [Core {self.core_id}] IDLE cycle")
             pass
+
+
+class Sim3Backend(Simulator):
+    """Backend module exposing core simulator components."""
+
+    def __init__(self, cycles: int, num_banks: int, num_addr: int) -> None:
+        self.cycles = cycles
+        self.num_banks = num_banks
+        self.num_addr = num_addr
+        self.GlobalVar = GlobalVar
+        self.DDRMemory = DDRMemory
+        self.DDRMemoryController = DDRMemoryController
+        self.Interconnect = Interconnect
+        self.CacheLevel = CacheLevel
+        self.MultiLevelCache = MultiLevelCache
+        self.Core = Core
 
 

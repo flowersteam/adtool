@@ -12,7 +12,8 @@ Place your class in the right folder:
 - `goal_samplers/` for goal sampling
 - `behavior_encoders/` for behavior embeddings
 - `maps/` for parameter/behavior maps
-- `simulator_runners/` for simulator backend runners
+- `simulator/` for simulator backends
+- `simulator_runners/` for simulator loop runners
 
 Then export it in that folder's `__init__.py`.
 
@@ -32,11 +33,14 @@ Example snippets:
 {
   "system": {
     "config": {
-      "simulator_runner_config": {
-        "path": "examples.core_interference.simulator_runners.MyRunner",
+      "simulator_config": {
+        "path": "examples.core_interference.simulator.MySimulatorBackend",
         "cycles": 512,
         "num_banks": 4,
         "num_addr": 96
+      },
+      "simulator_runner_config": {
+        "path": "examples.core_interference.simulator_runners.MyRunner"
       }
     }
   }
@@ -78,6 +82,7 @@ Example snippets:
 - Mixer: `mix(sequences, max_cycle=...) -> InstructionProgram`
 - Goal sampler: `sample(history, feature_size) -> np.ndarray`
 - Behavior encoder: `encode(raw_output) -> np.ndarray`
+- Simulator: `run(params) -> dict`
 - Simulator runner: `run(params) -> dict`
 
 See `types.py` for protocol/type contracts.

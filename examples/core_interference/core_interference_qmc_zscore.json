@@ -9,11 +9,14 @@
     "system": {
         "path": "examples.core_interference.systems.InterferenceSystem.InterferenceSystem",
         "config": {
-            "simulator_runner_config": {
-                "path": "examples.core_interference.simulator_runners.DefaultEnvSimulatorRunner",
+            "simulator_config": {
+                "path": "examples.core_interference.simulator.Sim3Backend",
                 "cycles": 512,
                 "num_banks": 4,
                 "num_addr": 96
+            },
+            "simulator_runner_config": {
+                "path": "examples.core_interference.simulator_runners.DefaultEnvSimulatorRunner"
             }
         }
     },

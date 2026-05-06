@@ -18,17 +18,23 @@ from examples.core_interference.helpers.normalization import (
 from examples.core_interference.types import (
     InterferenceDynamicParams,
     InterferenceParamsPayload,
+    InterferenceSimulatorConfig,
     InterferenceSimulatorRunnerConfig,
 )
 
 
 class InterferenceConfig(BaseModel):
-    simulator_runner_config: InterferenceSimulatorRunnerConfig = Field(
+    simulator_config: InterferenceSimulatorConfig = Field(
         default_factory=lambda: {
-            "path": "examples.core_interference.simulator_runners.DefaultEnvSimulatorRunner",
+            "path": "examples.core_interference.simulator.Sim3Backend",
             "cycles": 80,
             "num_banks": 4,
             "num_addr": 41,
+        }
+    )
+    simulator_runner_config: InterferenceSimulatorRunnerConfig = Field(
+        default_factory=lambda: {
+            "path": "examples.core_interference.simulator_runners.DefaultEnvSimulatorRunner",
         }
     )
 
@@ -41,17 +47,29 @@ class InterferenceSystem(System):
 
     def __init__(
             self,
+            simulator_config: Optional[InterferenceSimulatorConfig] = None,
             simulator_runner_config: Optional[InterferenceSimulatorRunnerConfig] = None,
             *args,
             **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
-        if simulator_runner_config is None:
+        if simulator_config is None and simulator_runner_config is None:
             simulator_runner_config = dict(self.config.simulator_runner_config)
+            simulator_config = dict(self.config.simulator_config)
+        elif simulator_config is None or simulator_runner_config is None:
+            raise ValueError(
+                "Both simulator_config and simulator_runner_config must be provided together."
+            )
 
+        simulator = make_module(
+            "simulator",
+            **simulator_config,
+        )
         self.simulator_runner = make_module(
             "simulator_runner",
-            **simulator_runner_config)
+            simulator=simulator,
+            **simulator_runner_config,
+        )
         self._fallback_frame = np.zeros((64, 64, 3), dtype=np.uint8)
 
     def map(self, input: Dict) -> Dict:

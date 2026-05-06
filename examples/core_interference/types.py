@@ -17,11 +17,15 @@ class InterferenceParamsPayload(TypedDict):
     dynamic_params: InterferenceDynamicParams
 
 
-class InterferenceSimulatorRunnerConfig(TypedDict):
+class InterferenceSimulatorConfig(TypedDict):
     path: str
     cycles: int
     num_banks: int
     num_addr: int
+
+
+class InterferenceSimulatorRunnerConfig(TypedDict):
+    path: str
 
 
 class GoalSampler(Protocol):
@@ -69,6 +73,9 @@ class BehaviorEncoder(Protocol):
         ...
 
 
+class Simulator(Protocol):
+    Any
+
 class SimulatorRunner(Protocol):
-    def run(self, params: InterferenceDynamicParams) -> Dict[str, Any]:
+    def run(self, params: Any) -> Any:
         ...
