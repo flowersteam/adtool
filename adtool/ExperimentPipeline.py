@@ -141,12 +141,19 @@ class ExperimentPipeline(Leaf):
 
 
             
-
-            mypath = self.config['experiment']['config']['save_location']+"discoveries/"
+            base_path = self.config['experiment']['config']['save_location']
+            mypath = base_path+"discoveries/"
             #list all discovery.json files in subdirectories  
             #check if mypath exists and is a folder
             if not os.path.exists(mypath):
                 os.makedirs(mypath)
+            
+
+            sub_modules_dir = "discoveries/modules"
+            modules_dir = os.path.join(base_path, sub_modules_dir)
+            if not os.path.exists(modules_dir):
+                os.mkdir(modules_dir)
+
 
             discoveries_folders = [f for f in listdir(mypath) if not isfile(join(mypath, f))]
             #get discovery.json files in discoveries folders
@@ -312,6 +319,10 @@ class ExperimentPipeline(Leaf):
         return
 
     def save(self, resource_uri: str):
+        modules_dir = os.path.join(self.resource_uri, "discoveries/modules")
+        uid = self.save_leaf(resource_uri=modules_dir)
+        self.uid = uid  # store for on_save_finished_callbacks
+
         self._raise_callbacks(
             self._on_save_callbacks,
             experiment_id=self.experiment_id,

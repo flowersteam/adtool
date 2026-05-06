@@ -48,6 +48,9 @@ class SaveWrapper(TransformWrapper):
         else:
             self.inputs_to_save = inputs_to_save
 
+        # Serialize first to get the metadata hash for the db name, which is needed for retrieval
+        self.serialize_token = self.serialize()
+
     def map(self, input: Dict) -> Dict:
         """
         WARN: This wrapper's .map() is stateful.
@@ -71,8 +74,12 @@ class SaveWrapper(TransformWrapper):
         # parent_uid is passed for specifying the parent node,
         # when passed to LinearLocator.store() by super().save_leaf()
         uid = super().save_leaf(resource_uri, parent_uid)
-
+        
+        # refresh after resource_uri is set
+        self.serialize_token = self.serialize()  
+    
         # clear cache
+        print("clearing in-memory buffer of size", len(self.buffer))
         self.buffer = []
         return uid
 
@@ -104,6 +111,8 @@ class SaveWrapper(TransformWrapper):
         `lookback_length = -1` corresponds to retrieving the entire history,
         which may be very large as it will query the on-disk SQLite db.
         """
+        import time
+        start_time = time.time()
         if lookback_length == 1:
             history_buffer = deepcopy(self.buffer)
         else:
@@ -115,11 +124,13 @@ class SaveWrapper(TransformWrapper):
                 # it will only be -1 here or 0
                 retrieval_length = lookback_length
 
+            print(f"DEBUG resource_uri: '{self.locator.resource_uri}'")
             try:
                 retrieved_buffer = self._retrieve_buffer(
                     self.locator.resource_uri, retrieval_length
                 )
             except Exception as e:
+                print(f"Error retrieving buffer from SQLite db: {e}")
                 if (
                     "unable to open database file" in str(e)
                     and self.locator.resource_uri != ""
@@ -133,13 +144,15 @@ class SaveWrapper(TransformWrapper):
                     # otherwise, we raise an exception suggesting that
                     # the resource_uri is not set
                     raise e
-
+            print(f"retrieved buffer of length {len(retrieved_buffer)} from SQLite db")
             # attach to working buffer in memory
             copy_buffer = deepcopy(self.buffer)
             retrieved_buffer.extend(copy_buffer)
 
             history_buffer = retrieved_buffer
 
+        end_time = time.time()
+        print(f"retrieved history buffer of length {len(history_buffer)} in {end_time - start_time:.2f} seconds")
         return history_buffer
 
     def _retrieve_buffer(self, buffer_src_uri: str, length: int) -> List[Dict]:
@@ -156,7 +169,7 @@ class SaveWrapper(TransformWrapper):
 
         # run part of the save routine to ge the db name
         # TODO: can tighten this up with direct calls
-        tmp_bin = self.serialize()
+        tmp_bin = self.serialize_token
         db_name, _ = temporary_locator.parse_bin(tmp_bin)
 
         # get parent_id of last insert for retrieval

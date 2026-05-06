@@ -4,6 +4,7 @@ from functools import partial
 import json
 import os
 from typing import Any, Dict, List, Union
+from adtool.utils.leaf.locators.locators import BlobLocator
 
 from adtool.systems import System
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
@@ -37,6 +38,7 @@ class IMGEPConfig(BaseModel):
     parameter_map_config: Dict = Field({})
     mutator: MutatorEnum = Field(MutatorEnum.Specific)
     mutator_config: Dict = Field({})
+    lookback_length: int = Field(-1, ge=-1)
 
 
 
@@ -56,14 +58,19 @@ class IMGEPExplorerInstance(Leaf):
         behavior_map: Leaf = IdentityWrapper(),
         mutator: Leaf = Leaf(),
         equil_time: int = 0,
+        lookback_length: int = -1,
     ) -> None:
         super().__init__()
-
+        
+        if lookback_length != 1:
+            self.locator = BlobLocator()
+        
         self.premap_key = premap_key
         self.postmap_key = postmap_key
         self.parameter_map = parameter_map
         self.behavior_map = behavior_map
         self.equil_time = equil_time
+        self.lookback_length = lookback_length
         self.timestep = 0
 
         self.mutator = mutator
@@ -152,7 +159,8 @@ class IMGEPExplorerInstance(Leaf):
         else:
             # suggest_trial reads history
             params_trial = self.suggest_trial(
-                goal=system_output['target'] if 'target' in system_output else None
+                goal=system_output['target'] if 'target' in system_output else None,
+                lookback_length=self.lookback_length
             )
 
             # assemble dict and update parameter_map state
@@ -311,11 +319,13 @@ class IMGEPExplorer():
         param_map = self.make_parameter_map(system)
         mutator = self.make_mutator(param_map)
         equil_time = self.config.equil_time
+        lookback_length = self.config.lookback_length
         explorer = IMGEPExplorerInstance(
             parameter_map=param_map,
             behavior_map=behavior_map,
             equil_time=equil_time,
             mutator=mutator,
+            lookback_length=lookback_length,
         )
 
         return explorer
