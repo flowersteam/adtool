@@ -2,10 +2,10 @@ import copy
 import random
 from typing import Optional
 
-from examples.core_interference.types import InstructionProgram
+from examples.core_interference.types import InstructionProgram, ProgramMutator
 
 
-class RandomInstructionMutator:
+class RandomInstructionMutator(ProgramMutator):
     """Random add/delete/modify mutator for instruction programs."""
 
     def __init__(self, seed: Optional[int] = None,

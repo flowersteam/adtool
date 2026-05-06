@@ -5,10 +5,10 @@ from typing import List, Optional
 from examples.core_interference.helpers.normalization import (
     normalize_instruction_sequences,
 )
-from examples.core_interference.types import InstructionProgram
+from examples.core_interference.types import InstructionProgram, ProgramMixer
 
 
-class InterleavingProgramMixer:
+class InterleavingProgramMixer(ProgramMixer):
     """Mixer that interleaves instructions from multiple parents."""
 
     def __init__(self, seed: Optional[int] = None) -> None:

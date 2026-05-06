@@ -4,10 +4,10 @@ from typing import List, Optional
 from examples.core_interference.helpers.normalization import (
     normalize_instruction_sequences,
 )
-from examples.core_interference.types import InstructionProgram
+from examples.core_interference.types import InstructionProgram, ProgramMixer
 
 
-class PreserveTimeStructureProgramMixer:
+class PreserveTimeStructureProgramMixer(ProgramMixer):
     """Mixer that keeps relative timing structure within chunks."""
 
     def __init__(self, num_parts: int, seed: Optional[int] = None) -> None:

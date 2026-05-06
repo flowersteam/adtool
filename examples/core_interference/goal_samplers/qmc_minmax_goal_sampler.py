@@ -3,8 +3,10 @@ from typing import List, Optional
 import numpy as np
 from scipy.stats import qmc
 
+from examples.core_interference.types import GoalSampler
 
-class QMCMinMaxGoalSampler:
+
+class QMCMinMaxGoalSampler(GoalSampler):
     """Sample goals from history using min/max range expansion and Quasi-Monte Carlo."""
 
     def __init__(self) -> None:

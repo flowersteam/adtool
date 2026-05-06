@@ -5,10 +5,10 @@ from typing import List, Optional
 from examples.core_interference.helpers.normalization import (
     normalize_instruction_sequences,
 )
-from examples.core_interference.types import InstructionProgram
+from examples.core_interference.types import InstructionProgram, ProgramMixer
 
 
-class ChunkProgramMixer:
+class ChunkProgramMixer(ProgramMixer):
     """Chunk-based mixer using random chunk shuffling."""
 
     def __init__(self, num_parts: int, seed: Optional[int] = None) -> None:

@@ -2,8 +2,10 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
+from examples.core_interference.types import BehaviorEncoder
 
-class ZScoreMetricEncoder:
+
+class ZScoreMetricEncoder(BehaviorEncoder):
     """Encode interference simulator output with running global z-score.
 
     Mean and variance are updated online across all observations seen so far,

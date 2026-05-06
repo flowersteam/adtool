@@ -2,8 +2,10 @@ from typing import List, Optional
 
 import numpy as np
 
+from examples.core_interference.types import GoalSampler
 
-class RandomMinMaxGoalSampler:
+
+class RandomMinMaxGoalSampler(GoalSampler):
     """Sample goals from history using min/max range expansion."""
 
     def sample(

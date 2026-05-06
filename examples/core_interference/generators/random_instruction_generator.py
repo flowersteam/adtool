@@ -1,10 +1,10 @@
 import random
 from typing import Optional
 
-from examples.core_interference.types import InstructionProgram
+from examples.core_interference.types import InstructionProgram, ProgramGenerator
 
 
-class RandomInstructionGenerator:
+class RandomInstructionGenerator(ProgramGenerator):
     """Random instruction program generator."""
 
     def __init__(self, seed: Optional[int] = None) -> None:

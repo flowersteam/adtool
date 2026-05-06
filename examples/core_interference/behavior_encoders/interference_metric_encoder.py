@@ -2,8 +2,10 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
+from examples.core_interference.types import BehaviorEncoder
 
-class InterferenceMetricEncoder:
+
+class InterferenceMetricEncoder(BehaviorEncoder):
     """Encode interference simulator output into a fixed feature vector."""
 
     def __init__(self, selection: Optional[List[str]] = None) -> None:
