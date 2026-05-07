@@ -2,11 +2,10 @@ from typing import Any, Dict
 
 import numpy as np
 
-from examples.embedded_systems.types import (
+from examples.embedded_systems.examples.core_interferences.types import (
     InterferenceDynamicParams,
-    Simulator,
-    SimulatorRunner,
 )
+from examples.embedded_systems.types import Simulator, SimulatorRunner
 
 
 class Experiment:

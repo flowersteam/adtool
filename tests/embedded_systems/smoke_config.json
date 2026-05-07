@@ -7,43 +7,43 @@
     }
   },
     "system": {
-        "path": "examples.embedded_systems.systems.InterferenceSystem.InterferenceSystem",
+        "path": "examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem.InterferenceSystem",
         "config": {
             "simulator_config": {
-                "path": "examples.embedded_systems.simulator.Sim3Backend",
+                "path": "examples.embedded_systems.examples.core_interferences.simulator.Sim3Backend",
                 "cycles": 128,
                 "num_banks": 4,
                 "num_addr": 96
             },
             "simulator_runner_config": {
-                "path": "examples.embedded_systems.simulator_runners.DefaultEnvSimulatorRunner"
+                "path": "examples.embedded_systems.examples.core_interferences.simulator_runners.DefaultEnvSimulatorRunner"
             }
         }
     },
   "explorer": {
-    "path": "examples.embedded_systems.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
+    "path": "examples.embedded_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
     "config": {
       "periode": 10,
       "k": 2,
       "mixer_config": {
-        "path": "examples.embedded_systems.mixers.InterleavingProgramMixer"
+        "path": "examples.embedded_systems.examples.core_interferences.mixers.InterleavingProgramMixer"
       },
       "behavior_map_config": {
-        "path": "examples.embedded_systems.maps.InterferenceBehaviorMap.InterferenceBehaviorMap",
+        "path": "examples.embedded_systems.examples.core_interferences.maps.InterferenceBehaviorMap.InterferenceBehaviorMap",
         "goal_sampler_config": {
           "path": "examples.embedded_systems.goal_samplers.RandomMinMaxGoalSampler"
         },
         "behavior_encoder_config": {
-          "path": "examples.embedded_systems.behavior_encoders.InterferenceMetricEncoder"
+          "path": "examples.embedded_systems.examples.core_interferences.behavior_encoders.InterferenceMetricEncoder"
         }
       },
       "parameter_map_config": {
-        "path": "examples.embedded_systems.maps.InterferenceParameterMap.InterferenceParameterMap",
+        "path": "examples.embedded_systems.examples.core_interferences.maps.InterferenceParameterMap.InterferenceParameterMap",
         "generator_config": {
-          "path": "examples.embedded_systems.generators.RandomInstructionGenerator"
+          "path": "examples.embedded_systems.examples.core_interferences.generators.RandomInstructionGenerator"
         },
         "mutator_config": {
-          "path": "examples.embedded_systems.mutators.RandomInstructionMutator",
+          "path": "examples.embedded_systems.examples.core_interferences.mutators.RandomInstructionMutator",
           "num_mutations": 2
         },
         "num_instructions": 6,

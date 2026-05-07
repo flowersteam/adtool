@@ -4,7 +4,9 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 
 from adtool.utils.leaf.Leaf import Leaf
-from examples.embedded_systems.systems.InterferenceSystem import InterferenceSystem
+from examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem import (
+    InterferenceSystem,
+)
 from examples.embedded_systems.helpers.module_factory import make_module
 
 
@@ -20,7 +22,7 @@ class InterferenceBehaviorMap(Leaf):
                 "path": "examples.embedded_systems.goal_samplers.RandomMinMaxGoalSampler"
             },
             behavior_encoder_config: Optional[Dict[str, Any]] = {
-                "path": "examples.embedded_systems.behavior_encoders.InterferenceMetricEncoder"
+                "path": "examples.embedded_systems.examples.core_interferences.behavior_encoders.InterferenceMetricEncoder"
             },
     ) -> None:
         super().__init__()

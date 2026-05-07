@@ -9,13 +9,13 @@ from pydantic import BaseModel, Field
 
 from adtool.systems.System import System
 from adtool.utils.expose_config.expose_config import expose
-from examples.embedded_systems.helpers.interference_visualizer import (
+from examples.embedded_systems.examples.core_interferences.helpers.interference_visualizer import (
     render_interference_dashboard,
 )
-from examples.embedded_systems.helpers.interference_normalization import (
+from examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
     normalize_instruction_program,
 )
-from examples.embedded_systems.types import (
+from examples.embedded_systems.examples.core_interferences.types import (
     InterferenceDynamicParams,
     InterferenceParamsPayload,
     InterferenceSimulatorConfig,
@@ -26,7 +26,7 @@ from examples.embedded_systems.types import (
 class InterferenceConfig(BaseModel):
     simulator_config: InterferenceSimulatorConfig = Field(
         default_factory=lambda: {
-            "path": "examples.embedded_systems.simulator.Sim3Backend",
+            "path": "examples.embedded_systems.examples.core_interferences.simulator.Sim3Backend",
             "cycles": 80,
             "num_banks": 4,
             "num_addr": 41,
@@ -34,7 +34,7 @@ class InterferenceConfig(BaseModel):
     )
     simulator_runner_config: InterferenceSimulatorRunnerConfig = Field(
         default_factory=lambda: {
-            "path": "examples.embedded_systems.simulator_runners.DefaultEnvSimulatorRunner",
+            "path": "examples.embedded_systems.examples.core_interferences.simulator_runners.DefaultEnvSimulatorRunner",
         }
     )
 

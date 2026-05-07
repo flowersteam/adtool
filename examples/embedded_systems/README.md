@@ -1,10 +1,12 @@
 # embedded_systems: Add and Configure Modules
 
 This example is fully path-configured: new components are loaded with `path` strings from JSON.
+Core interference modules now live under `examples/embedded_systems/examples/core_interferences/`.
 
 ## 1) Add a new module
 
-Place your class in the right folder:
+Place your class in the right folder (under
+`examples/embedded_systems/examples/core_interferences/` for the core interference system):
 
 - `generators/` for instruction generators
 - `mutators/` for mutation strategies
@@ -20,12 +22,13 @@ Then export it in that folder's `__init__.py`.
 Example:
 
 ```python
-from examples.embedded_systems.mixers.my_new_mixer import MyNewMixer
+from examples.embedded_systems.examples.core_interferences.mixers.my_new_mixer import MyNewMixer
 ```
 
 ## 2) Configure it in JSON
 
-Use the class path in `embedded_systems_1.json`.
+Use the class path in the core interference configs under
+`examples/embedded_systems/examples/core_interferences/`.
 
 Example snippets:
 
@@ -34,13 +37,13 @@ Example snippets:
   "system": {
     "config": {
       "simulator_config": {
-        "path": "examples.embedded_systems.simulator.MySimulatorBackend",
+        "path": "examples.embedded_systems.examples.core_interferences.simulator.MySimulatorBackend",
         "cycles": 512,
         "num_banks": 4,
         "num_addr": 96
       },
       "simulator_runner_config": {
-        "path": "examples.embedded_systems.simulator_runners.MyRunner"
+        "path": "examples.embedded_systems.examples.core_interferences.simulator_runners.MyRunner"
       }
     }
   }
@@ -52,22 +55,22 @@ Example snippets:
   "explorer": {
     "config": {
       "mixer_config": {
-        "path": "examples.embedded_systems.mixers.MyNewMixer"
+        "path": "examples.embedded_systems.examples.core_interferences.mixers.MyNewMixer"
       },
       "behavior_map_config": {
         "goal_sampler_config": {
           "path": "examples.embedded_systems.goal_samplers.MyGoalSampler"
         },
         "behavior_encoder_config": {
-          "path": "examples.embedded_systems.behavior_encoders.MyEncoder"
+          "path": "examples.embedded_systems.examples.core_interferences.behavior_encoders.MyEncoder"
         }
       },
       "parameter_map_config": {
         "generator_config": {
-          "path": "examples.embedded_systems.generators.MyGenerator"
+          "path": "examples.embedded_systems.examples.core_interferences.generators.MyGenerator"
         },
         "mutator_config": {
-          "path": "examples.embedded_systems.mutators.MyMutator"
+          "path": "examples.embedded_systems.examples.core_interferences.mutators.MyMutator"
         }
       }
     }
@@ -85,4 +88,5 @@ Example snippets:
 - Simulator: `run(params) -> dict`
 - Simulator runner: `run(params) -> dict`
 
-See `types.py` for protocol/type contracts.
+See `types.py` for protocol contracts and
+`examples/core_interferences/types.py` for the core interference payload types.

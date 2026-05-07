@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from adtool.utils.leaf.Leaf import Leaf
-from examples.embedded_systems.helpers.interference_normalization import (
+from examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
     normalize_instruction_program,
 )
-from examples.embedded_systems.systems.InterferenceSystem import InterferenceSystem
-from examples.embedded_systems.types import (
+from examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem import (
+    InterferenceSystem,
+)
+from examples.embedded_systems.examples.core_interferences.types import (
     InstructionProgram,
     InterferenceParamsPayload,
 )
@@ -34,10 +36,10 @@ class InterferenceParameterMap(Leaf):
             premap_key: str = "params",
             param_obj: InterferenceParams = None,
             generator_config: Optional[Dict[str, Any]] = {
-                "path": "examples.embedded_systems.generators.interference_random_instruction_generator.RandomInstructionGenerator"
+                "path": "examples.embedded_systems.examples.core_interferences.generators.interference_random_instruction_generator.RandomInstructionGenerator"
             },
             mutator_config: Optional[Dict[str, Any]] = {
-                "path": "examples.embedded_systems.mutators.interference_random_instruction_mutator.RandomInstructionMutator",
+                "path": "examples.embedded_systems.examples.core_interferences.mutators.interference_random_instruction_mutator.RandomInstructionMutator",
                 "num_mutations": 2,
             },
             **config_decorator_kwargs,
