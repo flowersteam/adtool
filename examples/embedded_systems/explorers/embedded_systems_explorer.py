@@ -218,12 +218,10 @@ class BaseIMGEPExplorer(BaseExplorerFactory):
             "behavior_map", system, **self.config.behavior_map_config)
         param_map = make_module("parameter_map", system,
                                 **self.config.parameter_map_config)
-        mixer = make_module("mixer", **self.config.mixer_config)
 
         return BaseIMGEPInstance(
             parameter_map=param_map,
             behavior_map=behavior_map,
             periode=self.config.periode,
-            k=self.config.k,
-            mixer=mixer,
+            k=self.config.k
         )
