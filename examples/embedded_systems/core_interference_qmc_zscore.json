@@ -1,0 +1,69 @@
+{
+    "experiment": {
+        "config": {
+            "save_location": "./discoveries/config_qmc_zscore/",
+            "save_frequency": 250,
+            "bootstrap_size": 500
+        }
+    },
+    "system": {
+        "path": "examples.embedded_systems.systems.InterferenceSystem.InterferenceSystem",
+        "config": {
+            "simulator_config": {
+                "path": "examples.embedded_systems.simulator.Sim3Backend",
+                "cycles": 512,
+                "num_banks": 4,
+                "num_addr": 96
+            },
+            "simulator_runner_config": {
+                "path": "examples.embedded_systems.simulator_runners.DefaultEnvSimulatorRunner"
+            }
+        }
+    },
+    "explorer": {
+        "path": "examples.embedded_systems.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
+        "config": {
+            "periode": 25,
+            "k": 3,
+            "mixer_config": {
+                "path": "examples.embedded_systems.mixers.InterleavingProgramMixer"
+            },
+            "behavior_map_config": {
+                "path": "examples.embedded_systems.maps.InterferenceBehaviorMap.InterferenceBehaviorMap",
+                "goal_sampler_config": {
+                    "path": "examples.embedded_systems.goal_samplers.QMCMinMaxGoalSampler"
+                },
+                "behavior_encoder_config": {
+                    "path": "examples.embedded_systems.behavior_encoders.ZScoreMetricEncoder"
+                }
+            },
+            "parameter_map_config": {
+                "path": "examples.embedded_systems.maps.InterferenceParameterMap.InterferenceParameterMap",
+                "generator_config": {
+                    "path": "examples.embedded_systems.generators.RandomInstructionGenerator"
+                },
+                "mutator_config": {
+                    "path": "examples.embedded_systems.mutators.RandomInstructionMutator",
+                    "num_mutations": 3
+                },
+                "num_instructions": 10,
+                "min_address_core0": 0,
+                "max_address_core0": 47,
+                "min_address_core1": 48,
+                "max_address_core1": 95,
+                "max_cycle": 128
+            }
+        }
+    },
+    "input_wrappers": [],
+    "output_representations": [],
+    "logger_handlers": [],
+    "callbacks": {
+        "on_discovery": [
+            {
+                "path": "adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+                "config": {}
+            }
+        ]
+    }
+}
