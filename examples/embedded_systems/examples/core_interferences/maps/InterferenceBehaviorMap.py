@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from examples.embedded_systems.maps.base_behavior_map import BaseBehaviorMap
+from examples.embedded_systems.maps.embedded_systems_behavior_map import BaseBehaviorMap
 from examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem import (
     InterferenceSystem,
 )

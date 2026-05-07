@@ -6,9 +6,9 @@ import numpy as np
 
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.wrappers.SaveWrapper import SaveWrapper
-from examples.embedded_systems.maps.base_behavior_map import BaseBehaviorMap
-from examples.embedded_systems.maps.base_parameter_map import BaseParameterMap
-from examples.embedded_systems.mixers.base_mixer import BaseMixer
+from examples.embedded_systems.maps.embedded_systems_behavior_map import BaseBehaviorMap
+from examples.embedded_systems.maps.embedded_systems_parameter_map import BaseParameterMap
+from examples.embedded_systems.mixers.embedded_systems_mixer import BaseMixer
 
 
 class BaseExplorerFactory(ABC):

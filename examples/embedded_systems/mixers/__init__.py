@@ -1,1 +1,1 @@
-from examples.embedded_systems.mixers.base_mixer import BaseMixer
+from examples.embedded_systems.mixers.embedded_systems_mixer import BaseMixer

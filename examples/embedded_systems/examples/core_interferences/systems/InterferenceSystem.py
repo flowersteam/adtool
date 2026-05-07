@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Tuple
 from examples.embedded_systems.helpers.module_factory import make_module
 from pydantic import BaseModel, Field
 
-from examples.embedded_systems.systems.base_system import BaseEmbeddedSystem
+from examples.embedded_systems.systems.embedded_systems_system import BaseEmbeddedSystem
 from adtool.utils.expose_config.expose_config import expose
 from examples.embedded_systems.examples.core_interferences.helpers.interference_visualizer import (
     render_interference_dashboard,

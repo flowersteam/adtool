@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 from adtool.systems import System
 from adtool.utils.expose_config.expose_config import expose
-from examples.embedded_systems.explorers.base_explorer import (
+from examples.embedded_systems.explorers.embedded_systems_explorer import (
     BaseExplorerFactory,
     BaseIMGEPInstance,
 )

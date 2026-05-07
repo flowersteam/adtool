@@ -1,1 +1,1 @@
-from examples.embedded_systems.systems.base_system import BaseEmbeddedSystem
+from examples.embedded_systems.systems.embedded_systems_system import BaseEmbeddedSystem

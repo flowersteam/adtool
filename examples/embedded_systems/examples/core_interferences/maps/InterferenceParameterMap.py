@@ -3,7 +3,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from examples.embedded_systems.maps.base_parameter_map import BaseParameterMap
+from examples.embedded_systems.maps.embedded_systems_parameter_map import BaseParameterMap
 from examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
     normalize_instruction_program,
 )

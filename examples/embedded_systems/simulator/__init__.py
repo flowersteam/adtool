@@ -1,1 +1,1 @@
-from examples.embedded_systems.simulator.base_simulator import BaseSimulator
+from examples.embedded_systems.simulator.embedded_systems_simulator import BaseSimulator

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from examples.embedded_systems.generators.base_generator import BaseCodeOperator
+from examples.embedded_systems.generators.embedded_systems_generator import BaseCodeOperator
 
 
 class BaseMutator(BaseCodeOperator, ABC):

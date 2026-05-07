@@ -5,7 +5,7 @@ import numpy as np
 from examples.embedded_systems.examples.core_interferences.types import (
     InterferenceDynamicParams,
 )
-from examples.embedded_systems.simulator_runners.base_simulator_runner import (
+from examples.embedded_systems.simulator_runners.embedded_systems_simulator_runner import (
     BaseSimulatorRunner,
 )
 from examples.embedded_systems.types import Simulator

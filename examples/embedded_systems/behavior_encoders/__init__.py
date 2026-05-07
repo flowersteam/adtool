@@ -1,3 +1,3 @@
-from examples.embedded_systems.behavior_encoders.base_behavior_encoder import (
+from examples.embedded_systems.behavior_encoders.embedded_systems_behavior_encoder import (
     BaseBehaviorEncoder,
 )
