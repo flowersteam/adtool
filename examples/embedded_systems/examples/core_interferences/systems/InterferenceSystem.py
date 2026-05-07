@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
-import io
 from typing import Any, Dict, Optional, Tuple
 
 from examples.embedded_systems.helpers.module_factory import make_module
-import imageio
-import numpy as np
 from pydantic import BaseModel, Field
 
-from adtool.systems.System import System
+from examples.embedded_systems.systems.base_system import BaseEmbeddedSystem
 from adtool.utils.expose_config.expose_config import expose
 from examples.embedded_systems.examples.core_interferences.helpers.interference_visualizer import (
     render_interference_dashboard,
@@ -40,7 +37,7 @@ class InterferenceConfig(BaseModel):
 
 
 @expose
-class InterferenceSystem(System):
+class InterferenceSystem(BaseEmbeddedSystem):
     """System wrapper around interference environment."""
 
     config = InterferenceConfig
@@ -70,7 +67,6 @@ class InterferenceSystem(System):
             simulator=simulator,
             **simulator_runner_config,
         )
-        self._fallback_frame = np.zeros((64, 64, 3), dtype=np.uint8)
 
     def map(self, input: Dict) -> Dict:
         # Copy input dict to avoid mutating upstream payload references.
@@ -102,10 +98,7 @@ class InterferenceSystem(System):
             data_dict, dict) else {}
 
         if not output:
-            byte_img = io.BytesIO()
-            imageio.imwrite(byte_img, self._fallback_frame, format="png")
-            byte_img.seek(0)
-            return [(byte_img.getvalue(), "png")]
+            return self.render_fallback()
 
         dashboard_png = render_interference_dashboard(data_dict)
         return [(dashboard_png, "png")]

@@ -15,7 +15,7 @@ from enum import Enum, auto
 import numpy as np
 from typing import Any, Dict
 
-from examples.embedded_systems.types import Simulator
+from examples.embedded_systems.simulator.base_simulator import BaseSimulator
 
 # ==========================================================
 # Global clock
@@ -862,10 +862,11 @@ class Core:
             pass
 
 
-class Sim3Backend(Simulator):
+class Sim3Backend(BaseSimulator):
     """Backend module exposing core simulator components."""
 
     def __init__(self, cycles: int, num_banks: int, num_addr: int) -> None:
+        super().__init__(cycles=cycles, num_banks=num_banks, num_addr=num_addr)
         self.cycles = cycles
         self.num_banks = num_banks
         self.num_addr = num_addr

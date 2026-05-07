@@ -3,7 +3,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from adtool.utils.leaf.Leaf import Leaf
+from examples.embedded_systems.maps.base_parameter_map import BaseParameterMap
 from examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
     normalize_instruction_program,
 )
@@ -27,7 +27,7 @@ class InterferenceParams:
     max_cycle: int = 400
 
 
-class InterferenceParameterMap(Leaf):
+class InterferenceParameterMap(BaseParameterMap):
     """Parameter map RANDOM generation and mutation policy."""
 
     def __init__(
@@ -44,8 +44,8 @@ class InterferenceParameterMap(Leaf):
             },
             **config_decorator_kwargs,
     ) -> None:
-        super().__init__()
         _ = system
+        super().__init__(premap_key=premap_key)
 
         if param_obj is None:
             param_obj = InterferenceParams()

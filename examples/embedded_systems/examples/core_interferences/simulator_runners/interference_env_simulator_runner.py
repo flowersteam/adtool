@@ -5,7 +5,10 @@ import numpy as np
 from examples.embedded_systems.examples.core_interferences.types import (
     InterferenceDynamicParams,
 )
-from examples.embedded_systems.types import Simulator, SimulatorRunner
+from examples.embedded_systems.simulator_runners.base_simulator_runner import (
+    BaseSimulatorRunner,
+)
+from examples.embedded_systems.types import Simulator
 
 
 class Experiment:
@@ -255,7 +258,7 @@ class Env:
             out['core1']['L2_hit_write']
         return out
 
-class DefaultEnvSimulatorRunner(SimulatorRunner):
+class DefaultEnvSimulatorRunner(BaseSimulatorRunner):
     """Simulator runner delegating execution to a simulator module."""
 
     def __init__(self, simulator: Simulator) -> None:

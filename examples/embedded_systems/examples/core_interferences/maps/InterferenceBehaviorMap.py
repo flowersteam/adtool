@@ -3,14 +3,14 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from adtool.utils.leaf.Leaf import Leaf
+from examples.embedded_systems.maps.base_behavior_map import BaseBehaviorMap
 from examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem import (
     InterferenceSystem,
 )
 from examples.embedded_systems.helpers.module_factory import make_module
 
 
-class InterferenceBehaviorMap(Leaf):
+class InterferenceBehaviorMap(BaseBehaviorMap):
     """Behavior map."""
 
     def __init__(
@@ -25,21 +25,14 @@ class InterferenceBehaviorMap(Leaf):
                 "path": "examples.embedded_systems.examples.core_interferences.behavior_encoders.InterferenceMetricEncoder"
             },
     ) -> None:
-        super().__init__()
         _ = system
-        self.premap_key = premap_key
-        self.postmap_key = postmap_key
-        self._history: List[np.ndarray] = []
-        self._feature_size = None
-        self._history_min: Optional[np.ndarray] = None
-        self._history_max: Optional[np.ndarray] = None
-        self.goal_sampler = make_module(
-            "goal_sampler",
-            **goal_sampler_config,
-        )
-        self.behavior_encoder = make_module(
-            "behavior_encoder",
-            **behavior_encoder_config,
+        goal_sampler = make_module("goal_sampler", **goal_sampler_config)
+        behavior_encoder = make_module("behavior_encoder", **behavior_encoder_config)
+        super().__init__(
+            premap_key=premap_key,
+            postmap_key=postmap_key,
+            goal_sampler=goal_sampler,
+            behavior_encoder=behavior_encoder,
         )
 
     def map(self, input: Dict) -> Dict:
