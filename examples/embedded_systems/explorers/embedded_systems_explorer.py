@@ -2,6 +2,11 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple
 
+from pydantic import BaseModel, Field
+
+from adtool.utils.expose_config.expose_config import expose
+from build.lib.adtool.systems import System
+from examples.embedded_systems.helpers.module_factory import make_module
 import numpy as np
 
 from adtool.utils.leaf.Leaf import Leaf
@@ -20,6 +25,15 @@ class BaseExplorerFactory(ABC):
     def __call__(self, system: Any) -> Leaf:
         ...
 
+class BaseExplorerConfig(BaseModel):
+    periode: int = Field(1, ge=1, le=100000)
+    k: int = Field(1, ge=1, le=1000)
+    behavior_map_config: Dict = Field(default_factory=lambda: {
+        "path": "examples.embedded_systems.examples.core_interferences.maps.InterferenceBehaviorMap.InterferenceBehaviorMap"
+    })
+    parameter_map_config: Dict = Field(default_factory=lambda: {
+        "path": "examples.embedded_systems.examples.core_interferences.maps.InterferenceParameterMap.InterferenceParameterMap"
+    })
 
 class BaseIMGEPInstance(Leaf):
     """Reusable IMGEP policy with kNN+mix behavior."""
@@ -189,3 +203,27 @@ class BaseIMGEPInstance(Leaf):
     def _get_max_cycle(self) -> int:
         param_obj = getattr(self.parameter_map, "param_obj", None)
         return int(getattr(param_obj, "max_cycle", 400))
+
+
+@expose
+class BaseIMGEPExplorer(BaseExplorerFactory):
+    config = BaseExplorerConfig
+    discovery_spec = ["params", "output", "raw_output", "rendered_outputs"]
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __call__(self, system: System) -> BaseIMGEPInstance:
+        behavior_map = make_module(
+            "behavior_map", system, **self.config.behavior_map_config)
+        param_map = make_module("parameter_map", system,
+                                **self.config.parameter_map_config)
+        mixer = make_module("mixer", **self.config.mixer_config)
+
+        return BaseIMGEPInstance(
+            parameter_map=param_map,
+            behavior_map=behavior_map,
+            periode=self.config.periode,
+            k=self.config.k,
+            mixer=mixer,
+        )
