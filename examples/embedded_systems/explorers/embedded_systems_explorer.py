@@ -27,7 +27,7 @@ class BaseExplorerFactory(ABC):
 
 class BaseExplorerConfig(BaseModel):
     periode: int = Field(1, ge=1, le=100000)
-    k: int = Field(1, ge=1, le=1000)
+    knn: int = Field(1, ge=1, le=1000)
     behavior_map_config: Dict = Field(default_factory=lambda: {
         "path": "examples.embedded_systems.examples.core_interferences.maps.InterferenceBehaviorMap.InterferenceBehaviorMap"
     })
@@ -45,7 +45,7 @@ class BaseIMGEPInstance(Leaf):
         parameter_map: BaseParameterMap | None = None,
         behavior_map: BaseBehaviorMap | None = None,
         periode: int = 1,
-        k: int = 1,
+        knn: int = 1,
         mixer: Optional[BaseMixer] = None,
     ) -> None:
         super().__init__()
@@ -56,7 +56,7 @@ class BaseIMGEPInstance(Leaf):
         self.parameter_map = parameter_map
         self.behavior_map = behavior_map
         self.periode = max(1, int(periode))
-        self.k = max(1, int(k))
+        self.knn = max(1, int(knn))
         self.mixer = mixer
 
         self.timestep = 0
@@ -181,14 +181,14 @@ class BaseIMGEPInstance(Leaf):
         denominator = max_ - min_
         denominator[denominator == 0] = 1.0
         distances = np.sum(((goal - features) / denominator) ** 2, axis=1)
-        k_eff = min(self.k, len(distances))
+        k_eff = min(self.knn, len(distances))
         return np.argsort(distances)[:k_eff]
 
     def _compose_base_policy(self, selected_params: List[Any]) -> Any:
         if not selected_params:
             return self.parameter_map.sample()
 
-        if len(selected_params) == 1 or self.k <= 1 or self.mixer is None:
+        if len(selected_params) == 1 or self.knn <= 1 or self.mixer is None:
             return deepcopy(selected_params[0])
 
         mixed_code = self._mix_codes(selected_params)
@@ -223,5 +223,5 @@ class BaseIMGEPExplorer(BaseExplorerFactory):
             parameter_map=param_map,
             behavior_map=behavior_map,
             periode=self.config.periode,
-            k=self.config.k
+            knn=self.config.knn
         )
