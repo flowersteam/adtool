@@ -17,7 +17,7 @@ from examples.embedded_systems.helpers.module_factory import make_module
 
 class InterferenceIMGEPConfig(BaseModel):
     periode: int = Field(1, ge=1, le=100000)
-    k: int = Field(1, ge=1, le=1000)
+    knn: int = Field(1, ge=1, le=1000)
     mixer: str = Field(
         "examples.embedded_systems.examples.core_interferences.mixers.interference_chunk_mixer.ChunkProgramMixer"
     )
@@ -40,7 +40,7 @@ class InterferenceIMGEPInstance(BaseIMGEPInstance):
         if not selected_params:
             return self.parameter_map.sample()
 
-        if len(selected_params) == 1 or self.k <= 1:
+        if len(selected_params) == 1 or self.knn <= 1:
             return deepcopy(selected_params[0])
 
         core0_pool = [p["dynamic_params"]["core0"] for p in selected_params]
@@ -94,6 +94,6 @@ class InterferenceIMGEPExplorer(BaseExplorerFactory):
             parameter_map=param_map,
             behavior_map=behavior_map,
             periode=self.config.periode,
-            k=self.config.k,
+            knn=self.config.knn,
             mixer=mixer,
         )

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from adtool.utils.expose_config.expose_config import expose
-from build.lib.adtool.systems import System
+from adtool.systems import System
 from examples.embedded_systems.helpers.module_factory import make_module
 import numpy as np
 

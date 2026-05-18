@@ -24,7 +24,7 @@
         "path": "examples.embedded_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
         "config": {
             "periode": 25,
-            "k": 3,
+            "knn": 3,
             "mixer_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.mixers.InterleavingProgramMixer"
             },
