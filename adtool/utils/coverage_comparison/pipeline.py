@@ -9,6 +9,7 @@ import numpy as np
 
 from .config import CoverageRunSummary, load_coverage_config
 from .dimensions import align_embeddings
+from .embedding_builder import build_embedding_builder
 from .embeddings import collect_random_embeddings, load_discovery_embeddings
 from .experiment import build_system_and_explorer, load_experiment_config
 from .plotting import compute_density_curve, plot_density_curves
@@ -63,10 +64,14 @@ def run_coverage_comparison(config_path: Path) -> CoverageRunSummary:
 
     system, explorer = build_system_and_explorer(experiment_config)
 
+    build_embedding = build_embedding_builder(coverage_config.embedding_builder)
+
     random_embeddings = collect_random_embeddings(
-        system, explorer, coverage_config.random_runs
+        system, explorer, coverage_config.random_runs, build_embedding
     )
-    tool_embeddings = load_discovery_embeddings(coverage_config.discovery_path)
+    tool_embeddings = load_discovery_embeddings(
+        coverage_config.discovery_path, build_embedding
+    )
 
     if not random_embeddings and not tool_embeddings:
         raise RuntimeError("No embeddings collected for coverage comparison.")

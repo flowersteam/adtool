@@ -24,6 +24,7 @@ class CoverageConfig:
     random_runs: int = 100
     seed: Optional[int] = None
     dimensions: List[int] = None
+    embedding_builder: Optional[Dict[str, Any]] = None
     plot: PlotConfig = field(default_factory=PlotConfig)
 
 
@@ -95,5 +96,6 @@ def load_coverage_config(config_path: Path) -> CoverageConfig:
         random_runs=int(payload.get("random_runs", 100)),
         seed=payload.get("seed"),
         dimensions=dimensions,
+        embedding_builder=payload.get("embedding_builder"),
         plot=_parse_plot_config(payload),
     )
