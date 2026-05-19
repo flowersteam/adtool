@@ -1,0 +1,22 @@
+{
+  "experiment_config_path": "core_interference_qmc_zscore.json",
+  "discovery_path": "../../../../discoveries/config_qmc_zscore/discoveries",
+  "output_dir": "../../../../discoveries/coverage_runs",
+  "random_runs": 10000,
+  "dimensions": [-1],
+  "seed": 101,
+  "embedding_builder": {
+    "path": "examples.embedded_systems.examples.core_interferences.coverage_embedding.CoreInterferenceCountEmbeddingBuilder",
+    "config": {}
+  },
+  "plot": {
+    "points": 512,
+    "bandwidth": 0.5,
+    "random_color": "#2f6fb0",
+    "tool_color": "#f28e2b",
+    "alpha": 0.4,
+    "line_width": 2.4,
+    "figsize": [8.5, 4.8],
+    "format": "png"
+  }
+}
