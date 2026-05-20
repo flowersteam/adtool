@@ -736,10 +736,15 @@ async function recomputeLayout() {
 }
 
 function applyFilter() {
-    const currentFilter = searchInput.value.trim().toLowerCase();
+    const search = buildDiscoveryMatcher(searchInput.value);
+    if (search.error) {
+        updateStatus(`Invalid search pattern: ${search.error}`);
+        return;
+    }
+
     let firstVisible = null;
     for (const plane of planes) {
-        const visible = currentFilter === "" || plane.userData.label.includes(currentFilter);
+        const visible = search.matcher(plane.userData.label);
         plane.visible = visible;
         if (visible && !firstVisible) {
             firstVisible = plane;
@@ -757,7 +762,8 @@ function applyFilter() {
         updateStatus("No discoveries match the filter.");
     } else if (planes.length > 0) {
         const shown = planes.filter((plane) => plane.visible).length;
-        updateStatus(`${shown}/${planes.length} discoveries shown.`);
+        const modeLabel = search.mode === "empty" ? "" : ` (${search.mode})`;
+        updateStatus(`${shown}/${planes.length} discoveries shown${modeLabel}.`);
     }
 }
 
@@ -818,6 +824,52 @@ function formatRange(bounds) {
         return "";
     }
     return `${Number(min).toPrecision(3)} to ${Number(max).toPrecision(3)}`;
+}
+
+function regexMatcher(regex) {
+    return (label) => {
+        regex.lastIndex = 0;
+        return regex.test(label);
+    };
+}
+
+function buildDiscoveryMatcher(rawQuery) {
+    const query = rawQuery.trim();
+    if (query === "") {
+        return {
+            error: "",
+            matcher: () => true,
+            mode: "empty",
+        };
+    }
+
+    try {
+        if (query.startsWith("re:")) {
+            const regex = new RegExp(query.slice(3), "i");
+            return { error: "", matcher: regexMatcher(regex), mode: "regex" };
+        }
+
+        if (query.length > 2 && query.startsWith("/") && query.lastIndexOf("/") > 0) {
+            const lastSlash = query.lastIndexOf("/");
+            const pattern = query.slice(1, lastSlash);
+            const flags = query.slice(lastSlash + 1) || "i";
+            const regex = new RegExp(pattern, flags.includes("i") ? flags : `${flags}i`);
+            return { error: "", matcher: regexMatcher(regex), mode: "regex" };
+        }
+    } catch (error) {
+        return {
+            error: error.message || "Invalid search pattern.",
+            matcher: () => true,
+            mode: "invalid",
+        };
+    }
+
+    const text = query.toLowerCase();
+    return {
+        error: "",
+        matcher: (label) => label.includes(text),
+        mode: "text",
+    };
 }
 
 function statBox(value, label) {

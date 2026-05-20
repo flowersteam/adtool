@@ -51,8 +51,10 @@
                         </div>
                     </div>
 
-                    <label class="fieldLabel" for="searchInput">Filter discoveries</label>
-                    <input id="searchInput" class="searchInput" type="search" placeholder="Search by folder or file">
+                    <label class="fieldLabel" for="searchInput">Search discovery names</label>
+                    <input id="searchInput" class="searchInput" type="search"
+                        placeholder="Text or regex, e.g. /idx_[0-9]{3}_/">
+                    <p class="fieldHint">Plain text is matched directly. Use <code>/regex/</code> or <code>re:regex</code> for patterns.</p>
 
                     <div class="buttonRow">
                         <button id="fitViewButton" type="button">Fit View</button>
