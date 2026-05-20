@@ -12,6 +12,7 @@ from pathlib import Path
 import json
 import threading
 import shutil
+import time
 from typing import Optional
 
 from datetime import datetime
@@ -30,6 +31,10 @@ MIME_TYPES = {
 
 BASE_DIR = Path(__file__).resolve().parent
 static_files = BASE_DIR / "static"
+RECOMPUTE_DEBOUNCE_SECONDS = 10.0
+RECOMPUTE_MIN_INTERVAL_SECONDS = 15.0
+recompute_lock = threading.Lock()
+last_recompute_time = 0.0
 
 
 parser = argparse.ArgumentParser()
@@ -129,12 +134,26 @@ def _coverage_error_detail() -> str:
     return "Coverage summary could not be loaded."
 
 
-def recompute_discoveries() -> None:
+def recompute_discoveries(force_refit: bool = False, respect_interval: bool = False) -> bool:
     """Recompute static coordinate artifacts from current discoveries."""
-    compute_coordinates(
-        str(discovery_files),
-        static_dir=str(static_files),
-    )
+    global last_recompute_time
+
+    with recompute_lock:
+        now = time.monotonic()
+        if (
+            respect_interval
+            and not force_refit
+            and now - last_recompute_time < RECOMPUTE_MIN_INTERVAL_SECONDS
+        ):
+            return False
+
+        compute_coordinates(
+            str(discovery_files),
+            static_dir=str(static_files),
+            force_refit=force_refit,
+        )
+        last_recompute_time = time.monotonic()
+        return True
 
 
 def watch_discoveries():
@@ -143,14 +162,21 @@ def watch_discoveries():
         # Only recompute for meaningful data updates.
         has_relevant_change = any(
             change[0] in (Change.added, Change.modified, Change.deleted)
-            and Path(change[1]).name in {"discovery.json", "visu.png", "config.json"}
+            and (
+                Path(change[1]).name in {"discovery.json", "config.json"}
+                or Path(change[1]).suffix.lower() in {".png", ".mp4"}
+            )
             for change in changes
         )
         if not has_relevant_change:
             continue
 
         print("Change in discoveries")
-        recompute_discoveries()
+        time.sleep(RECOMPUTE_DEBOUNCE_SECONDS)
+        if recompute_discoveries(respect_interval=True):
+            print("Discoveries recomputed")
+        else:
+            print("Discovery recompute skipped: waiting for live-update interval")
 
 
 @asynccontextmanager
@@ -286,7 +312,10 @@ async def websocket_endpoint(websocket: WebSocket):
     while True:
         async for changes in awatch(str(static_files)):
             for change in changes:
-                if change[0] in (Change.added, Change.modified):
+                if (
+                    change[0] in (Change.added, Change.modified)
+                    and Path(change[1]).name == "discoveries.json"
+                ):
                     print("New coordinates file")
                     try:
                         await websocket.send_text("refresh")
@@ -298,6 +327,12 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.get("/")
 async def read_root():
     return RedirectResponse(url="/static/index.html")
+
+
+@app.post("/recompute_layout")
+async def recompute_layout():
+    recompute_discoveries(force_refit=True)
+    return {"status": "ok"}
 
 
 # curl 'http://127.0.0.1:8765/export' -X POST -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br, zstd' -H 'Referer: http://127.0.0.1:8765/static/index.html' -H 'Content-Type: application/json' -H 'Origin: http://127.0.0.1:8765' -H 'Connection: keep-alive' -H 'Sec-Fetch-Dest: empty' -H 'Sec-Fetch-Mode: cors' -H 'Sec-Fetch-Site: same-origin' -H 'Priority: u=1' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' --data-raw '["/2024-06-06T15:16_exp_0_idx_295_seed_42/4e50156e34f55df28f88bf68a82688e58115f5a5.mp4","/2024-06-06T15:16_exp_0_idx_296_seed_42/11ab8da6166086f334b23b15bd70a27b3d76e54a.mp4","/2024-06-06T15:17_exp_0_idx_297_seed_42/0b1d886f90161aaadd5bdd4018d0486817a02091.mp4"]'

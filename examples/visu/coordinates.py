@@ -7,12 +7,30 @@ import numpy as np
 from sklearn.decomposition import PCA
 import cv2
 from sklearn.cluster import KMeans
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Optional
 
 import umap
 
-loaded_json = {
+loaded_json = {}
 
-}
+MIN_STABLE_UMAP_DISCOVERIES = 10
+MAX_RENDERED_DISCOVERIES = 500
+
+
+@dataclass
+class ProjectionState:
+    reducer: object
+    mean: np.ndarray
+    std: np.ndarray
+    center: np.ndarray
+    scale: float
+    fit_count: int
+    coordinates_by_visual: dict[str, tuple[float, float]] = field(default_factory=dict)
+
+
+projection_state: Optional[ProjectionState] = None
 
 
 def process_discovery(root, name):
@@ -27,17 +45,22 @@ def process_discovery(root, name):
     if discovery_path in loaded_json:
         return loaded_json[discovery_path]
 
-    with open(discovery_path) as f:
-        discovery_details = json.load(f)
+    try:
+        with open(discovery_path) as f:
+            discovery_details = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return None
 
-    discovery_embedding = discovery_details['output']
+    if 'output' not in discovery_details:
+        return None
+
+    try:
+        discovery_embedding = np.asarray(discovery_details['output'], dtype=float)
+    except (TypeError, ValueError):
+        return None
 
     if np.isnan(discovery_embedding).any():
         print("nan found")
-        return None
-    # same for None in embedding
-    if None in discovery_embedding:
-        print("None found")
         return None
 
     # same for infinities
@@ -53,7 +76,7 @@ def process_discovery(root, name):
 
         path = os.path.join(root, name, file)
         discovery['visual'] = path
-        discovery['embedding'] = discovery_embedding
+        discovery['embedding'] = discovery_embedding.tolist()
         loaded_json[discovery_path] = discovery
         return discovery
 
@@ -63,7 +86,7 @@ def process_discovery(root, name):
 
         path = os.path.join(root, name, file)
         discovery['visual'] = path
-        discovery['embedding'] = discovery_embedding
+        discovery['embedding'] = discovery_embedding.tolist()
         loaded_json[discovery_path] = discovery
         return discovery
 
@@ -86,7 +109,7 @@ def list_discoveries(path):
                 discoveries.append(result)
 
     print("Number of discoveries: ", len(discoveries))
-    return discoveries
+    return sorted(discoveries, key=lambda discovery: discovery["visual"])
 
 
 def concatenate_photos(discoveries, output_file='static/concatenated.webm'):
@@ -190,6 +213,8 @@ def export_last_frame(discoveries):
     for discovery in discoveries:
         if not os.path.exists(discovery['visual']):
             continue
+        if not discovery['visual'].lower().endswith(".mp4"):
+            continue
 
         img_path = f"{discovery['visual'][:-4]}.jpg"
         if os.path.exists(img_path):
@@ -214,124 +239,239 @@ def export_last_frame(discoveries):
         cv2.imwrite(img_path, frame, [int(cv2.IMWRITE_JPEG_QUALITY), 55])
 
 
-def compute_coordinates(path, static_dir='static'):
-    global pca
+def _write_json_atomic(path, payload):
+    tmp_path = f"{path}.tmp"
+    with open(tmp_path, "w") as f:
+        json.dump(payload, f)
+    os.replace(tmp_path, path)
+
+
+def _write_layout_status(static_dir, payload):
+    status_path = os.path.join(static_dir, "layout_status.json")
+    payload["updated_at"] = datetime.now().isoformat(timespec="seconds")
+    _write_json_atomic(status_path, payload)
+
+
+def _valid_discoveries(discoveries):
+    filtered = []
+    embeddings = []
+    expected_dim = None
+
+    for discovery in discoveries:
+        if "embedding" not in discovery:
+            continue
+
+        embedding = np.asarray(discovery["embedding"], dtype=float)
+        if embedding.ndim != 1 or embedding.size == 0:
+            continue
+        if expected_dim is None:
+            expected_dim = embedding.size
+        if embedding.size != expected_dim:
+            continue
+        if np.isnan(embedding).any() or np.isinf(embedding).any():
+            continue
+
+        filtered.append(discovery)
+        embeddings.append(embedding)
+
+    if not embeddings:
+        return [], np.empty((0, 0))
+
+    return filtered, np.vstack(embeddings)
+
+
+def _normalize_embedding_matrix(X):
+    mean = X.mean(axis=0)
+    std = X.std(axis=0) + 1e-6
+    return (X - mean) / std, mean, std
+
+
+def _normalize_projection_bounds(embedding):
+    min_xy = embedding.min(axis=0)
+    max_xy = embedding.max(axis=0)
+    center = (min_xy + max_xy) / 2.0
+    scale = float(np.max(max_xy - min_xy))
+    if scale <= 1e-9:
+        scale = 1.0
+    return center, scale
+
+
+def _project_with_temporary_layout(X):
+    if len(X) == 1:
+        return np.array([[0.0, 0.0]])
+    if len(X) == 2:
+        return np.array([[-0.5, 0.0], [0.5, 0.0]])
+
+    X_norm, _, _ = _normalize_embedding_matrix(X)
+    reducer = PCA(n_components=2, random_state=0)
+    embedding = reducer.fit_transform(X_norm)
+    center, scale = _normalize_projection_bounds(embedding)
+    return (embedding - center) / scale
+
+
+def _fit_stable_umap(discoveries, X):
+    X_norm, mean, std = _normalize_embedding_matrix(X)
+    reducer = umap.UMAP(
+        n_components=2,
+        random_state=0,
+        n_neighbors=min(10, len(X_norm) - 1),
+    )
+    embedding = reducer.fit_transform(X_norm)
+    center, scale = _normalize_projection_bounds(embedding)
+
+    state = ProjectionState(
+        reducer=reducer,
+        mean=mean,
+        std=std,
+        center=center,
+        scale=scale,
+        fit_count=len(X_norm),
+    )
+
+    for discovery, point in zip(discoveries, embedding):
+        normalized = (point - center) / scale
+        state.coordinates_by_visual[discovery["visual"]] = (
+            float(normalized[0]),
+            float(normalized[1]),
+        )
+
+    return state
+
+
+def _project_with_stable_state(discoveries, X, state):
+    coordinates = []
+    missing_indices = []
+
+    for idx, discovery in enumerate(discoveries):
+        known = state.coordinates_by_visual.get(discovery["visual"])
+        if known is not None:
+            coordinates.append(known)
+            continue
+
+        coordinates.append(None)
+        missing_indices.append(idx)
+
+    if missing_indices:
+        X_new = (X[missing_indices] - state.mean) / state.std
+        projected = state.reducer.transform(X_new)
+        for idx, point in zip(missing_indices, projected):
+            normalized = (point - state.center) / state.scale
+            coordinate = (float(normalized[0]), float(normalized[1]))
+            state.coordinates_by_visual[discoveries[idx]["visual"]] = coordinate
+            coordinates[idx] = coordinate
+
+    return np.asarray(coordinates, dtype=float)
+
+
+def _downsample_for_display(discoveries, embedding):
+    if len(discoveries) <= MAX_RENDERED_DISCOVERIES:
+        return discoveries, embedding
+
+    kmeans = KMeans(n_clusters=MAX_RENDERED_DISCOVERIES, random_state=0)
+    labels = kmeans.fit_predict(embedding)
+    centers = kmeans.cluster_centers_
+
+    selected_indices = []
+    for cluster_idx, center in enumerate(centers):
+        members = np.where(labels == cluster_idx)[0]
+        if len(members) == 0:
+            continue
+
+        cluster_points = embedding[members]
+        nearest_member = members[np.argmin(
+            np.linalg.norm(cluster_points - center, axis=1))]
+        selected_indices.append(nearest_member)
+
+    selected_indices.sort()
+    return [discoveries[i] for i in selected_indices], embedding[selected_indices]
+
+
+def _saved_coordinates(discoveries, embedding, root_path):
+    saved_coordinates = []
+    for discovery, point in zip(discoveries, embedding):
+        if np.isnan(point).any() or np.isinf(point).any():
+            continue
+        saved_coordinates.append({
+            "x": float(point[0]),
+            "y": float(point[1]),
+            "visual": discovery["visual"][1 + len(root_path):],
+        })
+    return saved_coordinates
+
+
+def compute_coordinates(path, static_dir='static', force_refit=False):
+    global projection_state
     print("computing coordinates", path)
     discoveries = list_discoveries(path)
     static_discoveries_path = os.path.join(static_dir, 'discoveries.json')
     static_concatenated_path = os.path.join(static_dir, 'concatenated.webm')
 
     if len(discoveries) == 0:
-        # touch discoveries.json
-        with open(static_discoveries_path, 'w') as f:
-            f.write('[]')
-            # rm static/concatenated.webm if exists
+        _write_json_atomic(static_discoveries_path, [])
+        _write_layout_status(static_dir, {
+            "mode": "empty",
+            "stable": False,
+            "count": 0,
+            "displayed_count": 0,
+            "fit_count": 0,
+        })
         if os.path.exists(static_concatenated_path):
             os.remove(static_concatenated_path)
-
         return
 
-    # if less than 2 discoveries, return
+    discoveries, X = _valid_discoveries(discoveries)
     if len(discoveries) == 0:
-        return
-    if len(discoveries) < 3:
-        with open(static_discoveries_path, 'w') as f:
-            json.dump([{
-                'x': 0,
-                'y': 0,
-                'visual': discoveries[0]['visual'][len(path):]
-            }], f)
-        return
-
-    if len(discoveries) == 2:
-        with open(static_discoveries_path, 'w') as f:
-            json.dump([{
-                'x': -1,
-                'y': 0,
-                'visual': discoveries[0]['visual'][len(path):]
-            }, {
-                'x': 1,
-                'y': 0,
-                'visual': discoveries[1]['visual'][len(path):]
-            }], f)
-        return
-
-    discoveries = [
-        discovery for discovery in discoveries if 'embedding' in discovery]
-    X = np.array([discovery['embedding'] for discovery in discoveries])
-
-    X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-6)
-
-  #  X = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0) + 1e-6)
-
-    # check if there is nan values
-    if np.isnan(X).any():
-        print("nan found in X")
-        return
-
-    # pca = PCA(n_components=2, random_state=0, whiten=True)
-    pca = umap.UMAP(n_components=2, random_state=0,
-                    n_neighbors=min(10, len(X)))
-    pca.fit(X)
-
-    embedding = pca.transform(X)
-    # check if there is nan values
-    if np.isnan(embedding).any():
-        print("nan found in embedding")
-
-    # Cap rendered points after UMAP so the 2D manifold is preserved before
-    # downsampling for visualization.
-    NB_CLUSTERS = 500
-    if len(discoveries) > NB_CLUSTERS:
-        kmeans = KMeans(n_clusters=NB_CLUSTERS, random_state=0)
-        labels = kmeans.fit_predict(embedding)
-        centers = kmeans.cluster_centers_
-
-        selected_indices = []
-        for cluster_idx, center in enumerate(centers):
-            members = np.where(labels == cluster_idx)[0]
-            if len(members) == 0:
-                continue
-
-            cluster_points = embedding[members]
-            nearest_member = members[np.argmin(
-                np.linalg.norm(cluster_points - center, axis=1))]
-            selected_indices.append(nearest_member)
-
-        discoveries = [discoveries[i] for i in selected_indices]
-        embedding = embedding[selected_indices]
-
-    saved_coordinates = []
-
-    for i, discovery in enumerate(discoveries):
-        # if nan in embedding, skip
-        if np.isnan(embedding[i]).any():
-            continue
-        saved_coordinates.append({
-            'x': embedding[i][0].item(),
-            'y': embedding[i][1].item(),
-            'visual': discovery['visual']
+        _write_json_atomic(static_discoveries_path, [])
+        _write_layout_status(static_dir, {
+            "mode": "empty",
+            "stable": False,
+            "count": 0,
+            "displayed_count": 0,
+            "fit_count": 0,
         })
+        return
 
-    min_x = min(discovery['x'] for discovery in saved_coordinates)
-    max_x = max(discovery['x'] for discovery in saved_coordinates)
-    min_y = min(discovery['y'] for discovery in saved_coordinates)
-    max_y = max(discovery['y'] for discovery in saved_coordinates)
+    if force_refit:
+        projection_state = None
+    if projection_state is not None and projection_state.mean.shape[0] != X.shape[1]:
+        projection_state = None
 
-    for discovery in saved_coordinates:
-        discovery['x'] = (discovery['x'] - min_x) / (max_x - min_x) - 0.5
-        discovery['y'] = (discovery['y'] - min_y) / (max_y - min_y) - 0.5
+    should_fit_umap = (
+        len(discoveries) >= MIN_STABLE_UMAP_DISCOVERIES
+        and (projection_state is None or force_refit)
+    )
+
+    if should_fit_umap:
+        projection_state = _fit_stable_umap(discoveries, X)
+
+    if projection_state is not None:
+        embedding = _project_with_stable_state(discoveries, X, projection_state)
+        layout_mode = "stable_umap"
+        stable = True
+        fit_count = projection_state.fit_count
+    else:
+        embedding = _project_with_temporary_layout(X)
+        layout_mode = "bootstrap_pca"
+        stable = False
+        fit_count = 0
 
     # width, height=concatenate_videos(discoveries)
     export_last_frame(discoveries)
 
-    # remove path from visual
-    for discovery in saved_coordinates:
-        discovery['visual'] = discovery['visual'][1 + len(path):]
-        # discovery['width'] = width
-        # discovery['height'] = height
+    display_discoveries, display_embedding = _downsample_for_display(
+        discoveries,
+        embedding,
+    )
+    saved_coordinates = _saved_coordinates(display_discoveries, display_embedding, path)
 
-    with open(static_discoveries_path, 'w') as f:
-        json.dump(saved_coordinates, f)
+    _write_json_atomic(static_discoveries_path, saved_coordinates)
+    _write_layout_status(static_dir, {
+        "mode": layout_mode,
+        "stable": stable,
+        "count": len(discoveries),
+        "displayed_count": len(saved_coordinates),
+        "fit_count": fit_count,
+        "max_displayed": MAX_RENDERED_DISCOVERIES,
+    })
 
-    return pca
+    return projection_state

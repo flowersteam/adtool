@@ -7,6 +7,7 @@ const HOVER_OPACITY = 1.0;
 const LOAD_RETRY_MS = 800;
 const DISCOVERY_LOAD_GRACE_MS = 30000;
 const COVERAGE_LOAD_GRACE_MS = 30000;
+const LIVE_REFRESH_COOLDOWN_MS = 15000;
 const cameraDepthBounds = { min: 2.2, max: 150.0 };
 
 const app = document.getElementById("app");
@@ -18,6 +19,7 @@ const entriesList = document.getElementById("entriesList");
 const searchInput = document.getElementById("searchInput");
 const fitViewButton = document.getElementById("fitViewButton");
 const refreshButton = document.getElementById("refreshButton");
+const recomputeLayoutButton = document.getElementById("recomputeLayoutButton");
 const clearSelectionButton = document.getElementById("clearSelectionButton");
 const exportButton = document.getElementById("exportButton");
 const previewSizeSlider = document.getElementById("previewSizeSlider");
@@ -67,6 +69,7 @@ const pointer = new THREE.Vector2();
 const textureLoader = new THREE.TextureLoader();
 
 const planes = [];
+const planesBySource = new Map();
 const selectedEntries = new Set();
 const selectedNodes = new Map();
 
@@ -76,6 +79,8 @@ let pendingRefresh = false;
 let coverageRequestId = 0;
 let coverageEnabled = false;
 let pointerDown = null;
+let liveRefreshTimerId = null;
+let lastLiveRefreshTimestamp = 0;
 
 function updateStatus(text) {
     statusLine.textContent = text;
@@ -158,6 +163,7 @@ function clearPlanes() {
         disposePlane(plane);
     }
     planes.length = 0;
+    planesBySource.clear();
     hoveredPlane = null;
     selectedEntries.clear();
     selectedNodes.clear();
@@ -498,6 +504,16 @@ function updateHoverState(event) {
     }
 }
 
+function updatePlaneFromPoint(plane, point) {
+    const visual = normalizeVisualPath(point.visual);
+    const sourcePath = mediaUrl(visual);
+    plane.position.set(SCALE_FACTOR * Number(point.x || 0), SCALE_FACTOR * Number(point.y || 0), 0);
+    plane.userData.sourcePath = sourcePath;
+    plane.userData.label = prettifyEntryLabel(sourcePath).toLowerCase();
+    plane.userData.selected = selectedEntries.has(sourcePath);
+    updatePlaneStyle(plane);
+}
+
 async function loadDiscoveryPoint(point) {
     const visual = normalizeVisualPath(point.visual);
     const previewImagePath = visualToPreviewImage(visual);
@@ -530,12 +546,8 @@ async function loadDiscoveryPoint(point) {
     });
 
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(baseWidth, baseHeight), material);
-    plane.position.set(SCALE_FACTOR * Number(point.x || 0), SCALE_FACTOR * Number(point.y || 0), 0);
-    plane.userData.sourcePath = mediaUrl(visual);
-    plane.userData.label = prettifyEntryLabel(plane.userData.sourcePath).toLowerCase();
-    plane.userData.selected = false;
     plane.userData.scaleBoost = 1.0;
-    updatePlaneStyle(plane);
+    updatePlaneFromPoint(plane, point);
     return plane;
 }
 
@@ -570,7 +582,77 @@ async function readDiscoveries(maxWaitMs = 0) {
     }
 }
 
-async function loadPoints(maxWaitMs = 0) {
+function removePlaneBySource(sourcePath) {
+    const plane = planesBySource.get(sourcePath);
+    if (!plane) {
+        return;
+    }
+
+    const idx = planes.indexOf(plane);
+    if (idx >= 0) {
+        planes.splice(idx, 1);
+    }
+    if (hoveredPlane === plane) {
+        hoveredPlane = null;
+        hidePreview();
+    }
+    planesBySource.delete(sourcePath);
+    disposePlane(plane);
+}
+
+async function syncPoints(pointsData, shouldFitInitialView = false) {
+    const existingCount = planes.length;
+    const expectedSources = new Set();
+    const newPoints = [];
+    let addedCount = 0;
+
+    for (const point of pointsData) {
+        const sourcePath = mediaUrl(point.visual);
+        expectedSources.add(sourcePath);
+
+        const existingPlane = planesBySource.get(sourcePath);
+        if (existingPlane) {
+            updatePlaneFromPoint(existingPlane, point);
+            continue;
+        }
+
+        newPoints.push(point);
+    }
+
+    const loadedPlanes = await Promise.all(newPoints.map(loadDiscoveryPoint));
+    for (const plane of loadedPlanes) {
+        if (!plane) {
+            continue;
+        }
+
+        planes.push(plane);
+        planesBySource.set(plane.userData.sourcePath, plane);
+        scene.add(plane);
+        addedCount += 1;
+    }
+
+    for (const sourcePath of Array.from(planesBySource.keys())) {
+        if (!expectedSources.has(sourcePath)) {
+            unselectEntry(sourcePath);
+            removePlaneBySource(sourcePath);
+        }
+    }
+
+    applyFilter();
+    setEmptyState(
+        planes.length === 0,
+        "No usable preview images were found for these discoveries.",
+        "No previews available",
+    );
+
+    if (shouldFitInitialView || existingCount === 0) {
+        fitView();
+    }
+
+    return addedCount;
+}
+
+async function loadPoints(maxWaitMs = 0, shouldFitInitialView = false) {
     const pointsData = await readDiscoveries(maxWaitMs);
 
     if (pointsData.length === 0) {
@@ -583,23 +665,14 @@ async function loadPoints(maxWaitMs = 0) {
         return;
     }
 
-    const loadedPlanes = await Promise.all(pointsData.map(loadDiscoveryPoint));
-    for (const plane of loadedPlanes.filter(Boolean)) {
-        planes.push(plane);
-        scene.add(plane);
-    }
-
-    applyFilter();
-    setEmptyState(
-        planes.length === 0,
-        "No usable preview images were found for these discoveries.",
-        "No previews available",
-    );
-    updateStatus(`${planes.length} discoveries loaded.`);
-    fitView();
+    const previousCount = planes.length;
+    const addedCount = await syncPoints(pointsData, shouldFitInitialView);
+    const shown = planes.filter((plane) => plane.visible).length;
+    const suffix = addedCount > 0 && previousCount > 0 ? `, ${addedCount} new` : "";
+    updateStatus(`${shown}/${pointsData.length} discoveries shown${suffix}.`);
 }
 
-async function refreshDiscoveries() {
+async function refreshDiscoveries(shouldFitInitialView = false) {
     if (isRefreshing) {
         pendingRefresh = true;
         return;
@@ -610,8 +683,7 @@ async function refreshDiscoveries() {
     try {
         updateStatus("Updating discoveries...");
         setEmptyState(false);
-        clearPlanes();
-        await loadPoints(DISCOVERY_LOAD_GRACE_MS);
+        await loadPoints(DISCOVERY_LOAD_GRACE_MS, shouldFitInitialView);
     } catch {
         setEmptyState(
             true,
@@ -624,8 +696,42 @@ async function refreshDiscoveries() {
         refreshButton.disabled = false;
         if (pendingRefresh) {
             pendingRefresh = false;
-            refreshDiscoveries();
+            refreshDiscoveries(shouldFitInitialView);
         }
+    }
+}
+
+function scheduleLiveRefresh() {
+    if (liveRefreshTimerId !== null) {
+        return;
+    }
+
+    const elapsed = performance.now() - lastLiveRefreshTimestamp;
+    const delay = Math.max(0, LIVE_REFRESH_COOLDOWN_MS - elapsed);
+
+    liveRefreshTimerId = window.setTimeout(async () => {
+        liveRefreshTimerId = null;
+        lastLiveRefreshTimestamp = performance.now();
+        await refreshDiscoveries(false);
+    }, delay);
+}
+
+async function recomputeLayout() {
+    recomputeLayoutButton.disabled = true;
+    refreshButton.disabled = true;
+    try {
+        updateStatus("Recomputing clustered layout...");
+        const response = await fetch("/recompute_layout", { method: "POST" });
+        if (!response.ok) {
+            throw new Error("layout recompute failed");
+        }
+        await refreshDiscoveries(true);
+        updateStatus("Clustered layout recomputed.");
+    } catch {
+        updateStatus("Failed to recompute clustered layout.");
+    } finally {
+        recomputeLayoutButton.disabled = false;
+        refreshButton.disabled = false;
     }
 }
 
@@ -687,7 +793,7 @@ function connectWebsocket() {
 
     ws.onmessage = async (event) => {
         if (event.data === "refresh") {
-            await refreshDiscoveries();
+            scheduleLiveRefresh();
         }
     };
 
@@ -934,7 +1040,8 @@ discoveriesTab.addEventListener("click", () => showPage("discoveries"));
 coverageTab.addEventListener("click", () => showPage("coverage"));
 reloadCoverageButton.addEventListener("click", loadCoverageSummary);
 fitViewButton.addEventListener("click", fitView);
-refreshButton.addEventListener("click", refreshDiscoveries);
+refreshButton.addEventListener("click", () => refreshDiscoveries(false));
+recomputeLayoutButton.addEventListener("click", recomputeLayout);
 clearSelectionButton.addEventListener("click", clearSelection);
 exportButton.addEventListener("click", exportEntries);
 searchInput.addEventListener("input", applyFilter);
@@ -953,6 +1060,8 @@ new ResizeObserver(resizeRenderer).observe(app);
 applyPreviewScale(previewSizeSlider.value);
 initializeCoverageNavigation();
 resizeRenderer();
-refreshDiscoveries();
+refreshDiscoveries(true).then(() => {
+    lastLiveRefreshTimestamp = performance.now();
+});
 connectWebsocket();
 updateViewAnimation();

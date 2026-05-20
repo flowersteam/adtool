@@ -261,6 +261,10 @@ code {
     gap: 10px;
 }
 
+#recomputeLayoutButton {
+    grid-column: 1 / -1;
+}
+
 .rangeControl {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) 48px;
