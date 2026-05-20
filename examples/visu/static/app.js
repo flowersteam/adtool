@@ -74,6 +74,7 @@ let hoveredPlane = null;
 let isRefreshing = false;
 let pendingRefresh = false;
 let coverageRequestId = 0;
+let coverageEnabled = false;
 let pointerDown = null;
 
 function updateStatus(text) {
@@ -207,8 +208,31 @@ function setCoverageEmpty(visible, title = "No coverage run found", message = ""
     }
 }
 
+async function initializeCoverageNavigation() {
+    try {
+        const response = await fetch("/coverage_status", { cache: "no-store" });
+        if (!response.ok) {
+            throw new Error("coverage status unavailable");
+        }
+
+        const status = await response.json();
+        coverageEnabled = Boolean(status.enabled);
+    } catch {
+        coverageEnabled = false;
+    }
+
+    coverageTab.hidden = !coverageEnabled;
+    if (!coverageEnabled && coveragePage.classList.contains("active")) {
+        showPage("discoveries");
+    }
+}
+
 function showPage(pageName) {
     const isCoverage = pageName === "coverage";
+    if (isCoverage && !coverageEnabled) {
+        return;
+    }
+
     viewerPage.classList.toggle("active", !isCoverage);
     coveragePage.classList.toggle("active", isCoverage);
     discoveriesTab.classList.toggle("active", !isCoverage);
@@ -771,9 +795,23 @@ function renderCoverage(summary) {
     }
 }
 
+async function responseErrorMessage(response) {
+    try {
+        const payload = await response.json();
+        if (typeof payload.detail === "string") {
+            return payload.detail;
+        }
+    } catch {
+        // Fall through to the generic message below.
+    }
+    return "Coverage summary could not be loaded.";
+}
+
 async function loadCoverageSummary() {
     const requestId = ++coverageRequestId;
     const deadline = performance.now() + COVERAGE_LOAD_GRACE_MS;
+    let lastErrorMessage = "Coverage summary could not be loaded.";
+    let fatalErrorMessage = "";
     reloadCoverageButton.disabled = true;
     coverageSubtitle.textContent = "Loading coverage summary...";
     coverageGrid.innerHTML = "";
@@ -788,7 +826,16 @@ async function loadCoverageSummary() {
                     summary = await response.json();
                     break;
                 }
-            } catch {
+
+                lastErrorMessage = await responseErrorMessage(response);
+                if (response.status === 422 || response.status === 400) {
+                    fatalErrorMessage = lastErrorMessage;
+                    throw new Error(fatalErrorMessage);
+                }
+            } catch (error) {
+                if (fatalErrorMessage) {
+                    throw error;
+                }
                 // Retry transient startup/load failures until the grace window expires.
             }
 
@@ -810,11 +857,11 @@ async function loadCoverageSummary() {
         }
         coverageGrid.innerHTML = "";
         coverageStats.innerHTML = "";
-        coverageSubtitle.textContent = "No coverage run is available.";
+        coverageSubtitle.textContent = "Coverage could not be loaded.";
         setCoverageEmpty(
             true,
-            "No coverage run found",
-            "Run the coverage comparison utility or pass --coverage_run to the visualization server.",
+            "Coverage format issue",
+            lastErrorMessage,
         );
     } finally {
         if (requestId === coverageRequestId) {
@@ -904,6 +951,7 @@ graphLightbox.addEventListener("click", (event) => {
 new ResizeObserver(resizeRenderer).observe(app);
 
 applyPreviewScale(previewSizeSlider.value);
+initializeCoverageNavigation();
 resizeRenderer();
 refreshDiscoveries();
 connectWebsocket();

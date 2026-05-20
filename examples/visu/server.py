@@ -38,11 +38,7 @@ parser.add_argument("--coverage_run", type=str, required=False, default=None)
 args = parser.parse_args()
 
 discovery_files = Path(args.discoveries).resolve()
-coverage_run = (
-    Path(args.coverage_run).resolve()
-    if args.coverage_run
-    else (discovery_files.parent / "coverage_run").resolve()
-)
+coverage_run = Path(args.coverage_run).resolve() if args.coverage_run else None
 
 
 def _is_relative_to(path: Path, parent: Path) -> bool:
@@ -54,11 +50,10 @@ def _is_relative_to(path: Path, parent: Path) -> bool:
 
 
 def _coverage_roots() -> list[Path]:
-    roots = [
-        coverage_run,
-        discovery_files.parent / "coverage_runs",
-        discovery_files.parent / "coverage_run",
-    ]
+    if coverage_run is None:
+        return []
+
+    roots = [coverage_run]
 
     if coverage_run.name.startswith("coverage_run_"):
         roots.append(coverage_run.parent)
@@ -97,6 +92,41 @@ def _find_coverage_summary() -> tuple[Optional[Path], Optional[Path]]:
         if summary is not None:
             return summary.resolve(), root.resolve()
     return None, None
+
+
+def _coverage_error_detail() -> str:
+    if coverage_run is None:
+        return "Coverage is disabled because no --coverage_run folder was provided when launching the visualization server."
+
+    if not coverage_run.exists():
+        return f"Coverage path does not exist: {coverage_run}"
+
+    if coverage_run.is_file():
+        return (
+            "Coverage path points to a file, but the visualization expects a coverage run folder. "
+            "Pass either a folder containing summary.json or a parent folder containing coverage_run_*/summary.json."
+        )
+
+    summary_path, _ = _find_coverage_summary()
+    if summary_path is None:
+        return (
+            "Coverage folder format is not recognized. Expected summary.json directly inside the folder, "
+            "or one or more coverage_run_* folders containing summary.json."
+        )
+
+    try:
+        with open(summary_path) as handle:
+            summary = json.load(handle)
+    except json.JSONDecodeError:
+        return f"Coverage summary is not valid JSON: {summary_path}"
+
+    if not isinstance(summary, dict):
+        return f"Coverage summary has the wrong format: expected a JSON object in {summary_path}"
+
+    if "images" not in summary or not isinstance(summary["images"], list):
+        return f"Coverage summary is missing an images list: {summary_path}"
+
+    return "Coverage summary could not be loaded."
 
 
 def recompute_discoveries() -> None:
@@ -180,6 +210,9 @@ async def serve_discoveries(file_path: str):
 
 @app.get("/coverage/{file_path:path}")
 async def serve_coverage_file(file_path: str):
+    if coverage_run is None:
+        raise HTTPException(status_code=404, detail="Coverage is disabled")
+
     full_path = None
     for root in _coverage_roots():
         candidate = (root / file_path).resolve()
@@ -195,14 +228,37 @@ async def serve_coverage_file(file_path: str):
     return FileResponse(str(full_path), media_type=mime_type)
 
 
+@app.get("/coverage_status")
+async def coverage_status():
+    return {
+        "enabled": coverage_run is not None,
+        "path": str(coverage_run) if coverage_run is not None else None,
+    }
+
+
 @app.get("/coverage_summary")
 async def coverage_summary():
+    if coverage_run is None:
+        raise HTTPException(status_code=404, detail=_coverage_error_detail())
+
+    if not coverage_run.exists():
+        raise HTTPException(status_code=404, detail=_coverage_error_detail())
+
+    if coverage_run.is_file():
+        raise HTTPException(status_code=422, detail=_coverage_error_detail())
+
     summary_path, serving_root = _find_coverage_summary()
     if summary_path is None or serving_root is None:
-        raise HTTPException(status_code=404, detail="Coverage summary not found")
+        raise HTTPException(status_code=404, detail=_coverage_error_detail())
 
-    with open(summary_path) as handle:
-        summary = json.load(handle)
+    try:
+        with open(summary_path) as handle:
+            summary = json.load(handle)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=422, detail=_coverage_error_detail())
+
+    if not isinstance(summary, dict) or "images" not in summary or not isinstance(summary["images"], list):
+        raise HTTPException(status_code=422, detail=_coverage_error_detail())
 
     run_dir = summary_path.parent
     images = []
