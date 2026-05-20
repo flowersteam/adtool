@@ -322,22 +322,6 @@ def compute_coordinates(path, static_dir='static'):
         discovery['x'] = (discovery['x'] - min_x) / (max_x - min_x) - 0.5
         discovery['y'] = (discovery['y'] - min_y) / (max_y - min_y) - 0.5
 
-    # same for target
-    if os.path.exists(f'{path}/target.json'):
-        with open(f'{path}/target.json') as f:
-            target = json.load(f)
-
-        target_embedding = pca.transform([target['target']])
-        target['x'] = target_embedding[0][0].item()
-        target['y'] = target_embedding[0][1].item()
-
-        target['x'] = (target['x'] - min_x) / (max_x - min_x) - 0.5
-        target['y'] = (target['y'] - min_y) / (max_y - min_y) - 0.5
-
-        # rewrite target.json
-        with open(f"{path}/target.json", "w") as f:
-            json.dump(target, f)
-
     # width, height=concatenate_videos(discoveries)
     export_last_frame(discoveries)
 

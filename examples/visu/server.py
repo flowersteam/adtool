@@ -12,10 +12,9 @@ from pathlib import Path
 import json
 import threading
 import shutil
+from typing import Optional
 
 from datetime import datetime
-
-current_pca = None
 
 MIME_TYPES = {
     "html": "text/html",
@@ -23,6 +22,9 @@ MIME_TYPES = {
     "css": "text/css",
     "mjs": "text/javascript",
     "json": "application/json",
+    "png": "image/png",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
 }
 
 
@@ -32,15 +34,74 @@ static_files = BASE_DIR / "static"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--discoveries", type=str, required=True)
+parser.add_argument("--coverage_run", type=str, required=False, default=None)
 args = parser.parse_args()
 
 discovery_files = Path(args.discoveries).resolve()
+coverage_run = (
+    Path(args.coverage_run).resolve()
+    if args.coverage_run
+    else (discovery_files.parent / "coverage_run").resolve()
+)
+
+
+def _is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.resolve().relative_to(parent.resolve())
+    except ValueError:
+        return False
+    return True
+
+
+def _coverage_roots() -> list[Path]:
+    roots = [
+        coverage_run,
+        discovery_files.parent / "coverage_runs",
+        discovery_files.parent / "coverage_run",
+    ]
+
+    if coverage_run.name.startswith("coverage_run_"):
+        roots.append(coverage_run.parent)
+
+    unique_roots: list[Path] = []
+    seen: set[Path] = set()
+    for root in roots:
+        resolved = root.resolve()
+        if resolved not in seen:
+            seen.add(resolved)
+            unique_roots.append(resolved)
+    return unique_roots
+
+
+def _latest_summary_under(root: Path) -> Optional[Path]:
+    direct_summary = root / "summary.json"
+    if direct_summary.exists():
+        return direct_summary
+
+    summaries = [
+        summary
+        for summary in root.glob("coverage_run_*/summary.json")
+        if summary.is_file()
+    ]
+    if not summaries:
+        return None
+
+    return max(summaries, key=lambda path: path.stat().st_mtime)
+
+
+def _find_coverage_summary() -> tuple[Optional[Path], Optional[Path]]:
+    for root in _coverage_roots():
+        if not root.exists():
+            continue
+        summary = _latest_summary_under(root)
+        if summary is not None:
+            return summary.resolve(), root.resolve()
+    return None, None
 
 
 def recompute_discoveries() -> None:
     """Recompute static coordinate artifacts from current discoveries."""
-    global current_pca
-    current_pca = compute_coordinates(
+    compute_coordinates(
         str(discovery_files),
         static_dir=str(static_files),
     )
@@ -49,9 +110,6 @@ def recompute_discoveries() -> None:
 def watch_discoveries():
     print("Watching discoveries")
     for changes in watch(str(discovery_files), recursive=True):
-        if any(Path(change[1]).name == "target.json" for change in changes):
-            continue
-
         # Only recompute for meaningful data updates.
         has_relevant_change = any(
             change[0] in (Change.added, Change.modified, Change.deleted)
@@ -120,29 +178,49 @@ async def serve_discoveries(file_path: str):
     return FileResponse(str(full_path), media_type=mime_type)
 
 
-@app.get("/disable_target")
-async def disable_target():
-    # delete static/target.json
-    target_file = discovery_files / "target.json"
-    if target_file.exists():
-        target_file.unlink()
-    return {"status": "ok"}
+@app.get("/coverage/{file_path:path}")
+async def serve_coverage_file(file_path: str):
+    full_path = None
+    for root in _coverage_roots():
+        candidate = (root / file_path).resolve()
+        if _is_relative_to(candidate, root) and candidate.exists():
+            full_path = candidate
+            break
+
+    if full_path is None:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    extension = file_path.split(".")[-1]
+    mime_type = MIME_TYPES.get(extension, "application/octet-stream")
+    return FileResponse(str(full_path), media_type=mime_type)
 
 
-@app.post("/update_target")
-async def update_target(target: dict):
-    if current_pca is None:
-        raise HTTPException(status_code=503, detail="No coordinates available")
+@app.get("/coverage_summary")
+async def coverage_summary():
+    summary_path, serving_root = _find_coverage_summary()
+    if summary_path is None or serving_root is None:
+        raise HTTPException(status_code=404, detail="Coverage summary not found")
 
-    # transform x and y to float and get the reverse pca
-    x, y = target['x'], target['y']
-    x, y = float(x), float(y)
-    target_embedding = current_pca.inverse_transform([[x, y]])
-    target['target'] = target_embedding[0].tolist()
-    with open(discovery_files / "target.json", "w") as f:
-        json.dump(target, f)
+    with open(summary_path) as handle:
+        summary = json.load(handle)
 
-    return {"status": "ok"}
+    run_dir = summary_path.parent
+    images = []
+    for image in summary.get("images", []):
+        image_path = (run_dir / image).resolve()
+        if _is_relative_to(image_path, serving_root):
+            image_url = f"/coverage/{image_path.relative_to(serving_root).as_posix()}"
+        else:
+            image_url = f"/coverage/{image}"
+
+        images.append({
+            "file": image,
+            "url": image_url,
+        })
+
+    summary["images"] = images
+    summary["run_name"] = run_dir.name
+    return summary
 
 
 @app.websocket("/ws")
