@@ -27,7 +27,7 @@ from PIL import Image
 
 
 
-from examples.flowlenia.systems.FlowLeniaParameters import FlowLeniaDynamicalParameters, FlowLeniaKernelGrowthDynamicalParameters,FlowLeniaParameters
+from adtool.examples.flowlenia.systems.FlowLeniaParameters import FlowLeniaDynamicalParameters, FlowLeniaKernelGrowthDynamicalParameters,FlowLeniaParameters
 
 
 
@@ -39,8 +39,8 @@ from adtool.utils.expose_config.expose_config import expose
 
 
 from adtool.systems.System import System
-from examples.flowlenia.systems.ReintegrationTracking import ReintegrationTracking
-from examples.flowlenia.systems.Utils import conn_from_matrix, growth, ker_f, sigmoid, sobel
+from adtool.examples.flowlenia.systems.ReintegrationTracking import ReintegrationTracking
+from adtool.examples.flowlenia.systems.Utils import conn_from_matrix, growth, ker_f, sigmoid, sobel
 
 
 torch.set_default_dtype(torch.float32)

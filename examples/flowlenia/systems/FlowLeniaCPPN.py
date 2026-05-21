@@ -1,5 +1,5 @@
 from copy import deepcopy
-from examples.flowlenia.systems.FlowLenia import FlowLenia
+from adtool.examples.flowlenia.systems.FlowLenia import FlowLenia
 from adtool.systems.System import System
 from adtool.wrappers.CPPNWrapper import CPPNWrapper
 
