@@ -25,7 +25,7 @@ setup(
         "sqlalchemy>=2.0",
         "tinydb==4.8.0",
         "toml>=0.10.2",
-     #   "torch>=1.7.1",
+        #"torch>=1.7.1",
         "urllib3==2.2.1",
         "watchdog>=4.0.0",
         "annotated-types==0.6.0",
@@ -46,7 +46,7 @@ setup(
             "watchfiles",
             "scikit-learn",
             "opencv-python",
-            "fastapi[uvicorn]",
+            "fastapi[standard]",
             "umap-learn"
         ],
         "docking":[
