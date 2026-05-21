@@ -33,8 +33,12 @@ BASE_DIR = Path(__file__).resolve().parent
 static_files = BASE_DIR / "static"
 RECOMPUTE_DEBOUNCE_SECONDS = 10.0
 RECOMPUTE_MIN_INTERVAL_SECONDS = 15.0
+DEFAULT_DISPLAY_LIMIT = 500
+MIN_DISPLAY_LIMIT = 1
+MAX_DISPLAY_LIMIT = 10000
 recompute_lock = threading.Lock()
 last_recompute_time = 0.0
+display_limit = DEFAULT_DISPLAY_LIMIT
 
 
 parser = argparse.ArgumentParser()
@@ -151,6 +155,7 @@ def recompute_discoveries(force_refit: bool = False, respect_interval: bool = Fa
             str(discovery_files),
             static_dir=str(static_files),
             force_refit=force_refit,
+            max_displayed=display_limit,
         )
         last_recompute_time = time.monotonic()
         return True
@@ -327,6 +332,37 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.get("/")
 async def read_root():
     return RedirectResponse(url="/static/index.html")
+
+
+@app.get("/display_limit")
+async def get_display_limit():
+    return {
+        "limit": display_limit,
+        "default": DEFAULT_DISPLAY_LIMIT,
+        "presets": [250, 500, 1000, 1500, 2000],
+        "min": MIN_DISPLAY_LIMIT,
+        "max": MAX_DISPLAY_LIMIT,
+    }
+
+
+@app.post("/display_limit")
+async def set_display_limit(payload: dict):
+    global display_limit
+
+    try:
+        limit = int(payload.get("limit"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Display limit must be an integer.")
+
+    if limit < MIN_DISPLAY_LIMIT or limit > MAX_DISPLAY_LIMIT:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Display limit must be between {MIN_DISPLAY_LIMIT} and {MAX_DISPLAY_LIMIT}.",
+        )
+
+    display_limit = limit
+    recompute_discoveries()
+    return {"status": "ok", "limit": display_limit}
 
 
 @app.post("/recompute_layout")

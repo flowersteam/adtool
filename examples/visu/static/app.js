@@ -17,6 +17,9 @@ const discoveryTotal = document.getElementById("discoveryTotal");
 const selectionTotal = document.getElementById("selectionTotal");
 const entriesList = document.getElementById("entriesList");
 const searchInput = document.getElementById("searchInput");
+const displayLimitSelect = document.getElementById("displayLimitSelect");
+const displayLimitCustom = document.getElementById("displayLimitCustom");
+const displayLimitApplyButton = document.getElementById("displayLimitApplyButton");
 const fitViewButton = document.getElementById("fitViewButton");
 const refreshButton = document.getElementById("refreshButton");
 const recomputeLayoutButton = document.getElementById("recomputeLayoutButton");
@@ -872,6 +875,65 @@ function buildDiscoveryMatcher(rawQuery) {
     };
 }
 
+function updateDisplayLimitInputs(limit) {
+    const value = String(limit);
+    const hasPreset = Array.from(displayLimitSelect.options).some((option) => option.value === value);
+    displayLimitSelect.value = hasPreset ? value : "custom";
+    displayLimitCustom.hidden = hasPreset;
+    displayLimitCustom.value = value;
+}
+
+function selectedDisplayLimit() {
+    const rawValue = displayLimitSelect.value === "custom"
+        ? displayLimitCustom.value
+        : displayLimitSelect.value;
+    const limit = Number.parseInt(rawValue, 10);
+    return Number.isFinite(limit) ? limit : null;
+}
+
+async function initializeDisplayLimit() {
+    try {
+        const response = await fetch("/display_limit", { cache: "no-store" });
+        if (!response.ok) {
+            throw new Error("display limit unavailable");
+        }
+        const payload = await response.json();
+        updateDisplayLimitInputs(payload.limit || 500);
+    } catch {
+        updateDisplayLimitInputs(500);
+    }
+}
+
+async function applyDisplayLimit() {
+    const limit = selectedDisplayLimit();
+    if (limit === null) {
+        updateStatus("Display limit must be a number.");
+        return;
+    }
+
+    displayLimitApplyButton.disabled = true;
+    try {
+        updateStatus(`Updating display limit to ${limit} discoveries...`);
+        const response = await fetch("/display_limit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ limit }),
+        });
+        if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+            throw new Error(payload.detail || "display limit update failed");
+        }
+
+        updateDisplayLimitInputs(limit);
+        await refreshDiscoveries(true);
+        updateStatus(`Displaying up to ${limit} discoveries.`);
+    } catch (error) {
+        updateStatus(error.message || "Failed to update display limit.");
+    } finally {
+        displayLimitApplyButton.disabled = false;
+    }
+}
+
 function statBox(value, label) {
     const node = document.createElement("div");
     node.className = "statBox";
@@ -1097,6 +1159,10 @@ recomputeLayoutButton.addEventListener("click", recomputeLayout);
 clearSelectionButton.addEventListener("click", clearSelection);
 exportButton.addEventListener("click", exportEntries);
 searchInput.addEventListener("input", applyFilter);
+displayLimitSelect.addEventListener("change", () => {
+    displayLimitCustom.hidden = displayLimitSelect.value !== "custom";
+});
+displayLimitApplyButton.addEventListener("click", applyDisplayLimit);
 previewSizeSlider.addEventListener("input", (event) => {
     applyPreviewScale(event.target.value);
 });
@@ -1111,6 +1177,7 @@ new ResizeObserver(resizeRenderer).observe(app);
 
 applyPreviewScale(previewSizeSlider.value);
 initializeCoverageNavigation();
+initializeDisplayLimit();
 resizeRenderer();
 refreshDiscoveries(true).then(() => {
     lastLiveRefreshTimestamp = performance.now();

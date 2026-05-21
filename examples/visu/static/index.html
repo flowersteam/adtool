@@ -56,6 +56,20 @@
                         placeholder="Text or regex, e.g. /idx_[0-9]{3}_/">
                     <p class="fieldHint">Plain text is matched directly. Use <code>/regex/</code> or <code>re:regex</code> for patterns.</p>
 
+                    <div class="displayLimitControl">
+                        <label for="displayLimitSelect">Displayed discoveries</label>
+                        <select id="displayLimitSelect">
+                            <option value="250">250</option>
+                            <option value="500" selected>500</option>
+                            <option value="1000">1000</option>
+                            <option value="1500">1500</option>
+                            <option value="2000">2000</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input id="displayLimitCustom" type="number" min="1" max="10000" step="1" value="500" hidden>
+                        <button id="displayLimitApplyButton" type="button">Apply</button>
+                    </div>
+
                     <div class="buttonRow">
                         <button id="fitViewButton" type="button">Fit View</button>
                         <button id="refreshButton" type="button">Refresh</button>

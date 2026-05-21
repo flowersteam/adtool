@@ -16,7 +16,7 @@ import umap
 loaded_json = {}
 
 MIN_STABLE_UMAP_DISCOVERIES = 10
-MAX_RENDERED_DISCOVERIES = 500
+DEFAULT_MAX_RENDERED_DISCOVERIES = 500
 
 
 @dataclass
@@ -363,11 +363,11 @@ def _project_with_stable_state(discoveries, X, state):
     return np.asarray(coordinates, dtype=float)
 
 
-def _downsample_for_display(discoveries, embedding):
-    if len(discoveries) <= MAX_RENDERED_DISCOVERIES:
+def _downsample_for_display(discoveries, embedding, max_displayed):
+    if len(discoveries) <= max_displayed:
         return discoveries, embedding
 
-    kmeans = KMeans(n_clusters=MAX_RENDERED_DISCOVERIES, random_state=0)
+    kmeans = KMeans(n_clusters=max_displayed, random_state=0)
     labels = kmeans.fit_predict(embedding)
     centers = kmeans.cluster_centers_
 
@@ -399,7 +399,12 @@ def _saved_coordinates(discoveries, embedding, root_path):
     return saved_coordinates
 
 
-def compute_coordinates(path, static_dir='static', force_refit=False):
+def compute_coordinates(
+    path,
+    static_dir='static',
+    force_refit=False,
+    max_displayed=DEFAULT_MAX_RENDERED_DISCOVERIES,
+):
     global projection_state
     print("computing coordinates", path)
     discoveries = list_discoveries(path)
@@ -461,6 +466,7 @@ def compute_coordinates(path, static_dir='static', force_refit=False):
     display_discoveries, display_embedding = _downsample_for_display(
         discoveries,
         embedding,
+        max_displayed,
     )
     saved_coordinates = _saved_coordinates(display_discoveries, display_embedding, path)
 
@@ -471,7 +477,7 @@ def compute_coordinates(path, static_dir='static', force_refit=False):
         "count": len(discoveries),
         "displayed_count": len(saved_coordinates),
         "fit_count": fit_count,
-        "max_displayed": MAX_RENDERED_DISCOVERIES,
+        "max_displayed": max_displayed,
     })
 
     return projection_state
