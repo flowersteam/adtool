@@ -4,29 +4,29 @@ from pydantic import BaseModel, Field
 
 from adtool.systems import System
 from adtool.utils.expose_config.expose_config import expose
-from examples.embedded_systems.explorers.embedded_systems_explorer import (
+from adtool.examples.embedded_systems.explorers.embedded_systems_explorer import (
     BaseExplorerFactory,
     BaseIMGEPInstance,
 )
-from examples.embedded_systems.examples.core_interferences.types import (
+from adtool.examples.embedded_systems.examples.core_interferences.types import (
     InstructionProgram,
     InterferenceParamsPayload,
 )
-from examples.embedded_systems.helpers.module_factory import make_module
+from adtool.examples.embedded_systems.helpers.module_factory import make_module
 
 
 class InterferenceIMGEPConfig(BaseModel):
     periode: int = Field(1, ge=1, le=100000)
     knn: int = Field(1, ge=1, le=1000)
     mixer: str = Field(
-        "examples.embedded_systems.examples.core_interferences.mixers.interference_chunk_mixer.ChunkProgramMixer"
+        "adtool.examples.embedded_systems.examples.core_interferences.mixers.interference_chunk_mixer.ChunkProgramMixer"
     )
     mixer_config: Dict = Field(default_factory=lambda: {"num_parts": 2})
     behavior_map_config: Dict = Field(default_factory=lambda: {
-        "path": "examples.embedded_systems.examples.core_interferences.maps.InterferenceBehaviorMap.InterferenceBehaviorMap"
+        "path": "adtool.examples.embedded_systems.examples.core_interferences.maps.InterferenceBehaviorMap.InterferenceBehaviorMap"
     })
     parameter_map_config: Dict = Field(default_factory=lambda: {
-        "path": "examples.embedded_systems.examples.core_interferences.maps.InterferenceParameterMap.InterferenceParameterMap"
+        "path": "adtool.examples.embedded_systems.examples.core_interferences.maps.InterferenceParameterMap.InterferenceParameterMap"
     })
 
 

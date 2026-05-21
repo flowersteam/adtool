@@ -1,2 +1,2 @@
-from examples.embedded_systems.maps.embedded_systems_behavior_map import BaseBehaviorMap
-from examples.embedded_systems.maps.embedded_systems_parameter_map import BaseParameterMap
+from adtool.examples.embedded_systems.maps.embedded_systems_behavior_map import BaseBehaviorMap
+from adtool.examples.embedded_systems.maps.embedded_systems_parameter_map import BaseParameterMap

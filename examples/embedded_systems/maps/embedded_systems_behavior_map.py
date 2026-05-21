@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 
 from adtool.utils.leaf.Leaf import Leaf
-from examples.embedded_systems.behavior_encoders.embedded_systems_behavior_encoder import (
+from adtool.examples.embedded_systems.behavior_encoders.embedded_systems_behavior_encoder import (
     BaseBehaviorEncoder,
 )
-from examples.embedded_systems.goal_samplers.embedded_systems_goal_sampler import BaseGoalSampler
+from adtool.examples.embedded_systems.goal_samplers.embedded_systems_goal_sampler import BaseGoalSampler
 
 
 class BaseBehaviorMap(Leaf):

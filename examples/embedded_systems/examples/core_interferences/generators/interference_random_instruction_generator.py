@@ -1,8 +1,8 @@
 import random
 from typing import Optional
 
-from examples.embedded_systems.examples.core_interferences.types import InstructionProgram
-from examples.embedded_systems.types import ProgramGenerator
+from adtool.examples.embedded_systems.examples.core_interferences.types import InstructionProgram
+from adtool.examples.embedded_systems.types import ProgramGenerator
 
 
 class RandomInstructionGenerator(ProgramGenerator):
