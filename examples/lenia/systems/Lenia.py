@@ -23,7 +23,7 @@ from matplotlib.animation import FuncAnimation
 from numpy import ndarray
 from PIL import Image
 
-from examples.lenia.systems.LeniaParameters import LeniaDynamicalParameters, LeniaParameters
+from adtool.examples.lenia.systems.LeniaParameters import LeniaDynamicalParameters, LeniaParameters
 
 
 

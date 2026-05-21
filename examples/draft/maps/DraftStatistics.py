@@ -1,7 +1,7 @@
 import typing
 from copy import deepcopy
 from adtool.utils.leaf.Leaf import Leaf
-from examples.draft.systems.Draft import Draft
+from adtool.examples.draft.systems.Draft import Draft
 from adtool.wrappers.BoxProjector import BoxProjector
 
 

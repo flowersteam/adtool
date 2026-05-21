@@ -7,7 +7,7 @@
             }
         },
         "system": {
-            "path": "examples.stable_diffusion.systems.StableDiffusionPropagator.StableDiffusionPropagator",
+            "path": "adtool.examples.stable_diffusion.systems.StableDiffusionPropagator.StableDiffusionPropagator",
             "config": {
                 "guidance_scale":1,
                 "num_inference_steps":2
@@ -18,8 +18,8 @@
             "config": {
                 "mutator": "specific",
                 "equil_time": 1,
-                "behavior_map": "examples.stable_diffusion.maps.SDStatistics.SDStatistics",
-                "parameter_map": "examples.stable_diffusion.maps.TextToVectorMap.TextToVectorMap",
+                "behavior_map": "adtool.examples.stable_diffusion.maps.SDStatistics.SDStatistics",
+                "parameter_map": "adtool.examples.stable_diffusion.maps.TextToVectorMap.TextToVectorMap",
                 "mutator_config": {},
                 "behavior_map_config": {},
                 "parameter_map_config": {

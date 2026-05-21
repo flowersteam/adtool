@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 import torch
-from examples.lenia.systems.Lenia import Lenia
+from adtool.examples.lenia.systems.Lenia import Lenia
 from adtool.systems.System import System
 
 
@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass
 from typing import Dict, Optional, Tuple, Union
 
 import torch
-from examples.lenia.systems.Lenia import Lenia
+from adtool.examples.lenia.systems.Lenia import Lenia
 from adtool.systems.System import System
 from adtool.wrappers.CPPNWrapper import CPPNWrapper
 

@@ -6,7 +6,7 @@ from addict import Dict
 from adtool.wrappers.BoxProjector import BoxProjector
 
 from adtool.utils.leaf.Leaf import Leaf
-from examples.nbody.systems.NBody import NBodySimulation
+from adtool.examples.nbody.systems.NBody import NBodySimulation
 
 DT = 0.001  # Time step for the simulation (global constant)
 SAVE_INTERVAL = 10  # Save interval for the simulation (global constant)

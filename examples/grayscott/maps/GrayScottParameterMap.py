@@ -12,7 +12,7 @@ from adtool.wrappers.mutators import add_gaussian_noise
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 
-from examples.grayscott.systems.GrayScott import GrayScott  
+from adtool.examples.grayscott.systems.GrayScott import GrayScott  
 
 
 @dataclass
