@@ -9,12 +9,12 @@ from adtool.utils.expose_config.expose_config import expose
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.SaveWrapper import SaveWrapper
-from examples.embedded_systems.examples.core_interferences.types import (
+from adtool.examples.embedded_systems.examples.core_interferences.types import (
     InstructionProgram,
     InterferenceParamsPayload,
 )
-from examples.embedded_systems.types import ProgramMixer
-from examples.embedded_systems.helpers.module_factory import make_module
+from adtool.examples.embedded_systems.types import ProgramMixer
+from adtool.examples.embedded_systems.helpers.module_factory import make_module
 
 
 class InterferenceIMGEPConfig(BaseModel):
@@ -26,14 +26,14 @@ class InterferenceIMGEPConfig(BaseModel):
     k: int = Field(1, ge=1, le=1000)
     # Mixer class path used to combine parent programs.
     mixer: str = Field(
-        "examples.embedded_systems.examples.core_interferences.mixers.interference_chunk_mixer.ChunkProgramMixer"
+        "adtool.examples.embedded_systems.examples.core_interferences.mixers.interference_chunk_mixer.ChunkProgramMixer"
     )
     mixer_config: Dict = Field(default_factory=lambda: {"num_parts": 2})
     behavior_map_config: Dict = Field(default_factory=lambda: {
-        "path": "examples.embedded_systems.examples.core_interferences.maps.InterferenceBehaviorMap.InterferenceBehaviorMap"
+        "path": "adtool.examples.embedded_systems.examples.core_interferences.maps.InterferenceBehaviorMap.InterferenceBehaviorMap"
     })
     parameter_map_config: Dict = Field(default_factory=lambda: {
-        "path": "examples.embedded_systems.examples.core_interferences.maps.InterferenceParameterMap.InterferenceParameterMap"
+        "path": "adtool.examples.embedded_systems.examples.core_interferences.maps.InterferenceParameterMap.InterferenceParameterMap"
     })
 
 

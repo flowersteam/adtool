@@ -15,7 +15,7 @@ from enum import Enum, auto
 import numpy as np
 from typing import Any, Dict
 
-from examples.embedded_systems.types import Simulator
+from adtool.examples.embedded_systems.types import Simulator
 
 # ==========================================================
 # Global clock
