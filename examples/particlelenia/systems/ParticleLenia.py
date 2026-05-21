@@ -1,4 +1,4 @@
-from examples.particlelenia.systems.ParticleLeniaParameters import ParticleLeniaDynamicalParameters, ParticleLeniaParameters
+from adtool.examples.particlelenia.systems.ParticleLeniaParameters import ParticleLeniaDynamicalParameters, ParticleLeniaParameters
 import torch
 import numpy as np
 import matplotlib.pyplot as plt

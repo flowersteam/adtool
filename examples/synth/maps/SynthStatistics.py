@@ -5,7 +5,7 @@ from copy import deepcopy
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 from adtool.wrappers.BoxProjector import BoxProjector
-from examples.synth.systems.Synth import SynthSimulation
+from adtool.examples.synth.systems.Synth import SynthSimulation
 
 
 from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2FeatureExtractor

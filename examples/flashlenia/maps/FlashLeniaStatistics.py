@@ -3,7 +3,7 @@ import numpy as np
 from copy import deepcopy
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.wrappers.BoxProjector import BoxProjector
-from examples.flashlenia.systems.FlashLenia import FlashLenia
+from adtool.examples.flashlenia.systems.FlashLenia import FlashLenia
 
 class FlashLeniaStatistics(Leaf):
     def __init__(

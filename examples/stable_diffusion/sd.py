@@ -1,8 +1,8 @@
 import torch
 from adtool.maps.IdentityBehaviorMap import IdentityBehaviorMap
 from adtool.maps.UniformParameterMap import UniformParameterMap
-from examples.stable_diffusion.maps.TextToVectorMap import TextToVectorMap
-from examples.stable_diffusion.systems.StableDiffusionPropagator import StableDiffusionPropagator
+from adtool.examples.stable_diffusion.maps.TextToVectorMap import TextToVectorMap
+from adtool.examples.stable_diffusion.systems.StableDiffusionPropagator import StableDiffusionPropagator
 
 from diffusers import DiffusionPipeline
 from peft import PeftModel
