@@ -189,12 +189,8 @@ def tracefunc(frame, event, arg, indent=[0]):
         indent[0] -= 1
     return tracefunc
 
-import sys
-
-
-
-if __name__ == "__main__":
- 
+def main():
+    # The main will call this method instead so it can be imported without running the experiment
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_file", type=str, required=True)
     parser.add_argument("--experiment_id", type=int, required=False, default= 0)
@@ -207,9 +203,11 @@ if __name__ == "__main__":
         config = json.load(json_file)
 
 
-
     # only to plot the call stack
     #sys.setprofile(tracefunc)
 
     experiment = create(config, args.experiment_id, args.seed)
     start(experiment, args.nb_iterations)
+
+if __name__ == "__main__":
+    main()
