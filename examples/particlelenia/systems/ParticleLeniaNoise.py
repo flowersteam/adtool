@@ -1,6 +1,6 @@
 from copy import deepcopy
 import torch
-from examples.particlelenia.systems.ParticleLenia import ParticleLenia
+from adtool.examples.particlelenia.systems.ParticleLenia import ParticleLenia
 from adtool.systems.System import System
 from typing import Dict, Tuple, Optional
 from pydantic import BaseModel

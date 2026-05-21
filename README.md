@@ -47,7 +47,7 @@ pip install .
 ### Examples
 Various examples are provided in the `examples/` directory.
 ```bash
-python3 run.py --config_file examples/grayscott/gray_scott.json
+python3 examples/run.py --config_file examples/grayscott/gray_scott.json
 ``` 
 Available examples are:
 - `examples/grayscott/gray_scott.json` - Discovering Gray-Scott diffusion patterns  

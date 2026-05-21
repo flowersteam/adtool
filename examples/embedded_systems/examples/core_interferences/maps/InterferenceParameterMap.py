@@ -3,18 +3,18 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from examples.embedded_systems.maps.embedded_systems_parameter_map import BaseParameterMap
-from examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
+from adtool.examples.embedded_systems.maps.embedded_systems_parameter_map import BaseParameterMap
+from adtool.examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
     normalize_instruction_program,
 )
-from examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem import (
+from adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem import (
     InterferenceSystem,
 )
-from examples.embedded_systems.examples.core_interferences.types import (
+from adtool.examples.embedded_systems.examples.core_interferences.types import (
     InstructionProgram,
     InterferenceParamsPayload,
 )
-from examples.embedded_systems.helpers.module_factory import make_module
+from adtool.examples.embedded_systems.helpers.module_factory import make_module
 
 
 @dataclass
@@ -36,10 +36,10 @@ class InterferenceParameterMap(BaseParameterMap):
             premap_key: str = "params",
             param_obj: InterferenceParams = None,
             generator_config: Optional[Dict[str, Any]] = {
-                "path": "examples.embedded_systems.examples.core_interferences.generators.interference_random_instruction_generator.RandomInstructionGenerator"
+                "path": "adtool.examples.embedded_systems.examples.core_interferences.generators.interference_random_instruction_generator.RandomInstructionGenerator"
             },
             mutator_config: Optional[Dict[str, Any]] = {
-                "path": "examples.embedded_systems.examples.core_interferences.mutators.interference_random_instruction_mutator.RandomInstructionMutator",
+                "path": "adtool.examples.embedded_systems.examples.core_interferences.mutators.interference_random_instruction_mutator.RandomInstructionMutator",
                 "num_mutations": 2,
             },
             **config_decorator_kwargs,

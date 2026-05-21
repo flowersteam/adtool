@@ -1,13 +1,13 @@
 {
   "experiment": {"config": {"save_location": "./", "save_frequency": 10, "bootstrap_size": 1}},
-  "system": {"path": "examples.flashlenia.systems.FlashLenia.FlashLenia", "config": {}},
+  "system": {"path": "adtool.examples.flashlenia.systems.FlashLenia.FlashLenia", "config": {}},
   "explorer": {
     "path": "adtool.explorers.CuriosityIMGEPExplorer.IMGEPExplorer",
     "config": {
       "mutator": "specific",
       "equil_time": 1,
-      "behavior_map": "examples.flashlenia.maps.FlashLeniaStatistics.FlashLeniaStatistics",
-      "parameter_map": "examples.flashlenia.maps.FlashLeniaParameterMap.FlashLeniaParameterMap",
+      "behavior_map": "adtool.examples.flashlenia.maps.FlashLeniaStatistics.FlashLeniaStatistics",
+      "parameter_map": "adtool.examples.flashlenia.maps.FlashLeniaParameterMap.FlashLeniaParameterMap",
       "mutator_config": {},
       "behavior_map_config": {},
       "parameter_map_config": {}

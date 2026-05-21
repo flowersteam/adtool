@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 import torch
-from examples.flowlenia.systems.FlowLenia import FlowLenia
+from adtool.examples.flowlenia.systems.FlowLenia import FlowLenia
 from adtool.systems.System import System
 from adtool.wrappers.CPPNWrapper import CPPNWrapper
 

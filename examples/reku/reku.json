@@ -7,7 +7,7 @@
         }
     },
     "system": {
-        "path": "examples.reku.systems.ReKu.ReKu",
+        "path": "adtool.examples.reku.systems.ReKu.ReKu",
         "config": {
             "perturbators": 2,
             "sync_pop":20,
@@ -19,8 +19,8 @@
         "config": {
             "mutator": "specific",
             "equil_time": 1,
-            "behavior_map": "examples.reku.maps.ReKuStatistics.ReKuStatistics",
-            "parameter_map": "examples.reku.maps.ReKuParameterMap.ReKuParameterMap",
+            "behavior_map": "adtool.examples.reku.maps.ReKuStatistics.ReKuStatistics",
+            "parameter_map": "adtool.examples.reku.maps.ReKuParameterMap.ReKuParameterMap",
             "mutator_config": {},
             "behavior_map_config": {},
             "parameter_map_config": {  }

@@ -1,1 +1,1 @@
-from examples.embedded_systems.mutators.embedded_systems_mutator import BaseMutator
+from adtool.examples.embedded_systems.mutators.embedded_systems_mutator import BaseMutator

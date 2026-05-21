@@ -3,7 +3,7 @@ from typing import List, Optional
 import numpy as np
 from scipy.stats import qmc
 
-from examples.embedded_systems.types import GoalSampler
+from adtool.examples.embedded_systems.types import GoalSampler
 
 
 class QMCMinMaxGoalSampler(GoalSampler):

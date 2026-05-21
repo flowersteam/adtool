@@ -1,1 +1,1 @@
-from examples.embedded_systems.mixers.embedded_systems_mixer import BaseMixer
+from adtool.examples.embedded_systems.mixers.embedded_systems_mixer import BaseMixer

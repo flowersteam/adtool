@@ -3,11 +3,11 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from examples.embedded_systems.maps.embedded_systems_behavior_map import BaseBehaviorMap
-from examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem import (
+from adtool.examples.embedded_systems.maps.embedded_systems_behavior_map import BaseBehaviorMap
+from adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem import (
     InterferenceSystem,
 )
-from examples.embedded_systems.helpers.module_factory import make_module
+from adtool.examples.embedded_systems.helpers.module_factory import make_module
 
 
 class InterferenceBehaviorMap(BaseBehaviorMap):
@@ -19,10 +19,10 @@ class InterferenceBehaviorMap(BaseBehaviorMap):
             premap_key: str = "output",
             postmap_key: str = "output",
             goal_sampler_config: Optional[Dict[str, Any]] = {
-                "path": "examples.embedded_systems.goal_samplers.RandomMinMaxGoalSampler"
+                "path": "adtool.examples.embedded_systems.goal_samplers.RandomMinMaxGoalSampler"
             },
             behavior_encoder_config: Optional[Dict[str, Any]] = {
-                "path": "examples.embedded_systems.examples.core_interferences.behavior_encoders.InterferenceMetricEncoder"
+                "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_encoders.InterferenceMetricEncoder"
             },
     ) -> None:
         _ = system

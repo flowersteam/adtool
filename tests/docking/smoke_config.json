@@ -1,7 +1,7 @@
 {
   "experiment": {"config": {"save_location": "./", "save_frequency": 10, "bootstrap_size": 1}},
   "system": {
-    "path": "examples.docking.systems.Docking.Docking",
+    "path": "adtool.examples.docking.systems.Docking.Docking",
     "config": {
       "biomolecule": "examples/docking/systems/P22680_3V8D_A.pdb",
       "bbox": "examples/docking/systems/P22680_3V8D_A_box_2.txt"
@@ -12,8 +12,8 @@
     "config": {
       "mutator": "specific",
       "equil_time": 1,
-      "behavior_map": "examples.docking.maps.DockingStatistics.DockingStatistics",
-      "parameter_map": "examples.docking.maps.DockingParameterMap.DockingParameterMap",
+      "behavior_map": "adtool.examples.docking.maps.DockingStatistics.DockingStatistics",
+      "parameter_map": "adtool.examples.docking.maps.DockingParameterMap.DockingParameterMap",
       "mutator_config": {},
       "behavior_map_config": {},
       "parameter_map_config": {"seed_smiles": "CC1(C(N2C(S1)C(C2=O)NC(=O)CC3=CC=CC=C3)C(=O)O)C"}

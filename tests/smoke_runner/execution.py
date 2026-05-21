@@ -45,7 +45,7 @@ def run_experiment(spec: SmokeSpec, runtime_cfg: Path) -> ExperimentResult:
     """Execute run.py for a single smoke spec."""
     cmd = [
         sys.executable,
-        "run.py",
+        "examples/run.py",
         "--config_file",
         str(runtime_cfg),
         "--nb_iterations",
