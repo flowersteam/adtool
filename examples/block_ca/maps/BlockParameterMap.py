@@ -12,7 +12,7 @@ from adtool.wrappers.mutators import add_gaussian_noise
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 
-from examples.block_ca.systems.Block import Block  
+from adtool.examples.block_ca.systems.Block import Block  
 
 
 

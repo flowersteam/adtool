@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Dict
 from adtool.utils.leaf.Leaf import Leaf
-from examples.synth.systems.Synth import SynthSimulation
+from adtool.examples.synth.systems.Synth import SynthSimulation
 import random
 
 class SynthParameterMap(Leaf):

@@ -4,7 +4,7 @@ from copy import deepcopy
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 from adtool.wrappers.BoxProjector import BoxProjector
-from examples.reku.systems.ReKu import ReKu
+from adtool.examples.reku.systems.ReKu import ReKu
 
 class ReKuStatistics(Leaf):
     """

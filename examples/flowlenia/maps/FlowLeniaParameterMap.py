@@ -7,8 +7,8 @@ from typing import Dict, Optional, Tuple
 
 import torch
 from adtool.systems import System
-from examples.flowlenia.systems.FlowLenia import FlowLenia
-from examples.flowlenia.systems.FlowLeniaParameters import FlowLeniaDynamicalParameters, FlowLeniaHyperParameters, FlowLeniaKernelGrowthDynamicalParameters
+from adtool.examples.flowlenia.systems.FlowLenia import FlowLenia
+from adtool.examples.flowlenia.systems.FlowLeniaParameters import FlowLeniaDynamicalParameters, FlowLeniaHyperParameters, FlowLeniaKernelGrowthDynamicalParameters
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.wrappers.mutators import add_gaussian_noise
 from adtool.utils.leaf.Leaf import Leaf

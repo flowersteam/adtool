@@ -7,8 +7,8 @@ from typing import Dict, Optional, Tuple
 
 import torch
 from adtool.utils.misc.torch_utils import replace_torch_with_numpy
-from examples.lenia.systems.Lenia import Lenia
-from examples.lenia.systems.LeniaParameters import LeniaDynamicalParameters, LeniaHyperParameters
+from adtool.examples.lenia.systems.Lenia import Lenia
+from adtool.examples.lenia.systems.LeniaParameters import LeniaDynamicalParameters, LeniaHyperParameters
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.wrappers.CPPNWrapper import CPPNWrapper
 from adtool.wrappers.mutators import add_gaussian_noise

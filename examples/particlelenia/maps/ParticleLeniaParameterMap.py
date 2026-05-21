@@ -6,8 +6,8 @@ from typing import Dict, Optional
 
 import torch
 from adtool.utils.misc.torch_utils import replace_torch_with_numpy
-from examples.particlelenia.systems.ParticleLenia import ParticleLenia
-from examples.particlelenia.systems.ParticleLeniaParameters import (
+from adtool.examples.particlelenia.systems.ParticleLenia import ParticleLenia
+from adtool.examples.particlelenia.systems.ParticleLeniaParameters import (
     ParticleLeniaDynamicalParameters,
     ParticleLeniaHyperParameters,
 )

@@ -7,7 +7,7 @@
             }
         },
         "system": {
-            "path": "examples.grayscott.systems.GrayScott.GrayScott",
+            "path": "adtool.examples.grayscott.systems.GrayScott.GrayScott",
             "config": {
                 "height": 256,
                 "width": 256,
@@ -19,8 +19,8 @@
             "config": {
                 "mutator": "specific",
                 "equil_time": 1,
-                "behavior_map": "examples.grayscott.maps.VLLMStatistics.VLLMStatistics",
-                "parameter_map": "examples.grayscott.maps.GrayScottParameterMap.GrayScottParameterMap",
+                "behavior_map": "adtool.examples.grayscott.maps.VLLMStatistics.VLLMStatistics",
+                "parameter_map": "adtool.examples.grayscott.maps.GrayScottParameterMap.GrayScottParameterMap",
                 "mutator_config": {},
                 "behavior_map_config": {},
                 "parameter_map_config": {  }
