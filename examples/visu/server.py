@@ -138,7 +138,7 @@ def _coverage_error_detail() -> str:
     return "Coverage summary could not be loaded."
 
 
-def recompute_discoveries(force_refit: bool = False, respect_interval: bool = False) -> bool:
+def recompute_discoveries(ignore_interval: bool = False, respect_interval: bool = False) -> bool:
     """Recompute static coordinate artifacts from current discoveries."""
     global last_recompute_time
 
@@ -146,7 +146,7 @@ def recompute_discoveries(force_refit: bool = False, respect_interval: bool = Fa
         now = time.monotonic()
         if (
             respect_interval
-            and not force_refit
+            and not ignore_interval
             and now - last_recompute_time < RECOMPUTE_MIN_INTERVAL_SECONDS
         ):
             return False
@@ -154,7 +154,6 @@ def recompute_discoveries(force_refit: bool = False, respect_interval: bool = Fa
         compute_coordinates(
             str(discovery_files),
             static_dir=str(static_files),
-            force_refit=force_refit,
             max_displayed=display_limit,
         )
         last_recompute_time = time.monotonic()
@@ -361,13 +360,13 @@ async def set_display_limit(payload: dict):
         )
 
     display_limit = limit
-    recompute_discoveries()
+    recompute_discoveries(ignore_interval=True)
     return {"status": "ok", "limit": display_limit}
 
 
 @app.post("/recompute_layout")
 async def recompute_layout():
-    recompute_discoveries(force_refit=True)
+    recompute_discoveries(ignore_interval=True)
     return {"status": "ok"}
 
 

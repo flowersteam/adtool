@@ -7,9 +7,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 import cv2
 from sklearn.cluster import KMeans
-from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 import umap
 
@@ -17,20 +15,6 @@ loaded_json = {}
 
 MIN_STABLE_UMAP_DISCOVERIES = 10
 DEFAULT_MAX_RENDERED_DISCOVERIES = 500
-
-
-@dataclass
-class ProjectionState:
-    reducer: object
-    mean: np.ndarray
-    std: np.ndarray
-    center: np.ndarray
-    scale: float
-    fit_count: int
-    coordinates_by_visual: dict[str, tuple[float, float]] = field(default_factory=dict)
-
-
-projection_state: Optional[ProjectionState] = None
 
 
 def process_discovery(root, name):
@@ -309,8 +293,8 @@ def _project_with_temporary_layout(X):
     return (embedding - center) / scale
 
 
-def _fit_stable_umap(discoveries, X):
-    X_norm, mean, std = _normalize_embedding_matrix(X)
+def _project_with_umap(X):
+    X_norm, _, _ = _normalize_embedding_matrix(X)
     reducer = umap.UMAP(
         n_components=2,
         random_state=0,
@@ -318,49 +302,7 @@ def _fit_stable_umap(discoveries, X):
     )
     embedding = reducer.fit_transform(X_norm)
     center, scale = _normalize_projection_bounds(embedding)
-
-    state = ProjectionState(
-        reducer=reducer,
-        mean=mean,
-        std=std,
-        center=center,
-        scale=scale,
-        fit_count=len(X_norm),
-    )
-
-    for discovery, point in zip(discoveries, embedding):
-        normalized = (point - center) / scale
-        state.coordinates_by_visual[discovery["visual"]] = (
-            float(normalized[0]),
-            float(normalized[1]),
-        )
-
-    return state
-
-
-def _project_with_stable_state(discoveries, X, state):
-    coordinates = []
-    missing_indices = []
-
-    for idx, discovery in enumerate(discoveries):
-        known = state.coordinates_by_visual.get(discovery["visual"])
-        if known is not None:
-            coordinates.append(known)
-            continue
-
-        coordinates.append(None)
-        missing_indices.append(idx)
-
-    if missing_indices:
-        X_new = (X[missing_indices] - state.mean) / state.std
-        projected = state.reducer.transform(X_new)
-        for idx, point in zip(missing_indices, projected):
-            normalized = (point - state.center) / state.scale
-            coordinate = (float(normalized[0]), float(normalized[1]))
-            state.coordinates_by_visual[discoveries[idx]["visual"]] = coordinate
-            coordinates[idx] = coordinate
-
-    return np.asarray(coordinates, dtype=float)
+    return (embedding - center) / scale
 
 
 def _downsample_for_display(discoveries, embedding, max_displayed):
@@ -402,10 +344,8 @@ def _saved_coordinates(discoveries, embedding, root_path):
 def compute_coordinates(
     path,
     static_dir='static',
-    force_refit=False,
     max_displayed=DEFAULT_MAX_RENDERED_DISCOVERIES,
 ):
-    global projection_state
     print("computing coordinates", path)
     discoveries = list_discoveries(path)
     static_discoveries_path = os.path.join(static_dir, 'discoveries.json')
@@ -436,24 +376,11 @@ def compute_coordinates(
         })
         return
 
-    if force_refit:
-        projection_state = None
-    if projection_state is not None and projection_state.mean.shape[0] != X.shape[1]:
-        projection_state = None
-
-    should_fit_umap = (
-        len(discoveries) >= MIN_STABLE_UMAP_DISCOVERIES
-        and (projection_state is None or force_refit)
-    )
-
-    if should_fit_umap:
-        projection_state = _fit_stable_umap(discoveries, X)
-
-    if projection_state is not None:
-        embedding = _project_with_stable_state(discoveries, X, projection_state)
-        layout_mode = "stable_umap"
-        stable = True
-        fit_count = projection_state.fit_count
+    if len(discoveries) >= MIN_STABLE_UMAP_DISCOVERIES:
+        embedding = _project_with_umap(X)
+        layout_mode = "refit_umap"
+        stable = False
+        fit_count = len(discoveries)
     else:
         embedding = _project_with_temporary_layout(X)
         layout_mode = "bootstrap_pca"
@@ -480,4 +407,4 @@ def compute_coordinates(
         "max_displayed": max_displayed,
     })
 
-    return projection_state
+    return None
