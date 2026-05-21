@@ -7,7 +7,7 @@
       }
     },
     "system": {
-      "path": "examples.nbody.systems.NBody.NBodySimulation",
+      "path": "adtool.examples.nbody.systems.NBody.NBodySimulation",
       "config": {
         "max_steps": 100000,
         "max_distance_limit": 10,
@@ -20,8 +20,8 @@
       "config": {
         "mutator": "specific",
         "equil_time": 1,
-        "behavior_map": "examples.nbody.maps.NBodyStatistics.NBodyStatistics",
-        "parameter_map": "examples.nbody.maps.NBodyParameterMap.NBodyParameterMap",
+        "behavior_map": "adtool.examples.nbody.maps.NBodyStatistics.NBodyStatistics",
+        "parameter_map": "adtool.examples.nbody.maps.NBodyParameterMap.NBodyParameterMap",
         "mutator_config": {},
         "behavior_map_config": {},
         "parameter_map_config": {}
