@@ -61,8 +61,11 @@ setup(
         ]
 
     },
-    packages=find_packages(include=[".","adtool","adtool.*"]),
-    package_dir={"": "."},
+    packages=["adtool", "adtool.examples"],
+    package_dir={
+        "adtool": "adtool",
+        "adtool.examples": "examples"
+    },
     include_package_data=True,
     entry_points={
         'console_scripts': [
