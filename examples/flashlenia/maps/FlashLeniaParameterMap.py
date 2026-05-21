@@ -9,7 +9,7 @@ import numpy as np
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.wrappers.mutators import add_gaussian_noise
-from examples.flashlenia.systems.FlashLenia import FlashLenia
+from adtool.examples.flashlenia.systems.FlashLenia import FlashLenia
 
 @dataclass
 class FlashLeniaParams:

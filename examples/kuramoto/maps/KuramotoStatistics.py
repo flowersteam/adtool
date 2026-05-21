@@ -5,7 +5,7 @@ from copy import deepcopy
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 from adtool.wrappers.BoxProjector import BoxProjector
-from examples.kuramoto.systems.Kuramoto import Kuramoto
+from adtool.examples.kuramoto.systems.Kuramoto import Kuramoto
 
 class KuramotoStatistics(Leaf):
     """
