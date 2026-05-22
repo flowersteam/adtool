@@ -1,8 +1,13 @@
 """Coverage comparison utilities and pipeline."""
 
-from .pipeline import run_coverage_comparison
 from .config import CoverageConfig, CoverageRunSummary, PlotConfig, load_coverage_config
 from .embedding_builder import DefaultEmbeddingBuilder, build_embedding_builder
+
+
+def run_coverage_comparison(config_path):
+    from .pipeline import run_coverage_comparison as _run_coverage_comparison
+
+    return _run_coverage_comparison(config_path)
 
 __all__ = [
     "CoverageConfig",

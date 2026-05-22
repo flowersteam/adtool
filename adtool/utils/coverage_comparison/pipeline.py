@@ -8,11 +8,9 @@ from typing import Dict, List, Optional, Tuple, Any
 import numpy as np
 
 from .config import CoverageRunSummary, load_coverage_config
-from .dimensions import align_embeddings
 from .embedding_builder import build_embedding_builder
 from .embeddings import collect_random_embeddings, load_discovery_embeddings
 from .experiment import build_system_and_explorer, load_experiment_config
-from .plotting import compute_density_curve, plot_density_curves
 
 
 def _set_seed(seed: Optional[int]) -> None:
@@ -23,14 +21,27 @@ def _set_seed(seed: Optional[int]) -> None:
     np.random.seed(seed)
 
 
-def _validate_dimensions(dimensions: List[int], dim_count: int) -> None:
-    if not dimensions:
-        raise ValueError("dimensions list cannot be empty")
-    for idx in dimensions:
-        if idx < 0 or idx >= dim_count:
+def _align_embeddings(embeddings: List[np.ndarray], dim_count: int) -> List[np.ndarray]:
+    return [emb for emb in embeddings if emb.size == dim_count]
+
+
+def _select_dimensions(configured_dimensions: Any, dim_count: int) -> List[int]:
+    if configured_dimensions is None:
+        return list(range(dim_count))
+    if isinstance(configured_dimensions, str):
+        if configured_dimensions.lower() == "all":
+            return list(range(dim_count))
+        raise ValueError("dimensions must be 'all' or a non-empty list of integers")
+
+    dimensions: List[int] = []
+    for idx in configured_dimensions:
+        resolved = idx + dim_count if idx < 0 else idx
+        if resolved < 0 or resolved >= dim_count:
             raise ValueError(
                 f"dimension index {idx} out of range for dim_count {dim_count}"
             )
+        dimensions.append(resolved)
+    return dimensions
 
 
 def _compute_bounds_for_dim(
@@ -77,14 +88,14 @@ def run_coverage_comparison(config_path: Path) -> CoverageRunSummary:
         raise RuntimeError("No embeddings collected for coverage comparison.")
 
     dim_count = len(random_embeddings[0]) if random_embeddings else len(tool_embeddings[0])
-    random_embeddings = align_embeddings(random_embeddings, dim_count)
-    tool_embeddings = align_embeddings(tool_embeddings, dim_count)
+    random_embeddings = _align_embeddings(random_embeddings, dim_count)
+    tool_embeddings = _align_embeddings(tool_embeddings, dim_count)
 
     if not random_embeddings and not tool_embeddings:
         raise RuntimeError("No embeddings matched the expected dimension count.")
 
-    dimensions = coverage_config.dimensions
-    _validate_dimensions(dimensions, dim_count)
+    configured_dimensions = coverage_config.dimensions
+    dimensions = _select_dimensions(configured_dimensions, dim_count)
     labels = [f"dim_{idx}" for idx in dimensions]
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -97,9 +108,9 @@ def run_coverage_comparison(config_path: Path) -> CoverageRunSummary:
     images: List[str] = []
 
     bounds: List[Tuple[float, float]] = []
+    from .plotting import compute_density_curve, plot_density_curves
 
-    for pos, dim in enumerate(dimensions):
-        label = labels[pos]
+    for dim, label in zip(dimensions, labels):
         dim_bounds = _compute_bounds_for_dim(random_embeddings, tool_embeddings, dim)
         bounds.append(dim_bounds)
 
@@ -152,10 +163,13 @@ def run_coverage_comparison(config_path: Path) -> CoverageRunSummary:
             "labels": summary.labels,
             "bounds": [list(b) for b in summary.bounds],
             "images": summary.images,
-            "dimensions": dimensions,
+            "dimensions": configured_dimensions,
+            "resolved_dimensions": dimensions,
             "experiment_config": str(coverage_config.experiment_config_path),
             "discovery_path": str(coverage_config.discovery_path),
             "output_dir": str(coverage_config.output_dir),
+            "random_baseline": "independent parameter_map.sample() trials",
+            "plot_type": "1d marginal KDE density",
             "timestamp": timestamp,
             "plot": asdict(coverage_config.plot),
         },

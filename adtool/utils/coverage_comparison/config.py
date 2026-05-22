@@ -23,7 +23,7 @@ class CoverageConfig:
     output_dir: Path
     random_runs: int = 100
     seed: Optional[int] = None
-    dimensions: List[int] = None
+    dimensions: Any = "all"
     embedding_builder: Optional[Dict[str, Any]] = None
     plot: PlotConfig = field(default_factory=PlotConfig)
 
@@ -79,15 +79,24 @@ def load_coverage_config(config_path: Path) -> CoverageConfig:
     discovery_path = _resolve_path(base_dir, payload["discovery_path"])
     output_dir = _resolve_path(base_dir, payload["output_dir"])
 
-    if "dimensions" not in payload:
-        raise ValueError("coverage config must include a 'dimensions' list")
-
-    raw_dimensions = payload["dimensions"]
-    if not isinstance(raw_dimensions, list) or not raw_dimensions:
-        raise ValueError("dimensions must be a non-empty list of integers")
-    if not all(isinstance(value, int) and not isinstance(value, bool) for value in raw_dimensions):
-        raise ValueError("dimensions must contain only integer indices")
-    dimensions = list(raw_dimensions)
+    raw_dimensions = payload.get("dimensions", "all")
+    if raw_dimensions is None:
+        dimensions = "all"
+    elif isinstance(raw_dimensions, str):
+        if raw_dimensions.lower() != "all":
+            raise ValueError("dimensions must be 'all' or a non-empty list of integers")
+        dimensions = "all"
+    elif isinstance(raw_dimensions, list):
+        if not raw_dimensions:
+            raise ValueError("dimensions list cannot be empty; use 'all' instead")
+        if not all(
+            isinstance(value, int) and not isinstance(value, bool)
+            for value in raw_dimensions
+        ):
+            raise ValueError("dimensions must contain only integer indices")
+        dimensions = list(raw_dimensions)
+    else:
+        raise ValueError("dimensions must be 'all' or a non-empty list of integers")
 
     return CoverageConfig(
         experiment_config_path=experiment_config_path,
