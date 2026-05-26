@@ -1,0 +1,60 @@
+{
+  "name": "flowlenia",
+  "generated_at_utc": "2026-04-27T13:39:30.746981+00:00",
+  "reference": {
+    "discovery_count": 5.0,
+    "output_dim": 17.0,
+    "output_mean": 0.13940202439537994,
+    "output_std": 0.24029802083452576,
+    "output_last_l2": 1.189471175052,
+    "output_finite_ratio": 1.0,
+    "output_first_mean": 0.12702277132956405,
+    "runtime_seconds": 4.328796101999615,
+    "seconds_per_iteration": 0.8657592203999229,
+    "param_numeric_mean": 0.5229925071703397,
+    "param_numeric_std": 0.7948242365751567
+  },
+  "ranges": {
+    "discovery_count": {
+      "min": 5.0,
+      "max": 5.0
+    },
+    "output_dim": {
+      "min": 17.0,
+      "max": 17.0
+    },
+    "output_mean": {
+      "min": -0.86059797560462,
+      "max": 1.13940202439538
+    },
+    "output_std": {
+      "min": 0.0,
+      "max": 1.2402980208345258
+    },
+    "output_last_l2": {
+      "min": 0.0,
+      "max": 3.1894711750519997
+    },
+    "output_finite_ratio": {
+      "min": 0.85,
+      "max": 1.0
+    },
+    "output_first_mean": {
+      "min": -0.8729772286704359,
+      "max": 1.127022771329564
+    },
+    "seconds_per_iteration": {
+      "min": 0.0,
+      "max": 3.9630368815996917
+    },
+    "param_numeric_mean": {
+      "min": 0.20919700286813592,
+      "max": 0.8367880114725436
+    },
+    "param_numeric_std": {
+      "min": 0.3179296946300627,
+      "max": 1.2717187785202506
+    }
+  },
+  "notes": "Loose acceptance ranges for smoke testing. Regenerate when intentionally changing behavior."
+}
