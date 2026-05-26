@@ -26,8 +26,17 @@ def process_discovery(root, name):
     if not os.path.exists(discovery_path):
         return None
 
-    if discovery_path in loaded_json:
-        return loaded_json[discovery_path]
+    try:
+        cache_mtime = max(
+            os.path.getmtime(discovery_path),
+            os.path.getmtime(os.path.join(root, name)),
+        )
+    except OSError:
+        return None
+
+    cached = loaded_json.get(discovery_path)
+    if isinstance(cached, dict) and cached.get("mtime") == cache_mtime:
+        return cached["discovery"]
 
     try:
         with open(discovery_path) as f:
@@ -61,7 +70,10 @@ def process_discovery(root, name):
         path = os.path.join(root, name, file)
         discovery['visual'] = path
         discovery['embedding'] = discovery_embedding.tolist()
-        loaded_json[discovery_path] = discovery
+        loaded_json[discovery_path] = {
+            "mtime": cache_mtime,
+            "discovery": discovery,
+        }
         return discovery
 
     png_files = [file for file in files if file.endswith('.png')]
@@ -71,7 +83,10 @@ def process_discovery(root, name):
         path = os.path.join(root, name, file)
         discovery['visual'] = path
         discovery['embedding'] = discovery_embedding.tolist()
-        loaded_json[discovery_path] = discovery
+        loaded_json[discovery_path] = {
+            "mtime": cache_mtime,
+            "discovery": discovery,
+        }
         return discovery
 
     return None
@@ -201,10 +216,20 @@ def export_last_frame(discoveries):
             continue
 
         img_path = f"{discovery['visual'][:-4]}.jpg"
-        if os.path.exists(img_path):
+        try:
+            if (
+                os.path.exists(img_path)
+                and os.path.getmtime(img_path) >= os.path.getmtime(discovery['visual'])
+            ):
+                continue
+        except OSError:
             continue
+
         video = cv2.VideoCapture(discovery['visual'])
         frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+        if frame_count <= 0:
+            video.release()
+            continue
         video.set(cv2.CAP_PROP_POS_FRAMES, frame_count - 1)
         ret, frame = video.read()
         video.release()

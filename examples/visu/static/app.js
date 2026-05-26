@@ -84,6 +84,7 @@ let coverageEnabled = false;
 let pointerDown = null;
 let liveRefreshTimerId = null;
 let lastLiveRefreshTimestamp = 0;
+let currentPreviewSource = null;
 
 function updateStatus(text) {
     statusLine.textContent = text;
@@ -396,6 +397,7 @@ function clearSelection() {
 
 function hidePreview() {
     previewCard.style.display = "none";
+    currentPreviewSource = null;
     previewVideo.pause();
     previewVideo.removeAttribute("src");
     previewVideo.style.display = "none";
@@ -451,18 +453,23 @@ function showPreviewForSource(src, pointerEvent = null, anchorElement = null) {
     previewMeta.textContent = prettifyEntryLabel(src);
     previewCard.style.display = "block";
 
-    previewVideo.pause();
-    previewVideo.style.display = "none";
-    previewImage.style.display = "none";
+    if (currentPreviewSource !== src) {
+        currentPreviewSource = src;
+        previewVideo.pause();
+        previewVideo.removeAttribute("src");
+        previewVideo.style.display = "none";
+        previewImage.removeAttribute("src");
+        previewImage.style.display = "none";
 
-    if (isVideoPath(src)) {
-        previewVideo.src = src;
-        previewVideo.style.display = "block";
-        previewVideo.currentTime = 0;
-        previewVideo.play().catch(() => {});
-    } else {
-        previewImage.src = src;
-        previewImage.style.display = "block";
+        if (isVideoPath(src)) {
+            previewVideo.src = src;
+            previewVideo.style.display = "block";
+            previewVideo.currentTime = 0;
+            previewVideo.play().catch(() => {});
+        } else {
+            previewImage.src = src;
+            previewImage.style.display = "block";
+        }
     }
 
     schedulePreviewPlacement(pointerEvent, anchorElement);

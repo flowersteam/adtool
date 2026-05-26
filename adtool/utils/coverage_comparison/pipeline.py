@@ -169,7 +169,7 @@ def run_coverage_comparison(config_path: Path) -> CoverageRunSummary:
             "discovery_path": str(coverage_config.discovery_path),
             "output_dir": str(coverage_config.output_dir),
             "random_baseline": "independent parameter_map.sample() trials",
-            "plot_type": "1d marginal KDE density",
+            "plot_type": "1d smoothed histogram density",
             "timestamp": timestamp,
             "plot": asdict(coverage_config.plot),
         },

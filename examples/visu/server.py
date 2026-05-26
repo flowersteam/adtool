@@ -26,6 +26,8 @@ MIME_TYPES = {
     "png": "image/png",
     "jpg": "image/jpeg",
     "jpeg": "image/jpeg",
+    "mp4": "video/mp4",
+    "webm": "video/webm",
 }
 
 
@@ -226,7 +228,7 @@ async def serve_discoveries(file_path: str):
     full_path = (discovery_files / file_path).resolve()
     print(full_path)
 
-    if not str(full_path).startswith(str(discovery_files)):
+    if not _is_relative_to(full_path, discovery_files):
         raise HTTPException(status_code=400, detail="Invalid file path")
 
     if not full_path.exists():
@@ -392,7 +394,7 @@ async def export_files(files: list[str]):
             continue
 
         source_dir = (discovery_files / relative_dir).resolve()
-        if not str(source_dir).startswith(str(discovery_files)):
+        if not _is_relative_to(source_dir, discovery_files):
             continue
         if not source_dir.exists() or not source_dir.is_dir():
             continue

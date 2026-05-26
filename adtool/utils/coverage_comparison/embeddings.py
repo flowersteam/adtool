@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List
 
@@ -50,14 +51,22 @@ def collect_random_embeddings(
     embeddings: List[np.ndarray] = []
     parameter_key = _get_parameter_key(explorer)
     behavior_key = _get_behavior_key(explorer)
-    behavior_map = getattr(explorer, "behavior_map", None)
+    base_behavior_map = getattr(explorer, "behavior_map", None)
 
     for _ in range(count):
         params_payload = explorer.parameter_map.sample()
         data = {parameter_key: params_payload}
         data = system.map(data)
-        if behavior_map is not None and data.get(behavior_key, None) is not None:
+
+        if base_behavior_map is not None and data.get(behavior_key, None) is not None:
+            try:
+                behavior_map = deepcopy(base_behavior_map)
+            except Exception as exc:
+                raise RuntimeError(
+                    "Could not copy behavior_map for independent random baseline."
+                ) from exc
             data = behavior_map.map(data)
+
         embedding = build_embedding(data)
         if _is_valid_embedding(embedding):
             embeddings.append(embedding)

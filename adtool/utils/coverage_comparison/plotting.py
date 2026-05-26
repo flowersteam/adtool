@@ -30,29 +30,34 @@ def _scott_bandwidth(values: np.ndarray) -> float:
     return std * (values.size ** (-1.0 / 5.0))
 
 
-def _kde_density(
-    values: np.ndarray,
-    xs: np.ndarray,
-    bandwidth: Optional[float],
-) -> np.ndarray:
-    if values.size == 0:
-        return np.zeros_like(xs)
-
-    bw = float(bandwidth) if bandwidth is not None else _scott_bandwidth(values)
-    bw = max(bw, 1e-9)
-    diffs = xs[:, None] - values[None, :]
-    kernel = np.exp(-0.5 * (diffs / bw) ** 2) / (bw * np.sqrt(2.0 * np.pi))
-    return np.mean(kernel, axis=1)
-
-
 def compute_density_curve(
     values: np.ndarray,
     bounds: Tuple[float, float],
     points: int,
     bandwidth: Optional[float],
 ) -> Tuple[np.ndarray, np.ndarray]:
+    points = max(2, int(points))
     xs = np.linspace(bounds[0], bounds[1], points)
-    density = _kde_density(values, xs, bandwidth)
+    if values.size == 0:
+        return xs, np.zeros_like(xs)
+
+    density, edges = np.histogram(
+        values, bins=points, range=bounds, density=True)
+    xs = (edges[:-1] + edges[1:]) / 2.0
+
+    bin_width = max((bounds[1] - bounds[0]) / points, 1e-12)
+    bw = float(bandwidth) if bandwidth is not None else _scott_bandwidth(values)
+    sigma_bins = max(bw / bin_width, 1e-9)
+    radius = max(1, int(np.ceil(3.0 * sigma_bins)))
+    radius = min(radius, max(0, (points - 1) // 2))
+    if radius == 0:
+        return xs, density
+
+    kernel_x = np.arange(-radius, radius + 1, dtype=float)
+    kernel = np.exp(-0.5 * (kernel_x / sigma_bins) ** 2)
+    kernel /= kernel.sum()
+    density = np.convolve(density, kernel, mode="same")
+
     return xs, density
 
 
