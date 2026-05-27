@@ -6,7 +6,7 @@
   "dimensions": "all",
   "seed": 101,
   "embedding_builder": {
-    "path": "examples.embedded_systems.examples.core_interferences.coverage_embedding.CoreInterferenceCountEmbeddingBuilder",
+    "path": "adtool.examples.embedded_systems.examples.core_interferences.coverage_embedding.CoreInterferenceCountEmbeddingBuilder",
     "config": {}
   },
   "plot": {

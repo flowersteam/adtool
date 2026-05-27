@@ -10,6 +10,7 @@ discoveries/
 
 # Web UI runtime
 discoveries.json
+layout_status.json
 
 frames/
 
