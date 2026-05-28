@@ -62,9 +62,6 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
         )
         self.periode = max(1, int(periode))
         self.knn = max(1, int(knn))
-        self._feature_cache: List[np.ndarray] = []
-        self._param_cache: List[Any] = []
-        self._history_cursor = 0
         self._current_goal: Optional[np.ndarray] = None
 
     def suggest_trial(
@@ -72,7 +69,7 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
         lookback_length: int = -1,
         goal: Optional[np.ndarray] = None,
     ) -> Any:
-        feature_matrix, param_history = self._get_cached_history(lookback_length)
+        feature_matrix, param_history = self._get_history_features(lookback_length)
 
         if feature_matrix.shape[0] == 0:
             return self.parameter_map.sample()
@@ -102,34 +99,27 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
             return True
         return self.timestep % self.periode == 0
 
-    def _sync_history_cache(self) -> None:
-        buffer = self._history_saver.buffer
-        if self._history_cursor > len(buffer):
-            self._feature_cache = []
-            self._param_cache = []
-            self._history_cursor = 0
+    def _get_history_features(self, lookback_length: int) -> Tuple[np.ndarray, List[Any]]:
+        history_length = lookback_length
+        if self._history_saver.locator.resource_uri == "":
+            history_length = 1
 
-        while self._history_cursor < len(buffer):
-            item = buffer[self._history_cursor]
-            self._history_cursor += 1
-
+        history = self._history_saver.get_history(lookback_length=history_length)
+        feature_history = []
+        param_history = []
+        for item in history:
             feature = np.asarray(item.get(self.premap_key, []), dtype=float).reshape(-1)
             params = item.get(self.postmap_key, None)
             if params is None or feature.size == 0:
                 continue
             if np.isnan(feature).any() or np.isinf(feature).any():
                 continue
+            feature_history.append(feature)
+            param_history.append(params)
 
-            self._feature_cache.append(feature)
-            self._param_cache.append(params)
-
-    def _get_cached_history(self, lookback_length: int) -> Tuple[np.ndarray, List[Any]]:
         if lookback_length > 0:
-            feature_history = self._feature_cache[-lookback_length:]
-            param_history = self._param_cache[-lookback_length:]
-        else:
-            feature_history = self._feature_cache
-            param_history = self._param_cache
+            feature_history = feature_history[-lookback_length:]
+            param_history = param_history[-lookback_length:]
 
         if not feature_history:
             return np.zeros((0, 0), dtype=float), []
