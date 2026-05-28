@@ -37,7 +37,8 @@
             "parameter_map_config": {
                 "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.InterferenceParameterMap",
                 "mixer_config": {
-                    "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.InterleavingProgramMixer"
+                    "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.ChunkProgramMixer",
+                    "num_parts": 3
                 },
                 "generator_config": {
                     "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionGenerator"

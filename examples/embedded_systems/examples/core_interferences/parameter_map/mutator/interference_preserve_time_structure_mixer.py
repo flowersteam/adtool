@@ -20,6 +20,7 @@ class PreserveTimeStructureProgramMixer(ProgramMixer):
         sequences: List[InstructionProgram],
         *,
         max_cycle: int,
+        num_instructions: Optional[int] = None,
     ) -> InstructionProgram:
         """
         Randomly mixes multiple instruction programs into one while preserving
@@ -131,5 +132,12 @@ class PreserveTimeStructureProgramMixer(ProgramMixer):
                 compressed[new_cycle] = mixed_program[old_cycle]
                 new_cycle += 1
             mixed_program = compressed
+
+        if num_instructions is not None and len(mixed_program) > num_instructions:
+            keep_cycles = sorted(mixed_program)[:max(0, int(num_instructions))]
+            mixed_program = {
+                cycle: mixed_program[cycle]
+                for cycle in keep_cycles
+            }
 
         return mixed_program

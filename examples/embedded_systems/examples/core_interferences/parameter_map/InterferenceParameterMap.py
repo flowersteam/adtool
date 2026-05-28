@@ -180,8 +180,16 @@ class InterferenceParameterMap(BaseParameterMap):
 
         return {
             "dynamic_params": {
-                "core0": self.mixer.mix(core0_pool, max_cycle=p.max_cycle),
-                "core1": self.mixer.mix(core1_pool, max_cycle=p.max_cycle),
+                "core0": self.mixer.mix(
+                    core0_pool,
+                    max_cycle=p.max_cycle,
+                    num_instructions=p.num_instructions,
+                ),
+                "core1": self.mixer.mix(
+                    core1_pool,
+                    max_cycle=p.max_cycle,
+                    num_instructions=p.num_instructions,
+                ),
             }
         }
 

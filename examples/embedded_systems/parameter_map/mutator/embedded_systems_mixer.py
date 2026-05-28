@@ -10,5 +10,6 @@ class BaseMixer(ABC):
         sequences: List[Any],
         *,
         max_cycle: int,
+        num_instructions: int | None = None,
     ) -> Any:
         ...

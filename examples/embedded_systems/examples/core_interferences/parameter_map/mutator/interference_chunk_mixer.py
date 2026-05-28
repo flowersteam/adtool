@@ -1,16 +1,18 @@
 import random
-import warnings
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from adtool.examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
     normalize_instruction_sequences,
 )
-from adtool.examples.embedded_systems.examples.core_interferences.types import InstructionProgram
+from adtool.examples.embedded_systems.examples.core_interferences.types import (
+    Instruction,
+    InstructionProgram,
+)
 from adtool.examples.embedded_systems.types import ProgramMixer
 
 
 class ChunkProgramMixer(ProgramMixer):
-    """Chunk-based mixer using random chunk shuffling."""
+    """Build a child program from contiguous chunks of nearest-parent programs."""
 
     def __init__(self, num_parts: int, seed: Optional[int] = None) -> None:
         self.num_parts = max(1, int(num_parts))
@@ -21,82 +23,148 @@ class ChunkProgramMixer(ProgramMixer):
         sequences: List[InstructionProgram],
         *,
         max_cycle: int,
+        num_instructions: Optional[int] = None,
     ) -> InstructionProgram:
-        """
-        Randomly mixes multiple instruction programs into one.
-
-        Args:
-            sequences (list[dict]): List of programs {cycle: (type, address)}
-            seed (int | None): Random seed
-            max_cycle (int): Maximum cycle number in output
-
-        Returns:
-            dict: Mixed program {cycle: (type, address)}
-        """
-
         rng = random.Random(self.seed)
-
-        # Step 0: normalize payloads and drop malformed programs with warnings.
-        sequences = normalize_instruction_sequences(
+        parents = normalize_instruction_sequences(
             sequences,
             strict=False,
-            context="mix_sequences",
+            context="chunk_mix",
         )
+        if not parents or max_cycle < 0:
+            return {}
 
-        # Step 1: sort each program by cycle
-        sorted_programs = []
-        for program in sequences:
-            instrs = sorted(program.items(), key=lambda x: x[0])
-            sorted_programs.append(instrs)
+        target_count = self._target_count(parents, num_instructions)
+        num_segments = max(self.num_parts, len(parents))
+        parent_chunks = [
+            self._split_program(program, num_segments)
+            for program in parents
+        ]
+        source_order = self._source_order(len(parents), num_segments, rng)
 
-        # Step 2: split each program into num_parts chunks
+        mixed_items: List[Tuple[int, Instruction]] = []
+        used_cycles = set()
+        for segment_idx, parent_idx in enumerate(source_order):
+            chunk = parent_chunks[parent_idx][segment_idx]
+            if not chunk:
+                chunk = self._fallback_chunk(parent_chunks, segment_idx)
+            mixed_items.extend(
+                self._place_chunk(
+                    chunk,
+                    segment_idx=segment_idx,
+                    num_segments=num_segments,
+                    max_cycle=max_cycle,
+                    used_cycles=used_cycles,
+                )
+            )
+
+        mixed_items = sorted(mixed_items, key=lambda item: item[0])
+        if target_count is not None and len(mixed_items) > target_count:
+            mixed_items = self._evenly_trim(mixed_items, target_count)
+
+        return dict(mixed_items)
+
+    def _target_count(
+        self,
+        parents: List[InstructionProgram],
+        num_instructions: Optional[int],
+    ) -> Optional[int]:
+        if num_instructions is not None:
+            return max(0, int(num_instructions))
+        return max((len(parent) for parent in parents), default=0)
+
+    def _split_program(
+        self,
+        program: InstructionProgram,
+        num_segments: int,
+    ) -> List[List[Tuple[int, Instruction]]]:
+        items = sorted(program.items(), key=lambda item: item[0])
         chunks = []
-        for instrs in sorted_programs:
-            if not instrs:
-                continue
+        for idx in range(num_segments):
+            start = round(idx * len(items) / num_segments)
+            end = round((idx + 1) * len(items) / num_segments)
+            chunks.append(items[start:end])
+        return chunks
 
-            chunk_size = max(1, len(instrs) // self.num_parts)
-            for i in range(0, len(instrs), chunk_size):
-                chunk = instrs[i:i + chunk_size]
-                chunks.append(chunk)
+    def _source_order(
+        self,
+        num_parents: int,
+        num_segments: int,
+        rng: random.Random,
+    ) -> List[int]:
+        source_order = list(range(num_parents))
+        while len(source_order) < num_segments:
+            source_order.append(rng.randrange(num_parents))
+        rng.shuffle(source_order)
+        return source_order[:num_segments]
 
-        # Step 3: shuffle chunks
-        rng.shuffle(chunks)
+    def _fallback_chunk(
+        self,
+        parent_chunks: List[List[List[Tuple[int, Instruction]]]],
+        segment_idx: int,
+    ) -> List[Tuple[int, Instruction]]:
+        for chunks in parent_chunks:
+            if chunks[segment_idx]:
+                return chunks[segment_idx]
+        for chunks in parent_chunks:
+            for chunk in chunks:
+                if chunk:
+                    return chunk
+        return []
 
-        # Step 4: flatten chunks into a single instruction list
-        mixed_instrs = []
-        for chunk in chunks:
-            mixed_instrs.extend(chunk)
+    def _place_chunk(
+        self,
+        chunk: List[Tuple[int, Instruction]],
+        *,
+        segment_idx: int,
+        num_segments: int,
+        max_cycle: int,
+        used_cycles: set[int],
+    ) -> List[Tuple[int, Instruction]]:
+        if not chunk:
+            return []
 
-        if not mixed_instrs:
-            return {}
-
-        if max_cycle < 1:
-            warnings.warn(
-                f"mix_sequences: invalid max_cycle={max_cycle}; returning empty program",
-                RuntimeWarning,
-            )
-            return {}
-
-        # Step 5: assign new increasing random cycles
-        num_instrs = len(mixed_instrs)
-        if num_instrs > max_cycle:
-            warnings.warn(
-                "mix_sequences: instruction count exceeds available cycle slots; "
-                f"truncating from {num_instrs} to {max_cycle}",
-                RuntimeWarning,
-            )
-            mixed_instrs = mixed_instrs[:max_cycle]
-            num_instrs = len(mixed_instrs)
-
-        available_cycles = sorted(
-            rng.sample(range(1, max_cycle + 1), k=num_instrs)
+        segment_start = round(segment_idx * (max_cycle + 1) / num_segments)
+        segment_end = max(
+            segment_start,
+            round((segment_idx + 1) * (max_cycle + 1) / num_segments) - 1,
         )
+        segment_width = max(1, segment_end - segment_start)
+        source_cycles = [cycle for cycle, _ in chunk]
+        source_start = min(source_cycles)
+        source_span = max(1, max(source_cycles) - source_start)
+        scale = min(1.0, segment_width / source_span)
 
-        # Step 6: build final program
-        mixed_program = {
-            cycle: instr
-            for cycle, (_, instr) in zip(available_cycles, mixed_instrs)
+        placed = []
+        for old_cycle, instruction in chunk:
+            new_cycle = segment_start + round((old_cycle - source_start) * scale)
+            new_cycle = min(max(0, new_cycle), max_cycle)
+            while new_cycle in used_cycles and new_cycle < max_cycle:
+                new_cycle += 1
+            while new_cycle in used_cycles and new_cycle > 0:
+                new_cycle -= 1
+            if new_cycle in used_cycles:
+                continue
+            used_cycles.add(new_cycle)
+            placed.append((new_cycle, instruction))
+        return placed
+
+    def _evenly_trim(
+        self,
+        items: List[Tuple[int, Instruction]],
+        target_count: int,
+    ) -> List[Tuple[int, Instruction]]:
+        if target_count <= 0:
+            return []
+        if target_count == 1:
+            return [items[len(items) // 2]]
+        last_idx = len(items) - 1
+        selected_indices = {
+            round(idx * last_idx / (target_count - 1))
+            for idx in range(target_count)
         }
-
-        return mixed_program
+        return [
+            item
+            for idx, item in enumerate(items)
+            if idx in selected_indices
+        ]
