@@ -23,7 +23,7 @@ from adtool.examples.embedded_systems.examples.core_interferences.types import (
 class InterferenceConfig(BaseModel):
     simulator_config: InterferenceSimulatorConfig = Field(
         default_factory=lambda: {
-            "path": "adtool.examples.embedded_systems.examples.core_interferences.simulator.Sim3Backend",
+            "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.simulator.Sim3Backend",
             "cycles": 80,
             "num_banks": 4,
             "num_addr": 41,
@@ -31,7 +31,7 @@ class InterferenceConfig(BaseModel):
     )
     simulator_runner_config: InterferenceSimulatorRunnerConfig = Field(
         default_factory=lambda: {
-            "path": "adtool.examples.embedded_systems.examples.core_interferences.simulator_runners.DefaultEnvSimulatorRunner",
+            "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner",
         }
     )
 
