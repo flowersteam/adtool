@@ -7,7 +7,7 @@
         }
     },
     "system": {
-        "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem",
+        "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem.InterferenceSystem",
         "config": {
             "simulator_config": {
                 "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.simulator.Sim3Backend",
@@ -26,7 +26,7 @@
             "periode": 25,
             "knn": 3,
             "behavior_map_config": {
-                "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap",
+                "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap.InterferenceBehaviorMap",
                 "goal_sampler_config": {
                     "path": "adtool.examples.embedded_systems.behavior_map.goal_sampler.QMCMinMaxGoalSampler"
                 },
@@ -35,7 +35,7 @@
                 }
             },
             "parameter_map_config": {
-                "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.InterferenceParameterMap",
+                "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.InterferenceParameterMap.InterferenceParameterMap",
                 "mixer_config": {
                     "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.ChunkProgramMixer",
                     "num_parts": 3
