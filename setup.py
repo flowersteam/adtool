@@ -1,4 +1,19 @@
-from setuptools import setup, find_packages
+from setuptools import find_namespace_packages, find_packages, setup
+
+
+adtool_packages = find_packages(
+    include=[
+        "adtool",
+        "adtool.*",
+    ]
+)
+example_packages = [
+    "adtool.examples",
+    *[
+        f"adtool.examples.{package}"
+        for package in find_namespace_packages(where="examples")
+    ],
+]
 
 setup(
     name="adtool",
@@ -61,7 +76,10 @@ setup(
         ]
 
     },
-    packages=["adtool", "adtool.examples"],
+    packages=[
+        *adtool_packages,
+        *example_packages,
+    ],
     package_dir={
         "adtool": "adtool",
         "adtool.examples": "examples"

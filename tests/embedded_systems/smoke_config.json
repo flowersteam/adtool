@@ -7,7 +7,7 @@
     }
   },
     "system": {
-        "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem.InterferenceSystem",
+        "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem",
         "config": {
             "simulator_config": {
                 "path": "adtool.examples.embedded_systems.examples.core_interferences.simulator.Sim3Backend",
