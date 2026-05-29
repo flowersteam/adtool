@@ -71,6 +71,9 @@ wphysics = [
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["adtool*", "examples*"]
+exclude = ["build*", "discoveries*", "docs*", "tests*"]
+namespaces = true
 
 
 [tool.setuptools.package-dir]
