@@ -2,88 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>ADtool</title>
-    <link rel="icon" href="/static/images/favicon.png">
-    <style>
-        body { margin: 0; overflow: hidden; 
-        
-        }
-        video {
-            display: none;
-            position: absolute;
-            width: 256px;
-            height: 256px;
-            pointer-events: none;
-        }
-        .video-border { border: 1px solid white; }
-        #iframeButton {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 10px 20px;
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            display: none;
-        }
-        #selectedEntries {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            padding: 10px;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            border-radius: 5px;
-            max-width: 300px;
-            overflow: auto;
-        }
-        #selectedEntries ul {
-            list-style: none;
-            padding: 0;
-        }
-        #selectedEntries li {
-            cursor: pointer;
-            margin: 5px 0;
-        }
-        #exportButton {
-            display: block;
-            margin-top: 10px;
-            padding: 5px 10px;
-            background-color: #2196f3;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #controlsMenu {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            padding: 10px;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            border-radius: 5px;
-            max-width: 300px;
-        }
-        #controlsMenu h3 {
-            margin-top: 0;
-        }
-        #controlsMenu ul {
-            list-style: none;
-            padding: 0;
-        }
-        #controlsMenu ul li {
-            margin: 5px 0;
-        }
-        #controlsToggle {
-            cursor: pointer;
-            padding: 5px;
-            background-color: #4caf50;
-            border-radius: 5px;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ADTool Discoveries</title>
+    <link rel="stylesheet" href="/static/styles.css">
     <script type="importmap">
         {
             "imports": {
@@ -96,410 +17,128 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip-utils/0.1.0/jszip-utils.min.js"></script>
 </head>
 <body>
-    <video id="hoverVideo" loop></video>
-    <button id="iframeButton" onclick="buttonAction()">Fullscreen</button>
-    <div id="selectedEntries">
-        <strong>Selected Entries:</strong>
-        <ul id="entriesList"></ul>
-        <button id="exportButton" onclick="exportEntries()">Export</button>
-    </div>
-    <div id="controlsMenu">
-        <div id="controlsToggle" onclick="toggleControls()">Controls ▼</div>
-        <div id="controlsContent" style="display: none;">
-          
-            <ul>
-                <li><strong>Hover:</strong> Play video</li>
-                <li><strong>Double-click:</strong> Set/Unset target</li>
+    <div class="shell">
+        <header class="topbar">
+            <div class="brandBlock">
+                <div>
+                    <h1>ADTool Discoveries</h1>
+                    <p id="statusLine">Loading discoveries...</p>
+                </div>
+            </div>
+            <nav class="pageNav" aria-label="Views">
+                <button id="discoveriesTab" class="navButton active" type="button">Discoveries</button>
+                <button id="coverageTab" class="navButton" type="button" hidden>Coverage</button>
+            </nav>
+        </header>
 
-                <li><strong>Click:</strong> Select entry</li>
-                <li><strong>Export:</strong> Export selected entries</li>
-            </ul>
+        <main class="workspace">
+            <section id="viewerPage" class="page active" aria-label="Discovery map">
+                <aside class="sidePanel">
+                    <div class="panelSection">
+                        <p class="eyebrow">Explorer</p>
+                        <h2>Discovery Map</h2>
+                        <p class="sectionText">Pan and zoom the map, hover for media, click entries to build an export set.</p>
+                    </div>
+
+                    <div class="statsGrid" aria-label="Discovery statistics">
+                        <div class="statBox">
+                            <span class="statValue" id="discoveryTotal">0</span>
+                            <span class="statLabel">discoveries</span>
+                        </div>
+                        <div class="statBox">
+                            <span class="statValue" id="selectionTotal">0</span>
+                            <span class="statLabel">selected</span>
+                        </div>
+                    </div>
+
+                    <label class="fieldLabel" for="searchInput">Search discovery names</label>
+                    <input id="searchInput" class="searchInput" type="search"
+                        placeholder="Text or regex, e.g. /idx_[0-9]{3}_/">
+                    <p class="fieldHint">Plain text is matched directly. Use <code>/regex/</code> or <code>re:regex</code> for patterns.</p>
+
+                    <div class="displayLimitControl">
+                        <label for="displayLimitSelect">Displayed discoveries</label>
+                        <select id="displayLimitSelect">
+                            <option value="250">250</option>
+                            <option value="500" selected>500</option>
+                            <option value="1000">1000</option>
+                            <option value="1500">1500</option>
+                            <option value="2000">2000</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input id="displayLimitCustom" type="number" min="1" max="10000" step="1" value="500" hidden>
+                        <button id="displayLimitApplyButton" type="button">Apply</button>
+                    </div>
+
+                    <div class="buttonRow">
+                        <button id="fitViewButton" type="button">Fit View</button>
+                        <button id="refreshButton" type="button">Refresh</button>
+                        <button id="recomputeLayoutButton" type="button">Recompute Layout</button>
+                    </div>
+
+                    <div class="rangeControl">
+                        <label for="previewSizeSlider">Preview size</label>
+                        <input id="previewSizeSlider" type="range" min="70" max="250" step="5" value="100">
+                        <span id="previewSizeValue">100%</span>
+                    </div>
+
+                    <div class="selectedHeader">
+                        <div>
+                            <p class="eyebrow">Selection</p>
+                            <h3>Export Set</h3>
+                        </div>
+                        <button id="clearSelectionButton" class="ghostButton" type="button">Clear</button>
+                    </div>
+                    <ul id="entriesList" aria-label="Selected discoveries"></ul>
+                    <button id="exportButton" class="primaryButton" type="button">Export Selected</button>
+                </aside>
+
+                <div class="mapStage">
+                    <div id="app" aria-label="Interactive discovery map"></div>
+                    <div id="emptyState" class="emptyState" hidden>
+                        <h2>No discoveries available</h2>
+                        <p>Start or refresh an experiment to populate this map.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="coveragePage" class="page coveragePage" aria-label="Coverage comparison">
+                <div class="coverageHeader">
+                    <div>
+                        <p class="eyebrow">Coverage comparison</p>
+                        <h2>Generated Graphs</h2>
+                        <p id="coverageSubtitle" class="sectionText">Loading coverage summary...</p>
+                    </div>
+                    <button id="reloadCoverageButton" type="button">Reload Coverage</button>
+                </div>
+
+                <div id="coverageStats" class="coverageStats" aria-label="Global coverage statistics"></div>
+                <div id="coverageGrid" class="coverageGrid" aria-label="Coverage graphs"></div>
+                <div id="coverageEmpty" class="emptyPanel" hidden>
+                    <h3>No coverage run found</h3>
+                    <p>Run the coverage comparison utility or pass <code>--coverage_run</code> to the visualization server.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="previewCard" aria-live="polite">
+        <video id="hoverVideo" muted loop playsinline></video>
+        <img id="hoverImage" alt="Discovery preview">
+        <div id="previewMeta">No preview loaded.</div>
+    </div>
+
+    <div id="graphLightbox" class="graphLightbox" hidden>
+        <div class="graphLightboxHeader">
+            <h2 id="graphLightboxTitle">Coverage graph</h2>
+            <button id="graphLightboxClose" type="button">Close</button>
+        </div>
+        <div class="graphLightboxBody">
+            <img id="graphLightboxImage" alt="Expanded coverage graph">
         </div>
     </div>
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xffffff);
-
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-        const renderer = new THREE.WebGLRenderer();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.1;
-        controls.rotateSpeed = 0.25;
-        controls.zoomSpeed = 1.2;
-        controls.panSpeed = 0.8;
-        controls.enableRotate = false;
-        controls.screenSpacePanning = true;
-        controls.maxPolarAngle = Math.PI / 2;
-        controls.minPolarAngle = Math.PI / 2;
-
-        controls.maxDistance = 500; // Maximum zoom out distance
-        controls.minDistance = 0; // Minimum zoom in distance
-
-                camera.near = 0.001; // Minimum render distance
-        camera.far = 500; // Maximum render distance
-        camera.updateProjectionMatrix();
-
-
-        const K=30;
-
-        const planes = [];
-        const videoElement = document.getElementById('hoverVideo');
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
-        let targetTexture, targetSprite;
-        let targetVisible = false;
-        const targetCoordinates = { x: 0, y: 0 };
-
-        let videoOpen = false;
-        const selectedEntries = new Set();
-        const entriesList = document.getElementById('entriesList');
-
-        async function loadTargetSprite() {
-            const textureLoader = new THREE.TextureLoader();
-            targetTexture = await textureLoader.loadAsync('/static/target.png');
-            const material = new THREE.SpriteMaterial({ map: targetTexture });
-            targetSprite = new THREE.Sprite(material);
-            targetSprite.scale.set(0.1, 0.1, 1);
-            targetSprite.visible = false;
-            scene.add(targetSprite);
-
-            const response = await fetch('/discoveries/target.json');
-            const targetJson = await response.json();
-            if (targetJson.detail !== "File not found") {
-                targetCoordinates.x = targetJson.x;
-                targetCoordinates.y = targetJson.y;
-                targetSprite.position.set(targetJson.x, targetJson.y, 0);
-                targetSprite.visible = true;
-                targetVisible = true;
-            }
-        }
-
-        loadTargetSprite();
-
-        function createPlane(texture, position, videoSrc) {
-            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-
-            const maxDim = Math.max(texture.image.width, texture.image.height);
-            const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.3 *  (texture.image.width / texture.image.height)
-            
-            , 0.3 * (texture.image.height / texture.image.width) 
-        ), material);
-            plane.position.set(K*position[0], K*position[1], 0);
-            plane.userData.videoSrc = videoSrc;
-            return plane;
-        }
-
-        async function loadPoints() {
-            const response = await fetch('/static/discoveries.json');
-            const pointsData = await response.json();
-
-            console.log(pointsData.length);
-
-            var nb_points=0;
-
-            const texturePromises = pointsData.map((point) => {
-                // nb_points++;
-                // if (nb_points>100){
-                //     return
-                // }
-                const imageName = point.visual.replace('.mp4', '.png');
-                return fetch(`/discoveries/${imageName}`).then((response) => response.blob()).then((blob) => {
-
-
-
-                    return new Promise((resolve) => {
-                        const img = new Image();
-                        img.src = URL.createObjectURL(blob);
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            const context = canvas.getContext('2d');
-                         canvas.width = img.width;
-                           canvas.height = img.height;
-                            context.drawImage(img, 0, 0);
-
-                            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                            const data = imageData.data;
-
-                for (let j = 0; j < data.length; j += 4) {
-                    if (data[j] > 200 && data[j + 1] > 200 && data[j + 2] > 200) {
-                        data[j + 3] = 0;
-                    }
-                }
-
-                // // if it's full white, skip it
-                // var is_white=true;
-                // for (let j = 0; j < data.length; j += 4) {
-                //     if (data[j] < 200 || data[j + 1] < 200 || data[j + 2] < 200) {
-                //         is_white=false;
-                //         break;
-                //     }
-                // }
-                // if (is_white){
-                //     //finish the promise without resolving
-                //     resolve();
-
-
-                // } 
-
-                            context.putImageData(imageData, 0, 0);
-                            const processedTexture = new THREE.CanvasTexture(canvas);
-                            resolve(processedTexture);
-                        };
-                    });
-                });
-            });
-
-
-
-            Promise.all(texturePromises).then((textures) => {
-                
-
-                textures.forEach((texture, i) => {
-
-                    if (!texture) return;
-
-                    console.log(pointsData[i].x, pointsData[i].y)
-                    // i/10
-                    const plane = createPlane(texture, [pointsData[i].x, pointsData[i].y], `/discoveries/${pointsData[i].visual}`);
-                    planes.push(plane);
-                    scene.add(plane);
-                });
-            });
-        }
-
-        loadPoints();
-
-        camera.position.set(0, 0, K);
-
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            updatePlanesScale();
-            renderer.render(scene, camera);
-        }
-
-        function updatePlanesScale() {
-            planes.forEach(plane => {
-                const distance = camera.position.z - plane.position.z;
-                const scale = distance * 1.5; // Adjust the multiplier for desired scaling effect
-                plane.scale.set(scale, scale, 1);
-            });
-            // update target sprite scale
-            if (!targetVisible) return;
-            const targetDistance = camera.position.z - targetSprite.position.z;
-            const targetScale = targetDistance * 0.05;
-            targetSprite.scale.set(targetScale, targetScale, 1);
-
-
-
-        }
-
-        animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        window.addEventListener('mousemove', (event) => {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            videoElement.style.left = `${event.clientX + 20}px`;
-            videoElement.style.top = `${event.clientY + 20}px`;
-
-            raycaster.setFromCamera(mouse, camera);
-
-            // Check if hovering over an image plane
-            const imageIntersects = raycaster.intersectObjects(planes);
-            if (imageIntersects.length > 0) {
-                const intersectedPlane = imageIntersects[0].object;
-                if (!videoOpen || videoElement.src !== intersectedPlane.userData.videoSrc) {
-                    videoElement.src = intersectedPlane.userData.videoSrc;
-                    videoElement.style.display = 'block';
-                    videoElement.onloadeddata = () => {
-                        videoElement.classList.add('video-border');
-                        videoElement.play();
-                    };
-                    videoOpen = true;
-                }
-            } else if (videoOpen) {
-                videoElement.classList.remove('video-border');
-                videoElement.style.display = 'none';
-                videoElement.pause();
-                videoOpen = false;
-            }
-        });
-
-        window.addEventListener('contextmenu', (event) => {
-            event.preventDefault();
-
-            raycaster.setFromCamera(mouse, camera);
-
-            const imageIntersects = raycaster.intersectObjects(planes);
-            if (imageIntersects.length > 0) {
-                const intersectedPlane = imageIntersects[0].object;
-                videoElement.src = intersectedPlane.userData.videoSrc;
-                videoElement.style.display = 'block';
-                videoElement.onloadeddata = () => {
-                    videoElement.classList.add('video-border');
-                    videoElement.play();
-                };
-                videoOpen = true;
-                return;
-            }
-
-            if (videoOpen) {
-                videoElement.classList.remove('video-border');
-                videoElement.style.display = 'none';
-                videoElement.pause();
-                videoOpen = false;
-            }
-        });
-
-        window.addEventListener('dblclick', () => {
-            raycaster.setFromCamera(mouse, camera);
-
-            // Check if double-clicked on the target
-            const targetIntersects = raycaster.intersectObject(targetSprite);
-            if (targetIntersects.length > 0 && targetVisible) {
-                targetSprite.visible = false;
-                targetVisible = false;
-
-                fetch('/disable_target', {
-                    method: 'GET',
-                });
-                return;
-            }
-
-            // Move target to the new location if double-clicked elsewhere
-            const worldPosition = getMouseWorldPosition();
-            targetCoordinates.x = worldPosition.x;
-            targetCoordinates.y = worldPosition.y;
-            targetSprite.position.set(worldPosition.x, worldPosition.y, 0);
-            targetSprite.visible = true;
-            targetVisible = true;
-
-            fetch('/update_target', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    x: targetCoordinates.x,
-                    y: targetCoordinates.y,
-                }),
-            });
-        });
-
-        function getMouseWorldPosition() {
-            const mouseVector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
-            mouseVector.unproject(camera);
-            const dir = mouseVector.sub(camera.position).normalize();
-            const distance = -camera.position.z / dir.z;
-            const worldPosition = camera.position.clone().add(dir.multiplyScalar(distance));
-            return worldPosition;
-        }
-
-        window.addEventListener('click', () => {
-            raycaster.setFromCamera(mouse, camera);
-
-            // Check if clicked on an image plane
-            const imageIntersects = raycaster.intersectObjects(planes);
-            if (imageIntersects.length > 0) {
-                const intersectedPlane = imageIntersects[0].object;
-                const videoSrc = intersectedPlane.userData.videoSrc;
-                const folder = videoSrc.split('/')[2];
-                if (!selectedEntries.has(videoSrc)) {
-                    selectedEntries.add(videoSrc);
-                    const li = document.createElement('li');
-                    li.textContent = folder;
-                    li.onclick = () => {
-                        selectedEntries.delete(videoSrc);
-                        entriesList.removeChild(li);
-                    };
-                    entriesList.appendChild(li);
-                } else {
-                    selectedEntries.delete(videoSrc);
-                    const li = Array.from(entriesList.children).find((li) => li.textContent === folder);
-                    entriesList.removeChild(li);
-
-                }
-            }
-        });
-
-
-
-        if (window.self !== window.top) {
-            document.getElementById('iframeButton').style.display = 'block';
-        }
-
-        let ws;
-
-        function connect() {
-            ws = new WebSocket("ws://127.0.0.1:8765/ws");
-            ws.onclose = function() {
-                setTimeout(connect, 1000);
-            };
-            ws.onmessage = function() {
-                ws.close();
-                location.reload();
-            };
-        }
-
-        connect();
-
-        window.buttonAction = function buttonAction() {
-            window.top.location.href = window.location.href;
-        }
-
-        window.toggleControls = function toggleControls() {
-            const controlsContent = document.getElementById('controlsContent');
-            if (controlsContent.style.display === 'none') {
-                controlsContent.style.display = 'block';
-                document.getElementById('controlsToggle').textContent = 'Controls ▲';
-            } else {
-                controlsContent.style.display = 'none';
-                document.getElementById('controlsToggle').textContent = 'Controls ▼';
-            }
-        }
-
-        window.exportEntries = function  exportEntries() {
-            // const data = Array.from(selectedEntries).map(entry => entry.split('/').pop()).join('\n');
-            // const blob = new Blob([data], { type: 'text/plain' });
-            // const url = URL.createObjectURL(blob);
-            // const a = document.createElement('a');
-            // a.href = url;
-            // a.download = 'selected_entries.txt';
-            // a.click();
-            // URL.revokeObjectURL(url);
-
-                // call /export endpoint
-
-//                 @app.post("/export")
-// async def export_files(files: list[str]):
-                fetch('/export', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(Array.from(selectedEntries)),
-                }).then(
-                    // alert the user that the export is ready
-                    () => alert('Export ready!'),
-                );
-
-        }
-
-    </script>
+    <script type="module" src="/static/app.js"></script>
 </body>
 </html>
+

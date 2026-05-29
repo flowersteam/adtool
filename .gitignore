@@ -8,6 +8,10 @@ __pycache__/
 
 discoveries/
 
+# Web UI runtime
+discoveries.json
+layout_status.json
+
 frames/
 
 replacements02_sa2.db
