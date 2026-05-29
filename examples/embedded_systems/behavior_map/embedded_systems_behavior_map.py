@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -13,7 +13,7 @@ from adtool.examples.embedded_systems.behavior_map.goal_sampler.embedded_systems
 
 
 class BaseBehaviorMap(Map):
-    """Base behavior map with history tracking and goal sampling."""
+    """Base behavior map with goal sampling."""
 
     def __init__(
         self,
@@ -27,10 +27,6 @@ class BaseBehaviorMap(Map):
         self.postmap_key = postmap_key
         self.goal_sampler = goal_sampler
         self.behavior_encoder = behavior_encoder
-        self._history: List[np.ndarray] = []
-        self._feature_size: Optional[int] = None
-        self._history_min: Optional[np.ndarray] = None
-        self._history_max: Optional[np.ndarray] = None
 
     def encode(self, raw_output: Dict[str, Any]) -> np.ndarray:
         if self.behavior_encoder is None:
@@ -48,25 +44,37 @@ class BaseBehaviorMap(Map):
         del intermed[self.premap_key]
         intermed[self.postmap_key] = embedding
 
-        self._history.append(embedding)
-        if self._feature_size is None:
-            self._feature_size = embedding.size
-        if self._history_min is None or self._history_max is None:
-            self._history_min = embedding.copy()
-            self._history_max = embedding.copy()
-        else:
-            np.minimum(self._history_min, embedding, out=self._history_min)
-            np.maximum(self._history_max, embedding, out=self._history_max)
         return intermed
 
-    def sample(self) -> np.ndarray:
+    def sample(self, history: Optional[np.ndarray] = None) -> np.ndarray:
+        if history is None:
+            history_items = []
+            feature_size = None
+            min_ = None
+            max_ = None
+        else:
+            history = np.asarray(history, dtype=float)
+            if history.size == 0:
+                history_items = []
+                feature_size = None
+                min_ = None
+                max_ = None
+            else:
+                if history.ndim == 1:
+                    history = history.reshape(1, -1)
+                history_items = [row for row in history]
+                feature_size = history.shape[1]
+                min_ = history.min(axis=0)
+                max_ = history.max(axis=0)
+
         if self.goal_sampler is None:
-            if self._feature_size is None:
+            if feature_size is None:
                 return np.zeros(1, dtype=float)
-            return np.zeros(self._feature_size, dtype=float)
+            return np.zeros(feature_size, dtype=float)
+
         return self.goal_sampler.sample(
-            self._history,
-            self._feature_size,
-            min_=self._history_min,
-            max_=self._history_max,
+            history_items,
+            feature_size,
+            min_=min_,
+            max_=max_,
         )

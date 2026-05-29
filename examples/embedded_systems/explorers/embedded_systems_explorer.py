@@ -76,11 +76,11 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
 
         if goal is None:
             if self._should_refresh_goal():
-                self._current_goal = self.behavior_map.sample()
+                self._current_goal = self.behavior_map.sample(feature_matrix)
             goal = self._current_goal
 
         if goal is None:
-            goal = self.behavior_map.sample()
+            goal = self.behavior_map.sample(feature_matrix)
 
         min_, max_ = self._compute_min_max(feature_matrix)
         indices = self._feature_to_closest_indices(
