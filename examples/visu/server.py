@@ -48,6 +48,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--discoveries", type=str, required=True)
 parser.add_argument("--coverage_run", type=str, required=False, default=None)
+parser.add_argument("--refresh", action="store_true")
 args = parser.parse_args()
 
 discovery_files = Path(args.discoveries).resolve()
@@ -55,6 +56,8 @@ coverage_run = Path(args.coverage_run).resolve() if args.coverage_run else None
 
 
 def _is_relative_to(path: Path, parent: Path) -> bool:
+    path = Path(path)
+    parent = Path(parent)
     try:
         path.resolve().relative_to(parent.resolve())
     except ValueError:
@@ -197,11 +200,15 @@ async def lifespan(app: FastAPI):
     os.makedirs(static_files, exist_ok=True)
     os.makedirs(discovery_files, exist_ok=True)
     
-    current_pca=compute_coordinates(discovery_files)
+    current_pca = compute_coordinates(
+        str(discovery_files),
+        static_dir=str(static_files),
+        max_displayed=display_limit,
+    )
 
     if args.refresh:
-    # execute watch_discoveries in a separate thread
-        t=threading.Thread(target=watch_discoveries)
+        # execute watch_discoveries in a separate thread
+        t = threading.Thread(target=watch_discoveries, daemon=True)
         t.start()
 
 
@@ -235,7 +242,7 @@ app.mount("/static", StaticFiles(directory=static_files,html = True), name="stat
 
 @app.get("/discoveries/{file_path:path}")
 async def serve_discoveries(file_path: str):
-    full_path = os.path.join(discovery_files, file_path)
+    full_path = (discovery_files / file_path).resolve()
     print(full_path)
 
     if not _is_relative_to(full_path, discovery_files):
@@ -247,7 +254,7 @@ async def serve_discoveries(file_path: str):
     extension = file_path.split(".")[-1]
     mime_type = MIME_TYPES.get(extension, "application/octet-stream")
 
-    return FileResponse(full_path, media_type=mime_type)
+    return FileResponse(str(full_path), media_type=mime_type)
 
 
 @app.get("/coverage/{file_path:path}")
@@ -389,13 +396,11 @@ async def export_files(files: list[str]):
     print(files)
     #create a new directory with the date 
     current_time= datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    new_dir = f"{discovery_files}/../{current_time}"
-
-    # simplify path
-    new_dir = os.path.abspath(new_dir)
+    new_dir = (discovery_files.parent / current_time).resolve()
 
     os.makedirs(new_dir, exist_ok=True)
     #copy past all files to a new directory
+    copied_dirs = set()
     for file in files:
         normalized = file.lstrip("/")
         if normalized.startswith("discoveries/"):

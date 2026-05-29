@@ -348,14 +348,16 @@ def _downsample_for_display(discoveries, embedding, max_displayed):
 
 
 def _saved_coordinates(discoveries, embedding, root_path):
+    root_path = os.fspath(root_path)
     saved_coordinates = []
     for discovery, point in zip(discoveries, embedding):
         if np.isnan(point).any() or np.isinf(point).any():
             continue
+        visual_path = os.path.relpath(os.fspath(discovery["visual"]), root_path)
         saved_coordinates.append({
             "x": float(point[0]),
             "y": float(point[1]),
-            "visual": discovery["visual"][1 + len(root_path):],
+            "visual": visual_path.replace(os.sep, "/"),
         })
     return saved_coordinates
 
