@@ -7,43 +7,44 @@
         }
     },
     "system": {
-        "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem.InterferenceSystem",
+        "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem",
         "config": {
             "simulator_config": {
-                "path": "adtool.examples.embedded_systems.examples.core_interferences.simulator.Sim3Backend",
+                "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.simulator.Sim3Backend",
                 "cycles": 512,
                 "num_banks": 4,
                 "num_addr": 96
             },
             "simulator_runner_config": {
-                "path": "adtool.examples.embedded_systems.examples.core_interferences.simulator_runners.DefaultEnvSimulatorRunner"
+                "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner"
             }
         }
     },
     "explorer": {
-        "path": "adtool.examples.embedded_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
+        "path": "adtool.examples.embedded_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer",
         "config": {
             "periode": 25,
             "knn": 3,
-            "mixer_config": {
-                "path": "adtool.examples.embedded_systems.examples.core_interferences.mixers.InterleavingProgramMixer"
-            },
             "behavior_map_config": {
-                "path": "adtool.examples.embedded_systems.examples.core_interferences.maps.InterferenceBehaviorMap.InterferenceBehaviorMap",
+                "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap",
                 "goal_sampler_config": {
-                    "path": "adtool.examples.embedded_systems.goal_samplers.RandomMinMaxGoalSampler"
+                    "path": "adtool.examples.embedded_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler"
                 },
                 "behavior_encoder_config": {
-                    "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_encoders.InterferenceMetricEncoder"
+                    "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder"
                 }
             },
             "parameter_map_config": {
-                "path": "adtool.examples.embedded_systems.examples.core_interferences.maps.InterferenceParameterMap.InterferenceParameterMap",
+                "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.InterferenceParameterMap.InterferenceParameterMap",
+                "mixer_config": {
+                    "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.ChunkProgramMixer",
+                    "num_parts": 3
+                },
                 "generator_config": {
-                    "path": "adtool.examples.embedded_systems.examples.core_interferences.generators.RandomInstructionGenerator"
+                    "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionGenerator"
                 },
                 "mutator_config": {
-                    "path": "adtool.examples.embedded_systems.examples.core_interferences.mutators.RandomInstructionMutator",
+                    "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionMutator",
                     "num_mutations": 2
                 },
                 "num_instructions": 10,

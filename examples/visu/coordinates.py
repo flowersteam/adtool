@@ -1,6 +1,5 @@
-import math
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor, as_completed
+
+
 import os
 import json
 import numpy as np
@@ -17,9 +16,15 @@ MIN_STABLE_UMAP_DISCOVERIES = 10
 DEFAULT_MAX_RENDERED_DISCOVERIES = 500
 
 
+import os
+import json
+import numpy as np
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 def process_discovery(root, name):
     global loaded_json
     discovery = {}
+
 
     discovery_path = os.path.join(root, name, 'discovery.json')
 
@@ -61,12 +66,12 @@ def process_discovery(root, name):
         print("infinities found")
         return None
 
-    files = os.listdir(os.path.join(root, name))
+    files=os.listdir(os.path.join(root, name))
     # get first file ending with mp4 , only the first one
-    mp4_files = [file for file in files if file.endswith('.mp4')]
+    mp4_files= [file for file in files if file.endswith('.mp4')]
     if len(mp4_files):
-        file = mp4_files[0]
-
+        file=mp4_files[0]
+        
         path = os.path.join(root, name, file)
         discovery['visual'] = path
         discovery['embedding'] = discovery_embedding.tolist()
@@ -75,10 +80,10 @@ def process_discovery(root, name):
             "discovery": discovery,
         }
         return discovery
-
-    png_files = [file for file in files if file.endswith('.png')]
+        
+    png_files= [file for file in files if file.endswith('.png')]
     if len(png_files):
-        file = png_files[0]
+        file=png_files[0]
 
         path = os.path.join(root, name, file)
         discovery['visual'] = path
@@ -90,7 +95,6 @@ def process_discovery(root, name):
         return discovery
 
     return None
-
 
 def list_discoveries(path):
     discoveries = []
@@ -110,13 +114,21 @@ def list_discoveries(path):
     print("Number of discoveries: ", len(discoveries))
     return sorted(discoveries, key=lambda discovery: discovery["visual"])
 
+import cv2
+import numpy as np
+from multiprocessing import Pool
 
 def concatenate_photos(discoveries, output_file='static/concatenated.webm'):
-    # make a single photo from all photos
+    #make a single photo from all photos
     photos = [cv2.imread(discovery['visual']) for discovery in discoveries]
     concatenated_photo = cv2.hconcat(photos)
     cv2.imwrite(output_file, concatenated_photo)
 
+
+import cv2
+import numpy as np
+from multiprocessing import Pool
+import math
 
 def process_frame(args):
     i, video_path, frame_positions, frame_counts, black_frame = args
@@ -128,7 +140,6 @@ def process_frame(args):
         frame = black_frame
     return i, frame
 
-
 def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
     video_paths = [discovery['visual'] for discovery in discoveries]
 
@@ -139,8 +150,7 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
     video.release()
 
     # Calculate the number of frames in each video
-    frame_counts = [int(cv2.VideoCapture(video_path).get(
-        cv2.CAP_PROP_FRAME_COUNT)) for video_path in video_paths]
+    frame_counts = [int(cv2.VideoCapture(video_path).get(cv2.CAP_PROP_FRAME_COUNT)) for video_path in video_paths]
     max_frame_count = max(frame_counts)
 
     # Calculate the number of rows and columns needed to form a grid
@@ -154,8 +164,7 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
     # Create a VideoWriter object with the output file name, fourcc code, frames per second, and frame size
     total_width = width * cols
     total_height = height * rows
-    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(
-        *'VP90'), 5, (total_width, total_height))
+    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'VP90'), 5, (total_width, total_height))
 
     # Initialize frame positions
     frame_positions = [0] * num_videos
@@ -163,8 +172,7 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
     with Pool() as p:
         while True:
             # Prepare arguments for process_frame function
-            args = [(i, video_path, frame_positions, frame_counts, black_frame)
-                    for i, video_path in enumerate(video_paths)]
+            args = [(i, video_path, frame_positions, frame_counts, black_frame) for i, video_path in enumerate(video_paths)]
 
             # Process frames in parallel
             results = p.map(process_frame, args)
@@ -181,8 +189,7 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
             frames = [result[1] for result in results]
 
             # Create an empty frame for the grid
-            grid_frame = np.zeros(
-                (total_height, total_width, 3), dtype=np.uint8)
+            grid_frame = np.zeros((total_height, total_width, 3), dtype=np.uint8)
 
             # Place each frame in the correct position in the grid
             for idx, frame in enumerate(frames):
@@ -190,8 +197,7 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
                 col = idx % cols
                 y_offset = row * height
                 x_offset = col * width
-                grid_frame[y_offset:y_offset + height,
-                           x_offset:x_offset + width] = frame
+                grid_frame[y_offset:y_offset + height, x_offset:x_offset + width] = frame
 
             # Write the grid frame to the output video
             out.write(grid_frame)
@@ -207,8 +213,7 @@ def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
 
 
 def export_last_frame(discoveries):
-    # Extract a lightweight preview frame for each video to speed up point
-    # texture loading in the web UI.
+    # extract last frame of each video and save them in respective folder
     for discovery in discoveries:
         if not os.path.exists(discovery['visual']):
             continue
@@ -234,19 +239,8 @@ def export_last_frame(discoveries):
         ret, frame = video.read()
         video.release()
 
-        if not ret or frame is None:
-            continue
-
-        # Keep previews small and compressed since they are only thumbnails for
-        # scatter points, not full-fidelity inspection media.
-        target_width = 320
-        h, w = frame.shape[:2]
-        if w > target_width:
-            target_height = int(h * (target_width / max(1, w)))
-            frame = cv2.resize(frame, (target_width, max(1, target_height)))
-
-        cv2.imwrite(img_path, frame, [int(cv2.IMWRITE_JPEG_QUALITY), 55])
-
+        # replace .mp4 with .jpg
+        cv2.imwrite(img_path, frame)
 
 def _write_json_atomic(path, payload):
     tmp_path = f"{path}.tmp"
@@ -412,7 +406,7 @@ def compute_coordinates(
         stable = False
         fit_count = 0
 
-    # width, height=concatenate_videos(discoveries)
+   # width, height=concatenate_videos(discoveries)
     export_last_frame(discoveries)
 
     display_discoveries, display_embedding = _downsample_for_display(

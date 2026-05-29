@@ -1,5 +1,5 @@
-import argparse
 import os
+import asyncio
 import uvicorn
 from fastapi import FastAPI, WebSocket, HTTPException
 from fastapi.responses import FileResponse, RedirectResponse
@@ -8,6 +8,7 @@ from coordinates import compute_coordinates
 from watchfiles import awatch, Change, watch
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
+import websockets
 from pathlib import Path
 import json
 import threading
@@ -42,6 +43,7 @@ recompute_lock = threading.Lock()
 last_recompute_time = 0.0
 display_limit = DEFAULT_DISPLAY_LIMIT
 
+import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--discoveries", type=str, required=True)
@@ -163,6 +165,7 @@ def recompute_discoveries(ignore_interval: bool = False, respect_interval: bool 
 
 
 def watch_discoveries():
+    global current_pca
     print("Watching discoveries")
     for changes in watch(str(discovery_files), recursive=True):
         # Only recompute for meaningful data updates.
@@ -185,25 +188,30 @@ def watch_discoveries():
             print("Discovery recompute skipped: waiting for live-update interval")
 
 
+#asyncio.create_task(watch_discoveries())
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global current_pca
     # Ensure directories exist
     os.makedirs(static_files, exist_ok=True)
     os.makedirs(discovery_files, exist_ok=True)
+    
+    current_pca=compute_coordinates(discovery_files)
 
-    recompute_discoveries()
+    if args.refresh:
+    # execute watch_discoveries in a separate thread
+        t=threading.Thread(target=watch_discoveries)
+        t.start()
 
-    # Keep live refresh on by default to support concurrent experimentation.
-    t = threading.Thread(target=watch_discoveries, daemon=True)
-    t.start()
+
 
     yield
-    # delete static/discoveires.json
-    discoveries_json = static_files / "discoveries.json"
-    if discoveries_json.exists():
-        discoveries_json.unlink()
+        # delete static/discoveires.json
+    if os.path.exists(f"{static_files}/discoveries.json"):
+        os.remove(f"{static_files}/discoveries.json")
 
-    os._exit(0)
+    os._exit(0) 
 
 
 app = FastAPI(lifespan=lifespan)
@@ -218,14 +226,16 @@ app.add_middleware(
 )
 
 
+
 # Mount the static directory to serve static files
-app.mount("/static", StaticFiles(directory=str(static_files),
-          html=True), name="static")
+app.mount("/static", StaticFiles(directory=static_files,html = True), name="static")
+
+
 
 
 @app.get("/discoveries/{file_path:path}")
 async def serve_discoveries(file_path: str):
-    full_path = (discovery_files / file_path).resolve()
+    full_path = os.path.join(discovery_files, file_path)
     print(full_path)
 
     if not _is_relative_to(full_path, discovery_files):
@@ -237,7 +247,7 @@ async def serve_discoveries(file_path: str):
     extension = file_path.split(".")[-1]
     mime_type = MIME_TYPES.get(extension, "application/octet-stream")
 
-    return FileResponse(str(full_path), media_type=mime_type)
+    return FileResponse(full_path, media_type=mime_type)
 
 
 @app.get("/coverage/{file_path:path}")
@@ -316,7 +326,7 @@ async def websocket_endpoint(websocket: WebSocket):
     print("Websocket connection")
     await websocket.accept()
     while True:
-        async for changes in awatch(str(static_files)):
+        async for changes in awatch(f"{static_files}/"):
             for change in changes:
                 if (
                     change[0] in (Change.added, Change.modified)
@@ -377,13 +387,15 @@ async def recompute_layout():
 @app.post("/export")
 async def export_files(files: list[str]):
     print(files)
-    # create a new directory with the date
-    current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    new_dir = (discovery_files.parent / current_time).resolve()
+    #create a new directory with the date 
+    current_time= datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    new_dir = f"{discovery_files}/../{current_time}"
+
+    # simplify path
+    new_dir = os.path.abspath(new_dir)
 
     os.makedirs(new_dir, exist_ok=True)
-
-    copied_dirs = set()
+    #copy past all files to a new directory
     for file in files:
         normalized = file.lstrip("/")
         if normalized.startswith("discoveries/"):
@@ -417,8 +429,7 @@ if __name__ == "__main__":
         uvicorn.run(app, host="127.0.0.1", port=8765)
     except KeyboardInterrupt:
         # delete static/discoveires.json
-        discoveries_json = static_files / "discoveries.json"
-        if discoveries_json.exists():
-            discoveries_json.unlink()
+        if os.path.exists(f"{static_files}/discoveries.json"):
+            os.remove(f"{static_files}/discoveries.json")
 
         os._exit(0)
