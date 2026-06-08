@@ -1,22 +1,13 @@
 {
-  "experiment_config_path": "core_interference_qmc_zscore.json",
-  "discovery_path": "../../../../discoveries/config_qmc_zscore/discoveries",
-  "output_dir": "../../../../discoveries/coverage_runs",
-  "random_runs": 10000,
   "dimensions": "all",
-  "seed": 101,
-  "embedding_builder": {
-    "path": "adtool.examples.embedded_systems.examples.core_interferences.coverage_embedding.CoreInterferenceCountEmbeddingBuilder",
-    "config": {}
-  },
+  "dimension_pretreatment": "examples.embedded_systems.examples.core_interferences.coverage_pretreatment.compact_interference_metrics",
   "plot": {
     "points": 512,
-    "bandwidth": 0.3,
-    "random_color": "#2f6fb0",
-    "tool_color": "#f28e2b",
-    "alpha": 0.4,
-    "line_width": 2.4,
-    "figsize": [8.5, 4.8],
-    "format": "png"
+    "format": "png",
+    "color_a": "#4c78a8",
+    "color_b": "#f58518",
+    "alpha": 0.35,
+    "line_width": 2.0,
+    "figsize": [7.0, 4.0]
   }
 }

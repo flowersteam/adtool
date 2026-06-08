@@ -59,8 +59,10 @@ export function createCoverageController({ elements, lightbox }) {
             ? `Showing ${summary.run_name}`
             : "Showing latest coverage run";
 
-        elements.coverageStats.appendChild(statBox(formatNumber(summary.random_count), "random samples"));
-        elements.coverageStats.appendChild(statBox(formatNumber(summary.tool_count), "tool discoveries"));
+        const datasetALabel = summary.dataset_a_label || "first set";
+        const datasetBLabel = summary.dataset_b_label || "second set";
+        elements.coverageStats.appendChild(statBox(formatNumber(summary.dataset_a_count), datasetALabel));
+        elements.coverageStats.appendChild(statBox(formatNumber(summary.dataset_b_count), datasetBLabel));
         elements.coverageStats.appendChild(statBox(formatNumber(summary.dim_count), "embedding dimensions"));
         elements.coverageStats.appendChild(statBox(formatNumber((summary.images || []).length), "graphs"));
 
