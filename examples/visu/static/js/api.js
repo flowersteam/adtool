@@ -40,11 +40,11 @@ export async function getCoverageStatus() {
     return response.json();
 }
 
-export async function getCoverageSummary() {
-    return fetch("/coverage_summary", { cache: "no-store" });
+export async function getCoverageRuns() {
+    return fetch("/coverage_runs", { cache: "no-store" });
 }
 
-export async function responseErrorMessage(response) {
+export async function responseErrorMessage(response, fallback = "Coverage summary could not be loaded.") {
     try {
         const payload = await response.json();
         if (typeof payload.detail === "string") {
@@ -53,7 +53,21 @@ export async function responseErrorMessage(response) {
     } catch {
         // Fall through to the generic message below.
     }
-    return "Coverage summary could not be loaded.";
+    return fallback;
+}
+
+async function postJson(url, payload, fallbackMessage) {
+    const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        throw new Error(await responseErrorMessage(response, fallbackMessage));
+    }
+
+    return response.json();
 }
 
 export async function getDisplayLimit() {
@@ -88,15 +102,13 @@ export async function requestLayoutRecompute() {
 }
 
 export async function exportDiscoveries(files) {
-    const response = await fetch("/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(files),
-    });
+    return postJson("/export", files, "export failed");
+}
 
-    if (!response.ok) {
-        throw new Error("export failed");
-    }
+export async function runRandomRun(payload) {
+    return postJson("/analysis/random_run", payload, "random run failed");
+}
 
-    return response.json();
+export async function runCoverageComparison(payload) {
+    return postJson("/analysis/coverage_comparison", payload, "coverage comparison failed");
 }

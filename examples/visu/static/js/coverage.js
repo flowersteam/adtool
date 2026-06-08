@@ -1,10 +1,9 @@
-import { COVERAGE_LOAD_GRACE_MS, LOAD_RETRY_MS } from "./config.js";
-import { getCoverageStatus, getCoverageSummary, responseErrorMessage } from "./api.js";
-import { formatNumber, formatRange, sleep } from "./utils.js";
+import { getCoverageRuns, getCoverageStatus, responseErrorMessage } from "./api.js";
+import { formatNumber, formatRange } from "./utils.js";
 
 export function createCoverageController({ elements, lightbox }) {
     let coverageRequestId = 0;
-    let coverageEnabled = false;
+    let coverageEnabled = true;
 
     function setEmpty(visible, title = "No coverage run found", message = "") {
         elements.coverageEmpty.hidden = !visible;
@@ -18,19 +17,20 @@ export function createCoverageController({ elements, lightbox }) {
         }
     }
 
-    async function initializeNavigation(showDiscoveriesPage) {
+    async function initializeNavigation() {
         try {
-            const status = await getCoverageStatus();
-            coverageEnabled = Boolean(status.enabled);
+            await getCoverageStatus();
         } catch {
-            coverageEnabled = false;
+            // Navigation remains available; load() will show the actionable empty state.
         }
 
-        elements.coverageTab.hidden = !coverageEnabled;
-        if (!coverageEnabled && elements.coveragePage.classList.contains("active")) {
-            showDiscoveriesPage();
-        }
+        setEnabled(true);
         return coverageEnabled;
+    }
+
+    function setEnabled(enabled) {
+        coverageEnabled = Boolean(enabled);
+        elements.coverageTab.hidden = !coverageEnabled;
     }
 
     function statBox(value, label) {
@@ -50,124 +50,157 @@ export function createCoverageController({ elements, lightbox }) {
         return node;
     }
 
-    function render(summary) {
+    function runTitle(summary) {
+        return summary.run_name || "coverage run";
+    }
+
+    function renderImageCard(summary, image, index) {
+        const imageInfo = typeof image === "string"
+            ? { file: image, url: `/coverage/${image}` }
+            : image;
+        const labels = Array.isArray(summary.labels) ? summary.labels : [];
+        const bounds = Array.isArray(summary.bounds) ? summary.bounds : [];
+        const title = labels[index] || imageInfo.title || imageInfo.file || `Graph ${index + 1}`;
+        const card = document.createElement("article");
+        card.className = "coverageCard";
+
+        const header = document.createElement("div");
+        header.className = "coverageCardHeader";
+
+        const titleNode = document.createElement("div");
+        titleNode.className = "coverageCardTitle";
+        titleNode.textContent = title;
+        titleNode.title = title;
+
+        const metaNode = document.createElement("div");
+        metaNode.className = "coverageCardMeta";
+        metaNode.textContent = formatRange(bounds[index]);
+
+        const img = document.createElement("img");
+        img.loading = "lazy";
+        img.decoding = "async";
+        img.alt = `Coverage graph for ${title}`;
+        img.src = imageInfo.url || `/coverage/${imageInfo.file}`;
+
+        const imageButton = document.createElement("button");
+        imageButton.className = "coverageImageButton";
+        imageButton.type = "button";
+        imageButton.setAttribute("aria-label", `Open ${title} larger`);
+        imageButton.addEventListener("click", () => {
+            lightbox.open(img.src, `${runTitle(summary)} / ${title}`);
+        });
+
+        header.appendChild(titleNode);
+        header.appendChild(metaNode);
+        card.appendChild(header);
+        imageButton.appendChild(img);
+        card.appendChild(imageButton);
+        return card;
+    }
+
+    function renderRun(summary) {
+        const section = document.createElement("section");
+        section.className = "coverageRunSection";
+
+        const header = document.createElement("div");
+        header.className = "coverageRunHeader";
+
+        const titleNode = document.createElement("h3");
+        titleNode.textContent = runTitle(summary);
+        titleNode.title = titleNode.textContent;
+
+        const metaNode = document.createElement("div");
+        metaNode.className = "coverageRunMeta";
+        const datasetALabel = summary.dataset_a_label || "first set";
+        const datasetBLabel = summary.dataset_b_label || "second set";
+        metaNode.textContent = [
+            `${datasetALabel}: ${formatNumber(summary.dataset_a_count)}`,
+            `${datasetBLabel}: ${formatNumber(summary.dataset_b_count)}`,
+            `${formatNumber(summary.dim_count)} dims`,
+        ].join(" | ");
+
+        const grid = document.createElement("div");
+        grid.className = "coverageRunGrid";
+
+        const images = Array.isArray(summary.images) ? summary.images : [];
+        for (const [index, image] of images.entries()) {
+            grid.appendChild(renderImageCard(summary, image, index));
+        }
+
+        if (images.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "emptyPanel compactEmptyPanel";
+            empty.textContent = "This run has no generated graphs.";
+            grid.appendChild(empty);
+        }
+
+        header.appendChild(titleNode);
+        header.appendChild(metaNode);
+        section.appendChild(header);
+        section.appendChild(grid);
+        return section;
+    }
+
+    function render(payload) {
+        const runs = Array.isArray(payload.runs) ? payload.runs : [];
         elements.coverageGrid.innerHTML = "";
         elements.coverageStats.innerHTML = "";
         setEmpty(false);
 
-        elements.coverageSubtitle.textContent = summary.run_name
-            ? `Showing ${summary.run_name}`
-            : "Showing latest coverage run";
+        const graphCount = runs.reduce(
+            (total, run) => total + (Array.isArray(run.images) ? run.images.length : 0),
+            0,
+        );
+        elements.coverageSubtitle.textContent = payload.coverage_runs_dir
+            ? `Showing ${runs.length} coverage runs from ${payload.coverage_runs_dir}`
+            : `Showing ${runs.length} coverage runs`;
 
-        const datasetALabel = summary.dataset_a_label || "first set";
-        const datasetBLabel = summary.dataset_b_label || "second set";
-        elements.coverageStats.appendChild(statBox(formatNumber(summary.dataset_a_count), datasetALabel));
-        elements.coverageStats.appendChild(statBox(formatNumber(summary.dataset_b_count), datasetBLabel));
-        elements.coverageStats.appendChild(statBox(formatNumber(summary.dim_count), "embedding dimensions"));
-        elements.coverageStats.appendChild(statBox(formatNumber((summary.images || []).length), "graphs"));
-
-        const images = Array.isArray(summary.images) ? summary.images : [];
-        const labels = Array.isArray(summary.labels) ? summary.labels : [];
-        const bounds = Array.isArray(summary.bounds) ? summary.bounds : [];
-
-        for (const [index, image] of images.entries()) {
-            const imageInfo = typeof image === "string"
-                ? { file: image, url: `/coverage/${image}` }
-                : image;
-            const title = labels[index] || imageInfo.title || imageInfo.file || `Graph ${index + 1}`;
-            const card = document.createElement("article");
-            card.className = "coverageCard";
-
-            const header = document.createElement("div");
-            header.className = "coverageCardHeader";
-
-            const titleNode = document.createElement("div");
-            titleNode.className = "coverageCardTitle";
-            titleNode.textContent = title;
-            titleNode.title = title;
-
-            const metaNode = document.createElement("div");
-            metaNode.className = "coverageCardMeta";
-            metaNode.textContent = formatRange(bounds[index]);
-
-            const img = document.createElement("img");
-            img.loading = "lazy";
-            img.decoding = "async";
-            img.alt = `Coverage graph for ${title}`;
-            img.src = imageInfo.url || `/coverage/${imageInfo.file}`;
-
-            const imageButton = document.createElement("button");
-            imageButton.className = "coverageImageButton";
-            imageButton.type = "button";
-            imageButton.setAttribute("aria-label", `Open ${title} larger`);
-            imageButton.addEventListener("click", () => {
-                lightbox.open(img.src, title);
-            });
-
-            header.appendChild(titleNode);
-            header.appendChild(metaNode);
-            card.appendChild(header);
-            imageButton.appendChild(img);
-            card.appendChild(imageButton);
-            elements.coverageGrid.appendChild(card);
+        elements.coverageStats.appendChild(statBox(formatNumber(runs.length), "coverage runs"));
+        elements.coverageStats.appendChild(statBox(formatNumber(graphCount), "graphs"));
+        if (runs.length > 0) {
+            const latest = runs[0];
+            elements.coverageStats.appendChild(statBox(formatNumber(latest.dataset_a_count), latest.dataset_a_label || "first set"));
+            elements.coverageStats.appendChild(statBox(formatNumber(latest.dataset_b_count), latest.dataset_b_label || "second set"));
         }
 
-        if (images.length === 0) {
+        for (const summary of runs) {
+            elements.coverageGrid.appendChild(renderRun(summary));
+        }
+
+        if (runs.length === 0) {
             setEmpty(
                 true,
-                "No coverage graphs found",
-                "The coverage summary exists, but it does not list generated images.",
+                "No coverage run found",
+                "Run a coverage comparison to create coverage_runs/coverage_run_* outputs.",
             );
         }
     }
 
     async function load() {
         const requestId = ++coverageRequestId;
-        const deadline = performance.now() + COVERAGE_LOAD_GRACE_MS;
-        let lastErrorMessage = "Coverage summary could not be loaded.";
-        let fatalErrorMessage = "";
+        let lastErrorMessage = "Coverage runs could not be loaded.";
+        let emptyTitle = "Coverage format issue";
 
         elements.reloadCoverageButton.disabled = true;
-        elements.coverageSubtitle.textContent = "Loading coverage summary...";
+        elements.coverageSubtitle.textContent = "Loading coverage runs...";
         elements.coverageGrid.innerHTML = "";
         elements.coverageStats.innerHTML = "";
         setEmpty(false);
 
         try {
-            let summary = null;
-            while (summary === null) {
-                try {
-                    const response = await getCoverageSummary();
-                    if (response.ok) {
-                        summary = await response.json();
-                        break;
-                    }
-
-                    lastErrorMessage = await responseErrorMessage(response);
-                    if (response.status === 422 || response.status === 400) {
-                        fatalErrorMessage = lastErrorMessage;
-                        throw new Error(fatalErrorMessage);
-                    }
-                } catch (error) {
-                    if (fatalErrorMessage) {
-                        throw error;
-                    }
-                    // Retry transient startup/load failures until the grace window expires.
+            const response = await getCoverageRuns();
+            if (!response.ok) {
+                lastErrorMessage = await responseErrorMessage(response, lastErrorMessage);
+                if (response.status === 404) {
+                    emptyTitle = "No coverage run found";
                 }
-
-                if (performance.now() >= deadline) {
-                    throw new Error("coverage summary unavailable");
-                }
-                if (requestId !== coverageRequestId) {
-                    return;
-                }
-                await sleep(LOAD_RETRY_MS);
+                throw new Error(lastErrorMessage);
             }
 
             if (requestId !== coverageRequestId) {
                 return;
             }
-            render(summary);
+            render(await response.json());
         } catch {
             if (requestId !== coverageRequestId) {
                 return;
@@ -175,7 +208,7 @@ export function createCoverageController({ elements, lightbox }) {
             elements.coverageGrid.innerHTML = "";
             elements.coverageStats.innerHTML = "";
             elements.coverageSubtitle.textContent = "Coverage could not be loaded.";
-            setEmpty(true, "Coverage format issue", lastErrorMessage);
+            setEmpty(true, emptyTitle, lastErrorMessage);
         } finally {
             if (requestId === coverageRequestId) {
                 elements.reloadCoverageButton.disabled = false;
@@ -187,5 +220,6 @@ export function createCoverageController({ elements, lightbox }) {
         initializeNavigation,
         isEnabled: () => coverageEnabled,
         load,
+        setEnabled,
     };
 }

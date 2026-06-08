@@ -1,4 +1,9 @@
-import { exportDiscoveries, requestLayoutRecompute } from "./js/api.js";
+import {
+    exportDiscoveries,
+    requestLayoutRecompute,
+    runCoverageComparison,
+    runRandomRun,
+} from "./js/api.js";
 import { createCoverageController } from "./js/coverage.js";
 import { createDiscoveryMap } from "./js/discovery-map.js";
 import { createDisplayLimitController } from "./js/display-limit.js";
@@ -24,9 +29,6 @@ const displayLimit = createDisplayLimitController({
 
 function showPage(pageName) {
     const isCoverage = pageName === "coverage";
-    if (isCoverage && !coverage.isEnabled()) {
-        return;
-    }
 
     elements.viewerPage.classList.toggle("active", !isCoverage);
     elements.coveragePage.classList.toggle("active", isCoverage);
@@ -76,6 +78,76 @@ async function exportEntries() {
     }
 }
 
+function trimmedValue(element) {
+    return element.value.trim();
+}
+
+async function launchRandomRun() {
+    const configPath = trimmedValue(elements.randomConfigPath);
+    if (!configPath) {
+        updateStatus("Random config path is required.");
+        elements.randomConfigPath.focus();
+        return;
+    }
+
+    elements.randomRunButton.disabled = true;
+    updateStatus("Running random baseline...");
+    try {
+        const payload = await runRandomRun({
+            config_file: configPath,
+            nb_iterations: elements.randomIterationsInput.value,
+            seed: elements.randomSeedInput.value,
+        });
+        elements.coverageComparePath.value = payload.discoveries_dir;
+        updateStatus(`Random run complete: ${payload.discoveries_dir}`);
+    } catch (error) {
+        updateStatus(error.message || "Random run failed. Check server logs.");
+    } finally {
+        elements.randomRunButton.disabled = false;
+    }
+}
+
+async function launchCoverageComparison() {
+    const comparisonPath = trimmedValue(elements.coverageComparePath);
+    if (!comparisonPath) {
+        updateStatus("Compare path is required.");
+        elements.coverageComparePath.focus();
+        return;
+    }
+
+    const configFile = trimmedValue(elements.coverageConfigPath);
+    const resolvedConfigFile = configFile.toLowerCase() === "none" ? "" : configFile;
+    const labelA = trimmedValue(elements.coverageLabelA) || "IMGEP";
+    const labelB = trimmedValue(elements.coverageLabelB) || "baseline";
+
+    elements.coverageCompareButton.disabled = true;
+    elements.reloadCoverageButton.disabled = true;
+    updateStatus("Running coverage comparison...");
+    try {
+        const payload = await runCoverageComparison({
+            path: comparisonPath,
+            config_file: resolvedConfigFile || null,
+            label_a: labelA,
+            label_b: labelB,
+        });
+        coverage.setEnabled(true);
+        updateStatus(`Coverage comparison complete: ${payload.run_dir}`);
+        showPage("coverage");
+    } catch (error) {
+        updateStatus(error.message || "Coverage comparison failed. Check server logs.");
+    } finally {
+        elements.coverageCompareButton.disabled = false;
+        elements.reloadCoverageButton.disabled = false;
+    }
+}
+
+function toggleCoverageActions() {
+    const collapsed = elements.coverageActionsBody.hidden;
+    elements.coverageActionsBody.hidden = !collapsed;
+    elements.coverageActionsToggle.setAttribute("aria-expanded", String(collapsed));
+    elements.coverageActionsToggle.textContent = collapsed ? "Hide" : "Show";
+}
+
 function bindEvents() {
     elements.discoveriesTab.addEventListener("click", () => showPage("discoveries"));
     elements.coverageTab.addEventListener("click", () => showPage("coverage"));
@@ -88,6 +160,9 @@ function bindEvents() {
     elements.searchInput.addEventListener("input", discoveryMap.applyFilter);
     elements.displayLimitSelect.addEventListener("change", displayLimit.syncCustomInputVisibility);
     elements.displayLimitApplyButton.addEventListener("click", displayLimit.apply);
+    elements.coverageActionsToggle.addEventListener("click", toggleCoverageActions);
+    elements.randomRunButton.addEventListener("click", launchRandomRun);
+    elements.coverageCompareButton.addEventListener("click", launchCoverageComparison);
     elements.previewSizeSlider.addEventListener("input", (event) => {
         preview.applyScale(event.target.value);
     });

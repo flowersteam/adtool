@@ -27,7 +27,7 @@
             </div>
             <nav class="pageNav" aria-label="Views">
                 <button id="discoveriesTab" class="navButton active" type="button">Discoveries</button>
-                <button id="coverageTab" class="navButton" type="button" hidden>Coverage</button>
+                <button id="coverageTab" class="navButton" type="button">Coverage</button>
             </nav>
         </header>
 
@@ -112,11 +112,75 @@
                     <button id="reloadCoverageButton" type="button">Reload Coverage</button>
                 </div>
 
+                <div class="coverageActions" aria-label="Analysis runs">
+                    <div class="coverageActionsHeader">
+                        <div>
+                            <p class="eyebrow">Analysis</p>
+                            <h3>Run Metrics</h3>
+                        </div>
+                        <button id="coverageActionsToggle" class="ghostButton" type="button" aria-expanded="true"
+                            aria-controls="coverageActionsBody">Hide</button>
+                    </div>
+
+                    <div id="coverageActionsBody" class="coverageActionsBody">
+                        <div class="coverageActionGroup">
+                            <div class="analysisHeader">
+                                <p class="eyebrow">Random baseline</p>
+                                <h3>Generate Discoveries</h3>
+                            </div>
+                            <div class="analysisFields randomFields">
+                                <label class="compactField wideField" for="randomConfigPath">
+                                    <span>Config path</span>
+                                    <input id="randomConfigPath" class="pathInput" type="text"
+                                        placeholder="examples/grayscott/gray_scott.json" autocomplete="off">
+                                </label>
+                                <label class="compactField" for="randomIterationsInput">
+                                    <span>Iterations</span>
+                                    <input id="randomIterationsInput" type="number" min="1" step="1" value="100">
+                                </label>
+                                <label class="compactField" for="randomSeedInput">
+                                    <span>Seed</span>
+                                    <input id="randomSeedInput" type="number" min="0" step="1" value="42">
+                                </label>
+                                <button id="randomRunButton" type="button">Run Random</button>
+                            </div>
+                        </div>
+
+                        <div class="coverageActionGroup">
+                            <div class="analysisHeader">
+                                <p class="eyebrow">Coverage run</p>
+                                <h3>Compare Discoveries</h3>
+                            </div>
+                            <div class="analysisFields compareFields">
+                                <label class="compactField wideField" for="coverageComparePath">
+                                    <span>Comparison path</span>
+                                    <input id="coverageComparePath" class="pathInput" type="text"
+                                        placeholder="/path/to/discoveries" autocomplete="off">
+                                </label>
+                                <label class="compactField wideField" for="coverageConfigPath">
+                                    <span>Config file</span>
+                                    <input id="coverageConfigPath" class="pathInput" type="text"
+                                        placeholder="None" autocomplete="off">
+                                </label>
+                                <label class="compactField" for="coverageLabelA">
+                                    <span>Label A</span>
+                                    <input id="coverageLabelA" type="text" value="IMGEP" autocomplete="off">
+                                </label>
+                                <label class="compactField" for="coverageLabelB">
+                                    <span>Label B</span>
+                                    <input id="coverageLabelB" type="text" value="baseline" autocomplete="off">
+                                </label>
+                                <button id="coverageCompareButton" class="primaryButton" type="button">Compare cover</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="coverageStats" class="coverageStats" aria-label="Global coverage statistics"></div>
                 <div id="coverageGrid" class="coverageGrid" aria-label="Coverage graphs"></div>
                 <div id="coverageEmpty" class="emptyPanel" hidden>
                     <h3>No coverage run found</h3>
-                    <p>Run the coverage comparison utility or pass <code>--coverage_run</code> to the visualization server.</p>
+                    <p>Enter a comparison path above or run a random baseline, then compare it with the current discoveries.</p>
                 </div>
             </section>
         </main>
@@ -141,4 +205,3 @@
     <script type="module" src="/static/app.js"></script>
 </body>
 </html>
-

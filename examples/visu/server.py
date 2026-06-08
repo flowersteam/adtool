@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import sys
 import threading
 import time
 from contextlib import asynccontextmanager
@@ -32,6 +33,8 @@ MIME_TYPES = {
 }
 
 BASE_DIR = Path(__file__).resolve().parent
+EXAMPLES_DIR = BASE_DIR.parent
+REPO_ROOT = EXAMPLES_DIR.parent
 STATIC_DIR = BASE_DIR / "static"
 RECOMPUTE_DEBOUNCE_SECONDS = 10.0
 RECOMPUTE_MIN_INTERVAL_SECONDS = 15.0
@@ -39,13 +42,14 @@ DEFAULT_DISPLAY_LIMIT = 500
 MIN_DISPLAY_LIMIT = 1
 MAX_DISPLAY_LIMIT = 10000
 DISPLAY_LIMIT_PRESETS = [250, 500, 1000, 1500, 2000]
+DEFAULT_RANDOM_ITERATIONS = 100
+DEFAULT_RANDOM_SEED = 42
 
 
 @dataclass(frozen=True)
 class ServerConfig:
     discoveries: Path
     static_dir: Path = STATIC_DIR
-    coverage_run: Path | None = None
     refresh: bool = False
 
 
@@ -53,19 +57,18 @@ class ServerConfig:
 class RuntimeState:
     display_limit: int = DEFAULT_DISPLAY_LIMIT
     last_recompute_time: float = 0.0
+    analysis_lock: threading.Lock = field(default_factory=threading.Lock)
     recompute_lock: threading.Lock = field(default_factory=threading.Lock)
 
 
 def parse_args() -> ServerConfig:
     parser = argparse.ArgumentParser()
     parser.add_argument("--discoveries", type=str, required=True)
-    parser.add_argument("--coverage_run", type=str, required=False, default=None)
     parser.add_argument("--refresh", action="store_true")
     args = parser.parse_args()
 
     return ServerConfig(
         discoveries=Path(args.discoveries).resolve(),
-        coverage_run=Path(args.coverage_run).resolve() if args.coverage_run else None,
         refresh=args.refresh,
     )
 
@@ -77,6 +80,36 @@ def _compute_coordinates(*args, **kwargs) -> None:
         from coordinates import compute_coordinates
 
     compute_coordinates(*args, **kwargs)
+
+
+def _ensure_analysis_import_paths() -> None:
+    for import_root in (REPO_ROOT, EXAMPLES_DIR):
+        if str(import_root) not in sys.path:
+            sys.path.insert(0, str(import_root))
+
+
+def _load_random_baseline_runner():
+    _ensure_analysis_import_paths()
+    try:
+        from analysis_metrics.random_run import run_random_baseline
+    except ModuleNotFoundError as exc:
+        if exc.name != "analysis_metrics":
+            raise
+        from examples.analysis_metrics.random_run import run_random_baseline
+
+    return run_random_baseline
+
+
+def _load_coverage_comparator():
+    _ensure_analysis_import_paths()
+    try:
+        from analysis_metrics.coverage_comparison import compare_discovery_sets
+    except ModuleNotFoundError as exc:
+        if exc.name != "analysis_metrics":
+            raise
+        from examples.analysis_metrics.coverage_comparison import compare_discovery_sets
+
+    return compare_discovery_sets
 
 
 def _is_relative_to(path: Path, parent: Path) -> bool:
@@ -92,74 +125,23 @@ def _mime_type(path: str | Path) -> str:
     return MIME_TYPES.get(extension, "application/octet-stream")
 
 
-def _coverage_roots(config: ServerConfig) -> list[Path]:
-    if config.coverage_run is None:
+def _coverage_runs_dir(config: ServerConfig) -> Path:
+    return (config.discoveries.parent / "coverage_runs").resolve()
+
+
+def _coverage_summary_paths(coverage_runs_dir: Path) -> list[Path]:
+    if not coverage_runs_dir.exists() or not coverage_runs_dir.is_dir():
         return []
-
-    roots = [config.coverage_run]
-    if config.coverage_run.name.startswith("coverage_run_"):
-        roots.append(config.coverage_run.parent)
-
-    unique_roots: list[Path] = []
-    seen: set[Path] = set()
-    for root in roots:
-        resolved = root.resolve()
-        if resolved not in seen:
-            seen.add(resolved)
-            unique_roots.append(resolved)
-    return unique_roots
-
-
-def _latest_summary_under(root: Path) -> Path | None:
-    direct_summary = root / "summary.json"
-    if direct_summary.exists():
-        return direct_summary
 
     summaries = [
         summary
-        for summary in root.glob("coverage_run_*/summary.json")
+        for summary in coverage_runs_dir.glob("coverage_run_*/summary.json")
         if summary.is_file()
     ]
-    if not summaries:
-        return None
-
-    return max(summaries, key=lambda path: path.stat().st_mtime)
+    return sorted(summaries, key=lambda path: path.stat().st_mtime, reverse=True)
 
 
-def _find_coverage_summary(config: ServerConfig) -> tuple[Path | None, Path | None]:
-    for root in _coverage_roots(config):
-        if not root.exists():
-            continue
-        summary = _latest_summary_under(root)
-        if summary is not None:
-            return summary.resolve(), root.resolve()
-    return None, None
-
-
-def _coverage_error_detail(config: ServerConfig) -> str:
-    if config.coverage_run is None:
-        return (
-            "Coverage is disabled because no --coverage_run folder was provided when "
-            "launching the visualization server."
-        )
-
-    if not config.coverage_run.exists():
-        return f"Coverage path does not exist: {config.coverage_run}"
-
-    if config.coverage_run.is_file():
-        return (
-            "Coverage path points to a file, but the visualization expects a coverage run folder. "
-            "Pass either a folder containing summary.json or a parent folder containing "
-            "coverage_run_*/summary.json."
-        )
-
-    summary_path, _ = _find_coverage_summary(config)
-    if summary_path is None:
-        return (
-            "Coverage folder format is not recognized. Expected summary.json directly inside "
-            "the folder, or one or more coverage_run_* folders containing summary.json."
-        )
-
+def _coverage_summary_error(summary_path: Path) -> str:
     try:
         with summary_path.open() as handle:
             summary = json.load(handle)
@@ -239,7 +221,6 @@ def _coverage_image_url(image: str, run_dir: Path, serving_root: Path) -> str:
 
 
 def _coverage_summary_payload(
-    config: ServerConfig,
     summary_path: Path,
     serving_root: Path,
 ) -> dict[str, Any]:
@@ -247,10 +228,10 @@ def _coverage_summary_payload(
         with summary_path.open() as handle:
             summary = json.load(handle)
     except json.JSONDecodeError:
-        raise HTTPException(status_code=422, detail=_coverage_error_detail(config))
+        raise HTTPException(status_code=422, detail=_coverage_summary_error(summary_path))
 
     if not isinstance(summary, dict) or "images" not in summary or not isinstance(summary["images"], list):
-        raise HTTPException(status_code=422, detail=_coverage_error_detail(config))
+        raise HTTPException(status_code=422, detail=_coverage_summary_error(summary_path))
 
     run_dir = summary_path.parent
     summary["images"] = [
@@ -264,6 +245,77 @@ def _coverage_summary_payload(
     return summary
 
 
+def _resolve_input_path(value: Any, field_name: str, required: bool = True) -> Path | None:
+    if value is None or str(value).strip() == "":
+        if required:
+            raise HTTPException(status_code=422, detail=f"{field_name} is required.")
+        return None
+
+    path = Path(str(value).strip()).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+
+    bases = (Path.cwd(), REPO_ROOT, EXAMPLES_DIR)
+    for base in bases:
+        candidate = (base / path).resolve()
+        if candidate.exists():
+            return candidate
+
+    return (Path.cwd() / path).resolve()
+
+
+def _require_directory(path: Path, field_name: str) -> None:
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"{field_name} does not exist: {path}")
+    if not path.is_dir():
+        raise HTTPException(status_code=422, detail=f"{field_name} must be a directory: {path}")
+
+
+def _require_file(path: Path, field_name: str) -> None:
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"{field_name} does not exist: {path}")
+    if not path.is_file():
+        raise HTTPException(status_code=422, detail=f"{field_name} must be a file: {path}")
+
+
+def _payload_int(
+    payload: dict[str, Any],
+    field_name: str,
+    default: int,
+    minimum: int | None = None,
+    maximum: int | None = None,
+) -> int:
+    value = payload.get(field_name, default)
+    if isinstance(value, bool):
+        raise HTTPException(status_code=422, detail=f"{field_name} must be an integer.")
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail=f"{field_name} must be an integer.")
+
+    if minimum is not None and parsed < minimum:
+        raise HTTPException(status_code=422, detail=f"{field_name} must be at least {minimum}.")
+    if maximum is not None and parsed > maximum:
+        raise HTTPException(status_code=422, detail=f"{field_name} must be at most {maximum}.")
+    return parsed
+
+
+def _optional_payload_int(payload: dict[str, Any], field_name: str) -> int | None:
+    if field_name not in payload or payload.get(field_name) in (None, ""):
+        return None
+    return _payload_int(payload, field_name, 0, minimum=2)
+
+
+def _timestamped_analysis_dir(config: ServerConfig, prefix: str) -> Path:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return (config.discoveries.parent / "analysis_runs" / f"{prefix}_{timestamp}").resolve()
+
+
+def _error_detail(prefix: str, exc: Exception) -> str:
+    message = str(exc) or exc.__class__.__name__
+    return f"{prefix}: {message}"
+
+
 def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastAPI:
     state = state or RuntimeState()
 
@@ -271,6 +323,7 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
     async def lifespan(app: FastAPI):
         config.static_dir.mkdir(parents=True, exist_ok=True)
         config.discoveries.mkdir(parents=True, exist_ok=True)
+        _coverage_runs_dir(config).mkdir(parents=True, exist_ok=True)
 
         _compute_coordinates(
             config.discoveries,
@@ -314,42 +367,49 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
 
     @app.get("/coverage/{file_path:path}")
     async def serve_coverage_file(file_path: str):
-        if config.coverage_run is None:
-            raise HTTPException(status_code=404, detail="Coverage is disabled")
-
-        full_path = None
-        for root in _coverage_roots(config):
-            candidate = (root / file_path).resolve()
-            if _is_relative_to(candidate, root) and candidate.exists():
-                full_path = candidate
-                break
-
-        if full_path is None:
+        coverage_runs_dir = _coverage_runs_dir(config)
+        full_path = (coverage_runs_dir / file_path).resolve()
+        if not _is_relative_to(full_path, coverage_runs_dir):
+            raise HTTPException(status_code=400, detail="Invalid file path")
+        if not full_path.exists():
             raise HTTPException(status_code=404, detail="File not found")
 
         return FileResponse(str(full_path), media_type=_mime_type(file_path))
 
     @app.get("/coverage_status")
     async def coverage_status():
+        coverage_runs_dir = _coverage_runs_dir(config)
+        summaries = _coverage_summary_paths(coverage_runs_dir)
         return {
-            "enabled": config.coverage_run is not None,
-            "path": str(config.coverage_run) if config.coverage_run is not None else None,
+            "enabled": True,
+            "has_run": len(summaries) > 0,
+            "path": str(coverage_runs_dir),
+            "run_count": len(summaries),
         }
 
     @app.get("/coverage_summary")
     async def coverage_summary():
-        if config.coverage_run is None:
-            raise HTTPException(status_code=404, detail=_coverage_error_detail(config))
-        if not config.coverage_run.exists():
-            raise HTTPException(status_code=404, detail=_coverage_error_detail(config))
-        if config.coverage_run.is_file():
-            raise HTTPException(status_code=422, detail=_coverage_error_detail(config))
+        coverage_runs_dir = _coverage_runs_dir(config)
+        summaries = _coverage_summary_paths(coverage_runs_dir)
+        if not summaries:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No coverage runs found in: {coverage_runs_dir}",
+            )
 
-        summary_path, serving_root = _find_coverage_summary(config)
-        if summary_path is None or serving_root is None:
-            raise HTTPException(status_code=404, detail=_coverage_error_detail(config))
+        return _coverage_summary_payload(summaries[0], coverage_runs_dir)
 
-        return _coverage_summary_payload(config, summary_path, serving_root)
+    @app.get("/coverage_runs")
+    async def coverage_runs():
+        coverage_runs_dir = _coverage_runs_dir(config)
+        runs = [
+            _coverage_summary_payload(summary_path, coverage_runs_dir)
+            for summary_path in _coverage_summary_paths(coverage_runs_dir)
+        ]
+        return {
+            "coverage_runs_dir": str(coverage_runs_dir),
+            "runs": runs,
+        }
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):
@@ -400,6 +460,104 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
     async def recompute_layout():
         recompute_discoveries(config, state, ignore_interval=True)
         return {"status": "ok"}
+
+    @app.post("/analysis/random_run")
+    def random_run(payload: dict[str, Any]):
+        config_file = _resolve_input_path(payload.get("config_file"), "config_file")
+        if config_file is None:
+            raise HTTPException(status_code=422, detail="config_file is required.")
+        _require_file(config_file, "config_file")
+
+        output_dir = _resolve_input_path(payload.get("output_dir"), "output_dir", required=False)
+        if output_dir is None:
+            output_dir = _timestamped_analysis_dir(config, "random_run")
+
+        nb_iterations = _payload_int(
+            payload,
+            "nb_iterations",
+            DEFAULT_RANDOM_ITERATIONS,
+            minimum=1,
+        )
+        seed = _payload_int(
+            payload,
+            "seed",
+            DEFAULT_RANDOM_SEED,
+            minimum=0,
+            maximum=2**32 - 1,
+        )
+
+        runner = _load_random_baseline_runner()
+        with state.analysis_lock:
+            try:
+                summary = runner(
+                    config_file=config_file,
+                    output_dir=output_dir,
+                    nb_iterations=nb_iterations,
+                    seed=seed,
+                )
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=500,
+                    detail=_error_detail("Random run failed", exc),
+                ) from exc
+
+        return {
+            "status": "ok",
+            "output_dir": str(summary.output_dir),
+            "discoveries_dir": str(summary.discoveries_dir),
+            "count": summary.count,
+            "seed": summary.seed,
+        }
+
+    @app.post("/analysis/coverage_comparison")
+    def coverage_comparison(payload: dict[str, Any]):
+        comparison_path = _resolve_input_path(
+            payload.get("path", payload.get("comparison_path")),
+            "path",
+        )
+        if comparison_path is None:
+            raise HTTPException(status_code=422, detail="path is required.")
+        _require_directory(comparison_path, "path")
+
+        raw_config_file = payload.get("config_file")
+        if isinstance(raw_config_file, str) and raw_config_file.strip().lower() == "none":
+            raw_config_file = None
+        config_file = _resolve_input_path(raw_config_file, "config_file", required=False)
+        if config_file is not None:
+            _require_file(config_file, "config_file")
+
+        points = _optional_payload_int(payload, "points")
+        label_a = payload.get("label_a") or "IMGEP"
+        label_b = payload.get("label_b") or "baseline"
+
+        comparator = _load_coverage_comparator()
+        with state.analysis_lock:
+            try:
+                summary = comparator(
+                    config.discoveries,
+                    comparison_path,
+                    output_dir=_coverage_runs_dir(config),
+                    label_a=str(label_a),
+                    label_b=str(label_b),
+                    config_file=config_file,
+                    points=points,
+                )
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=500,
+                    detail=_error_detail("Coverage comparison failed", exc),
+                ) from exc
+
+        return {
+            "status": "ok",
+            "run_dir": str(summary.run_dir),
+            "dataset_a_path": str(summary.discovery_a_path),
+            "dataset_b_path": str(summary.discovery_b_path),
+            "dataset_a_count": summary.count_a,
+            "dataset_b_count": summary.count_b,
+            "dim_count": summary.dim_count,
+            "images": summary.images,
+        }
 
     @app.post("/export")
     async def export_files(files: list[str]):
