@@ -1,3 +1,5 @@
+const VIDEO_SUFFIX = /\.mp4$/i;
+
 export function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
@@ -25,38 +27,34 @@ export function prettifyEntryLabel(src) {
     return `${parts[0]} / ${parts[parts.length - 1]}`;
 }
 
+function replaceVideoSuffix(path, replacement) {
+    return String(path).replace(VIDEO_SUFFIX, replacement);
+}
+
+function previewImagePath(path, replacement) {
+    return VIDEO_SUFFIX.test(path) ? replaceVideoSuffix(path, replacement) : path;
+}
+
 export function visualToPreviewImage(visualPath) {
     const normalized = normalizeVisualPath(visualPath);
-    if (/\.mp4$/i.test(normalized)) {
-        return normalized.replace(/\.mp4$/i, ".jpg");
-    }
-    return normalized;
+    return previewImagePath(normalized, ".jpg");
 }
 
 export function fallbackPreviewImage(visualPath) {
     const normalized = normalizeVisualPath(visualPath);
-    if (/\.mp4$/i.test(normalized)) {
-        return normalized.replace(/\.mp4$/i, ".png");
-    }
-    return normalized;
+    return previewImagePath(normalized, ".png");
 }
 
 export function selectedEntryPreviewPath(sourcePath) {
-    if (/\.mp4$/i.test(sourcePath)) {
-        return sourcePath.replace(/\.mp4$/i, ".jpg");
-    }
-    return sourcePath;
+    return previewImagePath(sourcePath, ".jpg");
 }
 
 export function selectedEntryPreviewFallback(sourcePath) {
-    if (/\.mp4$/i.test(sourcePath)) {
-        return sourcePath.replace(/\.mp4$/i, ".png");
-    }
-    return sourcePath;
+    return previewImagePath(sourcePath, ".png");
 }
 
 export function isVideoPath(path) {
-    return /\.mp4$/i.test(path);
+    return VIDEO_SUFFIX.test(path);
 }
 
 export function formatNumber(value) {

@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 import os
 import threading
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -21,7 +23,14 @@ VALID_VISUAL_SUFFIXES = (".mp4", ".png")
 
 Discovery = dict[str, Any]
 
-_discovery_cache: dict[str, dict[str, Any]] = {}
+
+@dataclass(frozen=True)
+class DiscoveryCacheEntry:
+    mtime: float
+    discovery: Discovery
+
+
+_discovery_cache: dict[str, DiscoveryCacheEntry] = {}
 _cache_lock = threading.Lock()
 
 
@@ -36,8 +45,8 @@ def _cached_discovery(discovery_path: Path, cache_mtime: float) -> Discovery | N
     cache_key = os.fspath(discovery_path)
     with _cache_lock:
         cached = _discovery_cache.get(cache_key)
-        if isinstance(cached, dict) and cached.get("mtime") == cache_mtime:
-            return cached["discovery"]
+        if cached is not None and cached.mtime == cache_mtime:
+            return cached.discovery
     return None
 
 
@@ -48,10 +57,7 @@ def _store_cached_discovery(
 ) -> None:
     cache_key = os.fspath(discovery_path)
     with _cache_lock:
-        _discovery_cache[cache_key] = {
-            "mtime": cache_mtime,
-            "discovery": discovery,
-        }
+        _discovery_cache[cache_key] = DiscoveryCacheEntry(cache_mtime, discovery)
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:
@@ -132,15 +138,19 @@ def process_discovery(root: str | os.PathLike[str], name: str) -> Discovery | No
     return discovery
 
 
+def _iter_discovery_candidates(path: str | os.PathLike[str]) -> Iterator[tuple[str, str]]:
+    for root, dirs, _ in os.walk(path):
+        for name in dirs:
+            yield root, name
+
+
 def list_discoveries(path: str | os.PathLike[str]) -> list[Discovery]:
-    tasks = []
     discoveries: list[Discovery] = []
-
     with ThreadPoolExecutor() as executor:
-        for root, dirs, _ in os.walk(path):
-            for name in dirs:
-                tasks.append(executor.submit(process_discovery, root, name))
-
+        tasks = [
+            executor.submit(process_discovery, root, name)
+            for root, name in _iter_discovery_candidates(path)
+        ]
         for future in as_completed(tasks):
             result = future.result()
             if result:
@@ -150,30 +160,40 @@ def list_discoveries(path: str | os.PathLike[str]) -> list[Discovery]:
     return sorted(discoveries, key=lambda discovery: discovery["visual"])
 
 
-def export_last_frame(discoveries: list[Discovery]) -> None:
-    for discovery in discoveries:
-        visual_path = Path(os.fspath(discovery["visual"]))
-        if not visual_path.exists() or visual_path.suffix.lower() != ".mp4":
-            continue
+def _last_frame_needs_export(visual_path: Path, image_path: Path) -> bool:
+    try:
+        return not image_path.exists() or image_path.stat().st_mtime < visual_path.stat().st_mtime
+    except OSError:
+        return False
 
-        image_path = visual_path.with_suffix(".jpg")
-        try:
-            if image_path.exists() and image_path.stat().st_mtime >= visual_path.stat().st_mtime:
-                continue
-        except OSError:
-            continue
 
-        video = cv2.VideoCapture(os.fspath(visual_path))
+def _export_video_last_frame(visual_path: Path) -> None:
+    image_path = visual_path.with_suffix(".jpg")
+    if not _last_frame_needs_export(visual_path, image_path):
+        return
+
+    video = cv2.VideoCapture(os.fspath(visual_path))
+    ret = False
+    frame = None
+    try:
         frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
         if frame_count <= 0:
-            video.release()
-            continue
+            return
 
         video.set(cv2.CAP_PROP_POS_FRAMES, frame_count - 1)
         ret, frame = video.read()
+    finally:
         video.release()
-        if ret:
-            cv2.imwrite(os.fspath(image_path), frame)
+
+    if ret:
+        cv2.imwrite(os.fspath(image_path), frame)
+
+
+def export_last_frame(discoveries: list[Discovery]) -> None:
+    for discovery in discoveries:
+        visual_path = Path(os.fspath(discovery["visual"]))
+        if visual_path.exists() and visual_path.suffix.lower() == ".mp4":
+            _export_video_last_frame(visual_path)
 
 
 def _write_json_atomic(path: str | os.PathLike[str], payload: Any) -> None:
@@ -195,13 +215,16 @@ def _write_layout_status(static_dir: str | os.PathLike[str], payload: dict[str, 
 
 def _write_empty_layout(static_dir: str | os.PathLike[str], discoveries_path: Path) -> None:
     _write_json_atomic(discoveries_path, [])
-    _write_layout_status(static_dir, {
-        "mode": "empty",
-        "stable": False,
-        "count": 0,
-        "displayed_count": 0,
-        "fit_count": 0,
-    })
+    _write_layout_status(
+        static_dir,
+        {
+            "mode": "empty",
+            "stable": False,
+            "count": 0,
+            "displayed_count": 0,
+            "fit_count": 0,
+        },
+    )
 
 
 def _valid_discoveries(discoveries: list[Discovery]) -> tuple[list[Discovery], np.ndarray]:
@@ -273,6 +296,12 @@ def _project_with_umap(x: np.ndarray) -> np.ndarray:
     return (embedding - center) / scale
 
 
+def _project_layout(x: np.ndarray) -> tuple[np.ndarray, str, int]:
+    if len(x) >= MIN_STABLE_UMAP_DISCOVERIES:
+        return _project_with_umap(x), "refit_umap", len(x)
+    return _project_with_temporary_layout(x), "bootstrap_pca", 0
+
+
 def _downsample_for_display(
     discoveries: list[Discovery],
     embedding: np.ndarray,
@@ -312,13 +341,38 @@ def _saved_coordinates(
             continue
 
         visual_path = os.path.relpath(os.fspath(discovery["visual"]), root_path)
-        saved_coordinates.append({
-            "x": float(point[0]),
-            "y": float(point[1]),
-            "visual": visual_path.replace(os.sep, "/"),
-        })
+        saved_coordinates.append(
+            {
+                "x": float(point[0]),
+                "y": float(point[1]),
+                "visual": visual_path.replace(os.sep, "/"),
+            }
+        )
 
     return saved_coordinates
+
+
+def _write_layout_result(
+    static_dir: str | os.PathLike[str],
+    discoveries_path: Path,
+    saved_coordinates: list[dict[str, Any]],
+    layout_mode: str,
+    count: int,
+    fit_count: int,
+    max_displayed: int,
+) -> None:
+    _write_json_atomic(discoveries_path, saved_coordinates)
+    _write_layout_status(
+        static_dir,
+        {
+            "mode": layout_mode,
+            "stable": False,
+            "count": count,
+            "displayed_count": len(saved_coordinates),
+            "fit_count": fit_count,
+            "max_displayed": max_displayed,
+        },
+    )
 
 
 def compute_coordinates(
@@ -343,15 +397,7 @@ def compute_coordinates(
         _write_empty_layout(static_dir, discoveries_path)
         return
 
-    if len(discoveries) >= MIN_STABLE_UMAP_DISCOVERIES:
-        embedding = _project_with_umap(x)
-        layout_mode = "refit_umap"
-        fit_count = len(discoveries)
-    else:
-        embedding = _project_with_temporary_layout(x)
-        layout_mode = "bootstrap_pca"
-        fit_count = 0
-
+    embedding, layout_mode, fit_count = _project_layout(x)
     export_last_frame(discoveries)
 
     display_discoveries, display_embedding = _downsample_for_display(
@@ -361,12 +407,12 @@ def compute_coordinates(
     )
     saved_coordinates = _saved_coordinates(display_discoveries, display_embedding, path)
 
-    _write_json_atomic(discoveries_path, saved_coordinates)
-    _write_layout_status(static_dir, {
-        "mode": layout_mode,
-        "stable": False,
-        "count": len(discoveries),
-        "displayed_count": len(saved_coordinates),
-        "fit_count": fit_count,
-        "max_displayed": max_displayed,
-    })
+    _write_layout_result(
+        static_dir,
+        discoveries_path,
+        saved_coordinates,
+        layout_mode,
+        len(discoveries),
+        fit_count,
+        max_displayed,
+    )

@@ -33,11 +33,7 @@ export async function readDiscoveries(maxWaitMs = 0, onWaiting = () => {}) {
 }
 
 export async function getCoverageStatus() {
-    const response = await fetch("/coverage_status", { cache: "no-store" });
-    if (!response.ok) {
-        throw new Error("coverage status unavailable");
-    }
-    return response.json();
+    return getJson("/coverage_status", "coverage status unavailable");
 }
 
 export async function getCoverageRuns() {
@@ -56,12 +52,24 @@ export async function responseErrorMessage(response, fallback = "Coverage summar
     return fallback;
 }
 
+async function getJson(url, fallbackMessage) {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) {
+        throw new Error(await responseErrorMessage(response, fallbackMessage));
+    }
+    return response.json();
+}
+
 async function postJson(url, payload, fallbackMessage) {
-    const response = await fetch(url, {
+    const request = {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-    });
+    };
+    if (payload !== undefined) {
+        request.headers = { "Content-Type": "application/json" };
+        request.body = JSON.stringify(payload);
+    }
+
+    const response = await fetch(url, request);
 
     if (!response.ok) {
         throw new Error(await responseErrorMessage(response, fallbackMessage));
@@ -71,34 +79,15 @@ async function postJson(url, payload, fallbackMessage) {
 }
 
 export async function getDisplayLimit() {
-    const response = await fetch("/display_limit", { cache: "no-store" });
-    if (!response.ok) {
-        throw new Error("display limit unavailable");
-    }
-    return response.json();
+    return getJson("/display_limit", "display limit unavailable");
 }
 
 export async function setDisplayLimit(limit) {
-    const response = await fetch("/display_limit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ limit }),
-    });
-
-    if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.detail || "display limit update failed");
-    }
-
-    return response.json();
+    return postJson("/display_limit", { limit }, "display limit update failed");
 }
 
 export async function requestLayoutRecompute() {
-    const response = await fetch("/recompute_layout", { method: "POST" });
-    if (!response.ok) {
-        throw new Error("layout recompute failed");
-    }
-    return response.json();
+    return postJson("/recompute_layout", undefined, "layout recompute failed");
 }
 
 export async function exportDiscoveries(files) {
