@@ -44,10 +44,7 @@ class InterferenceParameterMap(BaseParameterMap):
                 "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_mutator.RandomInstructionMutator",
                 "num_mutations": 2,
             },
-            mixer_config: Optional[Dict[str, Any]] = {
-                "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.interference_chunk_mixer.ChunkProgramMixer",
-                "num_parts": 2,
-            },
+            mixer_config: Optional[Dict[str, Any]] = None,
             **config_decorator_kwargs,
     ) -> None:
         _ = system

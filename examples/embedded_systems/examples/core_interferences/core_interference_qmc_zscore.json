@@ -1,13 +1,13 @@
 {
     "experiment": {
         "config": {
-            "save_location": "./discoveries/config_qmc_zscore_2212/",
-            "save_frequency": 10,
-            "bootstrap_size": 1
+            "save_location": "./discoveries/config_qmc_zscore_knn_1/",
+            "save_frequency": 400,
+            "bootstrap_size": 400
         }
     },
     "system": {
-        "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem.InterferenceSystem",
+        "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem",
         "config": {
             "simulator_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.systems.simulator.Sim3Backend",
@@ -24,7 +24,7 @@
         "path": "examples.embedded_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
         "config": {
             "periode": 25,
-            "knn": 3,
+            "knn": 1,
             "behavior_map_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap.InterferenceBehaviorMap",
                 "goal_sampler_config": {
@@ -36,18 +36,14 @@
             },
             "parameter_map_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.parameter_map.InterferenceParameterMap.InterferenceParameterMap",
-                "mixer_config": {
-                    "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.ChunkProgramMixer",
-                    "num_parts": 3
-                },
                 "generator_config": {
                     "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionGenerator"
                 },
                 "mutator_config": {
                     "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionMutator",
-                    "num_mutations": 3
+                    "num_mutations": 20
                 },
-                "num_instructions": 10,
+                "num_instructions": 100,
                 "min_address_core0": 0,
                 "max_address_core0": 47,
                 "min_address_core1": 48,
