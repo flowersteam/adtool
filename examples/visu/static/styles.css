@@ -293,6 +293,101 @@ code {
     width: 100%;
 }
 
+.viewModeControl,
+.projectionControl {
+    display: grid;
+    align-items: center;
+    gap: 6px;
+}
+
+.viewModeControl {
+    grid-template-columns: auto minmax(0, 1fr);
+}
+
+.viewModeControl > span,
+.projectionControl label {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 680;
+}
+
+.segmentedControl {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.segmentedControl button {
+    min-width: 0;
+    padding-inline: 6px;
+}
+
+.segmentedControl button.active {
+    border-color: var(--accent);
+    color: #ffffff;
+    background: var(--accent);
+}
+
+.projectionControl {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.projectionControl label {
+    grid-column: 1 / 2;
+}
+
+.projectionControl select,
+.projectionControl input {
+    min-height: 32px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 5px 8px;
+    color: var(--text);
+    background: var(--surface);
+}
+
+.projectionControl select {
+    grid-column: 1 / 2;
+    width: 100%;
+}
+
+.projectionControl button {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+}
+
+.projectionControl input {
+    width: 100%;
+}
+
+.projectionControl input:not([hidden]) {
+    display: block;
+}
+
+.projectionControl.axesVisible {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+}
+
+.projectionControl.axesVisible label,
+.projectionControl.axesVisible select {
+    grid-column: 1 / -1;
+}
+
+.projectionControl.axesVisible button {
+    grid-column: 3 / 4;
+    grid-row: 3 / 4;
+}
+
+.projectionControl.axesVisible #projectionAxisXInput {
+    grid-column: 1 / 2;
+    grid-row: 3 / 4;
+}
+
+.projectionControl.axesVisible #projectionAxisYInput {
+    grid-column: 2 / 3;
+    grid-row: 3 / 4;
+}
+
 .analysisHeader {
     display: grid;
     gap: 2px;

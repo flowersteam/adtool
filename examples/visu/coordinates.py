@@ -15,11 +15,19 @@ import numpy as np
 import umap
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 
-MIN_STABLE_UMAP_DISCOVERIES = 10
 DEFAULT_MAX_RENDERED_DISCOVERIES = 500
 VALID_VISUAL_SUFFIXES = (".mp4", ".png")
+VALID_PROJECTION_METHODS = ("umap", "pca", "tsne", "axis")
+DEFAULT_PROJECTION_METHOD = "umap"
+DEFAULT_PROJECTION_AXES = (0, 1)
+THUMBNAIL_ATLAS_PREFIX = "discovery_atlas_"
+THUMBNAIL_ATLAS_SUFFIX = ".png"
+THUMBNAIL_ATLAS_SIZE = 4096
+THUMBNAIL_TILE_SIZE = 32
+THUMBNAIL_TILE_PADDING = 1
 
 Discovery = dict[str, Any]
 
@@ -214,6 +222,7 @@ def _write_layout_status(static_dir: str | os.PathLike[str], payload: dict[str, 
 
 
 def _write_empty_layout(static_dir: str | os.PathLike[str], discoveries_path: Path) -> None:
+    _clean_thumbnail_atlases(Path(static_dir))
     _write_json_atomic(discoveries_path, [])
     _write_layout_status(
         static_dir,
@@ -271,20 +280,50 @@ def _normalize_projection_bounds(embedding: np.ndarray) -> tuple[np.ndarray, flo
     return center, scale
 
 
-def _project_with_temporary_layout(x: np.ndarray) -> np.ndarray:
+def _normalized_projection(embedding: np.ndarray) -> np.ndarray:
+    embedding = _ensure_2d_projection(embedding)
+    center, scale = _normalize_projection_bounds(embedding)
+    return (embedding - center) / scale
+
+
+def _ensure_2d_projection(embedding: np.ndarray) -> np.ndarray:
+    embedding = np.asarray(embedding, dtype=float)
+    if embedding.ndim == 0:
+        embedding = embedding.reshape(1, 1)
+    if embedding.ndim == 1:
+        embedding = embedding.reshape(-1, 1)
+
+    if embedding.shape[1] == 0:
+        return np.zeros((embedding.shape[0], 2))
+    if embedding.shape[1] == 1:
+        return np.hstack([embedding, np.zeros((embedding.shape[0], 1))])
+    return embedding[:, :2]
+
+
+def _bootstrap_layout(x: np.ndarray) -> np.ndarray:
     if len(x) == 1:
         return np.array([[0.0, 0.0]])
     if len(x) == 2:
         return np.array([[-0.5, 0.0], [0.5, 0.0]])
 
+    return _project_with_pca(x)
+
+
+def _project_with_pca(x: np.ndarray) -> np.ndarray:
+    if len(x) < 3:
+        return _bootstrap_layout(x)
+
     x_norm, _, _ = _normalize_embedding_matrix(x)
-    reducer = PCA(n_components=2, random_state=0)
+    n_components = min(2, x_norm.shape[0], x_norm.shape[1])
+    reducer = PCA(n_components=n_components, random_state=0)
     embedding = reducer.fit_transform(x_norm)
-    center, scale = _normalize_projection_bounds(embedding)
-    return (embedding - center) / scale
+    return _normalized_projection(embedding)
 
 
 def _project_with_umap(x: np.ndarray) -> np.ndarray:
+    if len(x) < 3:
+        return _bootstrap_layout(x)
+
     x_norm, _, _ = _normalize_embedding_matrix(x)
     reducer = umap.UMAP(
         n_components=2,
@@ -292,14 +331,157 @@ def _project_with_umap(x: np.ndarray) -> np.ndarray:
         n_neighbors=min(10, len(x_norm) - 1),
     )
     embedding = reducer.fit_transform(x_norm)
-    center, scale = _normalize_projection_bounds(embedding)
-    return (embedding - center) / scale
+    return _normalized_projection(embedding)
 
 
-def _project_layout(x: np.ndarray) -> tuple[np.ndarray, str, int]:
-    if len(x) >= MIN_STABLE_UMAP_DISCOVERIES:
-        return _project_with_umap(x), "refit_umap", len(x)
-    return _project_with_temporary_layout(x), "bootstrap_pca", 0
+def _project_with_tsne(x: np.ndarray) -> np.ndarray:
+    if len(x) < 3:
+        return _bootstrap_layout(x)
+
+    x_norm, _, _ = _normalize_embedding_matrix(x)
+    perplexity = min(30.0, max(1.0, (len(x_norm) - 1) / 3.0))
+    reducer = TSNE(
+        n_components=2,
+        random_state=0,
+        perplexity=perplexity,
+        init="random",
+        learning_rate="auto",
+    )
+    embedding = reducer.fit_transform(x_norm)
+    return _normalized_projection(embedding)
+
+
+def _project_with_axes(x: np.ndarray, axes: tuple[int, int]) -> np.ndarray:
+    x_axis, y_axis = axes
+    if x_axis == y_axis:
+        raise ValueError("Axis ids must be different.")
+
+    output_dim = x.shape[1] if x.ndim == 2 else 0
+    if x_axis < 0 or y_axis < 0 or x_axis >= output_dim or y_axis >= output_dim:
+        raise ValueError(
+            f"Axis ids must be between 0 and {max(0, output_dim - 1)} for this output.",
+        )
+
+    embedding = x[:, [x_axis, y_axis]]
+    return _normalized_projection(embedding)
+
+
+def _project_layout(
+    x: np.ndarray,
+    projection_method: str = DEFAULT_PROJECTION_METHOD,
+    projection_axes: tuple[int, int] = DEFAULT_PROJECTION_AXES,
+) -> tuple[np.ndarray, str, int]:
+    method = projection_method.lower()
+    if method not in VALID_PROJECTION_METHODS:
+        raise ValueError(f"Unknown projection method: {projection_method}")
+
+    if method == "axis":
+        return _project_with_axes(x, projection_axes), (
+            f"axis_{projection_axes[0]}_{projection_axes[1]}"
+        ), len(x)
+    if method == "pca":
+        return _project_with_pca(x), "pca", len(x)
+    if method == "tsne":
+        return _project_with_tsne(x), "tsne", len(x)
+    if len(x) < 3:
+        return _bootstrap_layout(x), "umap_bootstrap_pca", 0
+    return _project_with_umap(x), "umap", len(x)
+
+
+def _preview_thumbnail_path(visual_path: Path) -> Path:
+    if visual_path.suffix.lower() == ".mp4":
+        image_path = visual_path.with_suffix(".jpg")
+        if image_path.exists():
+            return image_path
+        return visual_path.with_suffix(".png")
+    return visual_path
+
+
+def _read_thumbnail_tile(visual_path: Path) -> np.ndarray | None:
+    image = cv2.imread(os.fspath(_preview_thumbnail_path(visual_path)), cv2.IMREAD_UNCHANGED)
+    if image is None:
+        return None
+
+    if image.ndim == 2:
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGRA)
+    elif image.shape[2] == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
+    elif image.shape[2] != 4:
+        return None
+
+    return cv2.resize(
+        image,
+        (THUMBNAIL_TILE_SIZE, THUMBNAIL_TILE_SIZE),
+        interpolation=cv2.INTER_AREA,
+    )
+
+
+def _clean_thumbnail_atlases(static_dir: Path) -> None:
+    for atlas_path in static_dir.glob(f"{THUMBNAIL_ATLAS_PREFIX}*{THUMBNAIL_ATLAS_SUFFIX}"):
+        try:
+            atlas_path.unlink()
+        except OSError:
+            continue
+
+
+def _write_thumbnail_atlases(
+    discoveries: list[Discovery],
+    static_dir: Path,
+) -> dict[str, dict[str, Any]]:
+    _clean_thumbnail_atlases(static_dir)
+    if not discoveries:
+        return {}
+
+    pitch = THUMBNAIL_TILE_SIZE + THUMBNAIL_TILE_PADDING * 2
+    tiles_per_row = THUMBNAIL_ATLAS_SIZE // pitch
+    if tiles_per_row <= 0:
+        return {}
+
+    tiles_per_atlas = tiles_per_row * tiles_per_row
+    metadata: dict[str, dict[str, Any]] = {}
+    atlas = np.zeros((THUMBNAIL_ATLAS_SIZE, THUMBNAIL_ATLAS_SIZE, 4), dtype=np.uint8)
+    atlas_index = 0
+    tile_index = 0
+
+    def write_current_atlas() -> None:
+        if tile_index == 0:
+            return
+        atlas_path = static_dir / f"{THUMBNAIL_ATLAS_PREFIX}{atlas_index}{THUMBNAIL_ATLAS_SUFFIX}"
+        cv2.imwrite(os.fspath(atlas_path), atlas)
+
+    for discovery in discoveries:
+        visual_path = Path(os.fspath(discovery["visual"]))
+        tile = _read_thumbnail_tile(visual_path)
+        if tile is None:
+            continue
+
+        if tile_index >= tiles_per_atlas:
+            write_current_atlas()
+            atlas_index += 1
+            tile_index = 0
+            atlas = np.zeros((THUMBNAIL_ATLAS_SIZE, THUMBNAIL_ATLAS_SIZE, 4), dtype=np.uint8)
+
+        row = tile_index // tiles_per_row
+        col = tile_index % tiles_per_row
+        x0 = col * pitch + THUMBNAIL_TILE_PADDING
+        y0 = row * pitch + THUMBNAIL_TILE_PADDING
+        x1 = x0 + THUMBNAIL_TILE_SIZE
+        y1 = y0 + THUMBNAIL_TILE_SIZE
+        atlas[y0:y1, x0:x1] = tile
+
+        metadata[os.fspath(visual_path)] = {
+            "atlas": f"{THUMBNAIL_ATLAS_PREFIX}{atlas_index}{THUMBNAIL_ATLAS_SUFFIX}",
+            "uv": [
+                x0 / THUMBNAIL_ATLAS_SIZE,
+                y0 / THUMBNAIL_ATLAS_SIZE,
+                x1 / THUMBNAIL_ATLAS_SIZE,
+                y1 / THUMBNAIL_ATLAS_SIZE,
+            ],
+        }
+        tile_index += 1
+
+    write_current_atlas()
+    return metadata
 
 
 def _downsample_for_display(
@@ -332,8 +514,10 @@ def _saved_coordinates(
     discoveries: list[Discovery],
     embedding: np.ndarray,
     root_path: str | os.PathLike[str],
+    thumbnail_metadata: dict[str, dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     root_path = os.fspath(root_path)
+    thumbnail_metadata = thumbnail_metadata or {}
     saved_coordinates = []
 
     for discovery, point in zip(discoveries, embedding):
@@ -341,13 +525,17 @@ def _saved_coordinates(
             continue
 
         visual_path = os.path.relpath(os.fspath(discovery["visual"]), root_path)
-        saved_coordinates.append(
-            {
-                "x": float(point[0]),
-                "y": float(point[1]),
-                "visual": visual_path.replace(os.sep, "/"),
-            }
-        )
+        saved_point = {
+            "x": float(point[0]),
+            "y": float(point[1]),
+            "visual": visual_path.replace(os.sep, "/"),
+        }
+
+        thumbnail = thumbnail_metadata.get(os.fspath(discovery["visual"]))
+        if thumbnail is not None:
+            saved_point["thumbnail"] = thumbnail
+
+        saved_coordinates.append(saved_point)
 
     return saved_coordinates
 
@@ -360,6 +548,8 @@ def _write_layout_result(
     count: int,
     fit_count: int,
     max_displayed: int,
+    projection_method: str,
+    projection_axes: tuple[int, int],
 ) -> None:
     _write_json_atomic(discoveries_path, saved_coordinates)
     _write_layout_status(
@@ -371,6 +561,8 @@ def _write_layout_result(
             "displayed_count": len(saved_coordinates),
             "fit_count": fit_count,
             "max_displayed": max_displayed,
+            "projection_method": projection_method,
+            "projection_axes": list(projection_axes),
         },
     )
 
@@ -379,9 +571,12 @@ def compute_coordinates(
     path: str | os.PathLike[str],
     static_dir: str | os.PathLike[str] = "static",
     max_displayed: int = DEFAULT_MAX_RENDERED_DISCOVERIES,
+    projection_method: str = DEFAULT_PROJECTION_METHOD,
+    projection_axes: tuple[int, int] = DEFAULT_PROJECTION_AXES,
 ) -> None:
     print("computing coordinates", path)
     static_dir = Path(static_dir)
+    static_dir.mkdir(parents=True, exist_ok=True)
     discoveries_path = static_dir / "discoveries.json"
     concatenated_path = static_dir / "concatenated.webm"
 
@@ -397,7 +592,11 @@ def compute_coordinates(
         _write_empty_layout(static_dir, discoveries_path)
         return
 
-    embedding, layout_mode, fit_count = _project_layout(x)
+    embedding, layout_mode, fit_count = _project_layout(
+        x,
+        projection_method=projection_method,
+        projection_axes=projection_axes,
+    )
     export_last_frame(discoveries)
 
     display_discoveries, display_embedding = _downsample_for_display(
@@ -405,7 +604,13 @@ def compute_coordinates(
         embedding,
         max_displayed,
     )
-    saved_coordinates = _saved_coordinates(display_discoveries, display_embedding, path)
+    thumbnail_metadata = _write_thumbnail_atlases(display_discoveries, static_dir)
+    saved_coordinates = _saved_coordinates(
+        display_discoveries,
+        display_embedding,
+        path,
+        thumbnail_metadata,
+    )
 
     _write_layout_result(
         static_dir,
@@ -415,4 +620,6 @@ def compute_coordinates(
         len(discoveries),
         fit_count,
         max_displayed,
+        projection_method,
+        projection_axes,
     )

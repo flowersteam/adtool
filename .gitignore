@@ -11,6 +11,7 @@ discoveries/
 # Web UI runtime
 discoveries.json
 layout_status.json
+discovery_atlas_*.png
 
 frames/
 

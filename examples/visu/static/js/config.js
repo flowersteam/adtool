@@ -5,3 +5,6 @@ export const LOAD_RETRY_MS = 800;
 export const DISCOVERY_LOAD_GRACE_MS = 30000;
 export const LIVE_REFRESH_COOLDOWN_MS = 15000;
 export const CAMERA_DEPTH_BOUNDS = { min: 2.2, max: 150.0 };
+export const HYBRID_THUMBNAIL_LIMIT = 400;
+export const HYBRID_GRID_CELL_PX = 72;
+export const HYBRID_THUMBNAIL_WORLD_SIZE = 0.34;

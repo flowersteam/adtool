@@ -28,6 +28,7 @@ export function createMapScene(container) {
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     const textureLoader = new THREE.TextureLoader();
+    const viewChangeCallbacks = new Set();
     let animationStarted = false;
 
     function resizeRenderer() {
@@ -36,7 +37,16 @@ export function createMapScene(container) {
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
         renderer.setSize(width, height, false);
+        notifyViewChange();
     }
+
+    function notifyViewChange() {
+        for (const callback of viewChangeCallbacks) {
+            callback();
+        }
+    }
+
+    controls.addEventListener("change", notifyViewChange);
 
     function fitView(planes) {
         if (planes.length === 0) {
@@ -79,13 +89,39 @@ export function createMapScene(container) {
         return intersects.length > 0 ? intersects[0].object : null;
     }
 
+    function screenPoint(position) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        const projected = position.clone().project(camera);
+        return {
+            x: ((projected.x + 1) / 2) * rect.width,
+            y: ((-projected.y + 1) / 2) * rect.height,
+            z: projected.z,
+            inside: projected.z >= -1
+                && projected.z <= 1
+                && projected.x >= -1
+                && projected.x <= 1
+                && projected.y >= -1
+                && projected.y <= 1,
+            width: rect.width,
+            height: rect.height,
+        };
+    }
+
+    function onViewChange(callback) {
+        viewChangeCallbacks.add(callback);
+        return () => viewChangeCallbacks.delete(callback);
+    }
+
     function updateViewAnimation(getPlanes) {
         requestAnimationFrame(() => updateViewAnimation(getPlanes));
         controls.update();
 
         for (const plane of getPlanes()) {
             const distance = Math.max(0.01, camera.position.z - plane.position.z);
-            const scale = distance * 0.19 * (plane.userData.scaleBoost || 1.0);
+            const scale = distance
+                * 0.19
+                * (plane.userData.baseScale || 1.0)
+                * (plane.userData.scaleBoost || 1.0);
             plane.scale.set(scale, scale, 1);
         }
 
@@ -102,10 +138,12 @@ export function createMapScene(container) {
 
     return {
         fitView,
+        onViewChange,
         pickPlaneAtPointer,
         renderer,
         resizeRenderer,
         scene,
+        screenPoint,
         startAnimation,
         textureLoader,
     };

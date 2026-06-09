@@ -7,6 +7,7 @@ import { getDom } from "./js/dom.js";
 import { createGraphLightbox } from "./js/lightbox.js";
 import { createPageRouter } from "./js/page-router.js";
 import { createPreviewController } from "./js/preview.js";
+import { createProjectionController } from "./js/projection.js";
 
 const elements = getDom();
 
@@ -20,6 +21,11 @@ const coverage = createCoverageController({ elements, lightbox });
 const discoveryMap = createDiscoveryMap({ elements, preview, updateStatus });
 const router = createPageRouter({ coverage, discoveryMap, elements, preview });
 const displayLimit = createDisplayLimitController({
+    elements,
+    refreshDiscoveries: discoveryMap.refreshDiscoveries,
+    updateStatus,
+});
+const projection = createProjectionController({
     elements,
     refreshDiscoveries: discoveryMap.refreshDiscoveries,
     updateStatus,
@@ -44,6 +50,14 @@ function bindEvents() {
     elements.searchInput.addEventListener("input", discoveryMap.applyFilter);
     elements.displayLimitSelect.addEventListener("change", displayLimit.syncCustomInputVisibility);
     elements.displayLimitApplyButton.addEventListener("click", displayLimit.apply);
+    elements.viewModeControl.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-render-mode]");
+        if (button) {
+            discoveryMap.setRenderMode(button.dataset.renderMode);
+        }
+    });
+    elements.projectionMethodSelect.addEventListener("change", projection.syncAxisVisibility);
+    elements.projectionApplyButton.addEventListener("click", projection.apply);
     elements.coverageActionsToggle.addEventListener("click", analysisActions.toggleCoverageActions);
     elements.randomRunButton.addEventListener("click", analysisActions.launchRandomRun);
     elements.coverageCompareButton.addEventListener("click", analysisActions.launchCoverageComparison);
@@ -74,6 +88,7 @@ async function initialize() {
     preview.applyScale(elements.previewSizeSlider.value);
     coverage.initializeNavigation();
     displayLimit.initialize();
+    projection.initialize();
     discoveryMap.resizeRenderer();
     discoveryMap.refreshDiscoveries(true).then(() => {
         discoveryMap.markLiveRefreshNow();

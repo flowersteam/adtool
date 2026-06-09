@@ -86,6 +86,14 @@ export async function setDisplayLimit(limit) {
     return postJson("/display_limit", { limit }, "display limit update failed");
 }
 
+export async function getProjection() {
+    return getJson("/projection", "projection settings unavailable");
+}
+
+export async function setProjection(payload) {
+    return postJson("/projection", payload, "projection update failed");
+}
+
 export async function requestLayoutRecompute() {
     return postJson("/recompute_layout", undefined, "layout recompute failed");
 }

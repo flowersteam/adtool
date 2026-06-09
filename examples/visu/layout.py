@@ -32,6 +32,8 @@ def _compute_coordinates(*args, **kwargs) -> None:
 
 def cleanup_static_discoveries(config: ServerConfig) -> None:
     (config.static_dir / "discoveries.json").unlink(missing_ok=True)
+    for atlas_path in config.static_dir.glob("discovery_atlas_*.png"):
+        atlas_path.unlink(missing_ok=True)
 
 
 def write_discovery_coordinates(config: ServerConfig, state: RuntimeState) -> None:
@@ -39,6 +41,8 @@ def write_discovery_coordinates(config: ServerConfig, state: RuntimeState) -> No
         config.discoveries,
         static_dir=config.static_dir,
         max_displayed=state.display_limit,
+        projection_method=state.projection_method,
+        projection_axes=state.projection_axes,
     )
 
 
@@ -84,7 +88,10 @@ def watch_discoveries(config: ServerConfig, state: RuntimeState) -> None:
 
         print("Change in discoveries")
         time.sleep(RECOMPUTE_DEBOUNCE_SECONDS)
-        if recompute_discoveries(config, state, respect_interval=True):
-            print("Discoveries recomputed")
-        else:
-            print("Discovery recompute skipped: waiting for live-update interval")
+        try:
+            if recompute_discoveries(config, state, respect_interval=True):
+                print("Discoveries recomputed")
+            else:
+                print("Discovery recompute skipped: waiting for live-update interval")
+        except ValueError as error:
+            print(f"Discovery recompute failed: {error}")

@@ -31,6 +31,10 @@ MIN_DISPLAY_LIMIT = 1
 MAX_DISPLAY_LIMIT = 10000
 DISPLAY_LIMIT_PRESETS = [250, 500, 1000, 1500, 2000]
 
+DEFAULT_PROJECTION_METHOD = "umap"
+DEFAULT_PROJECTION_AXES = (0, 1)
+PROJECTION_METHODS = ["umap", "pca", "tsne", "axis"]
+
 DEFAULT_RANDOM_ITERATIONS = 100
 DEFAULT_RANDOM_SEED = 42
 
@@ -45,6 +49,8 @@ class ServerConfig:
 @dataclass
 class RuntimeState:
     display_limit: int = DEFAULT_DISPLAY_LIMIT
+    projection_method: str = DEFAULT_PROJECTION_METHOD
+    projection_axes: tuple[int, int] = DEFAULT_PROJECTION_AXES
     last_recompute_time: float = 0.0
     analysis_lock: threading.Lock = field(default_factory=threading.Lock)
     recompute_lock: threading.Lock = field(default_factory=threading.Lock)

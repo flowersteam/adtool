@@ -3,6 +3,9 @@ import * as THREE from "three";
 import {
     DISCOVERY_LOAD_GRACE_MS,
     HOVER_OPACITY,
+    HYBRID_GRID_CELL_PX,
+    HYBRID_THUMBNAIL_LIMIT,
+    HYBRID_THUMBNAIL_WORLD_SIZE,
     LIVE_REFRESH_COOLDOWN_MS,
     POINT_OPACITY,
     SCALE_FACTOR,
@@ -19,22 +22,114 @@ import {
     visualToPreviewImage,
 } from "./utils.js";
 
+const RENDER_MODES = new Set(["points", "images", "hybrid"]);
+const POINT_COLOR = "#2f3a35";
+const HOVER_COLOR = "#255f56";
+const SELECTED_COLOR = "#bc6c25";
+
 export function createDiscoveryMap({ elements, preview, updateStatus }) {
     const mapScene = createMapScene(elements.app);
     const { renderer, scene, textureLoader } = mapScene;
-    const planes = [];
-    const planesBySource = new Map();
 
-    let hoveredPlane = null;
+    const pointGeometry = new THREE.CircleGeometry(0.12, 14);
+    const pointMaterials = {
+        normal: pointMaterial(POINT_COLOR),
+        hover: pointMaterial(HOVER_COLOR),
+        selected: pointMaterial(SELECTED_COLOR),
+    };
+    const atlasTextures = new Map();
+
+    let entries = [];
+    let renderMode = "points";
+    let hoveredEntry = null;
     let isRefreshing = false;
     let pendingRefresh = false;
     let pointerDown = null;
     let liveRefreshTimerId = null;
     let lastLiveRefreshTimestamp = 0;
+    let renderVersion = 0;
+    let hybridRebuildId = null;
+
+    function pointMaterial(color) {
+        return new THREE.MeshBasicMaterial({
+            color,
+            opacity: POINT_OPACITY,
+            transparent: true,
+            depthWrite: false,
+        });
+    }
+
+    function entrySource(point) {
+        return mediaUrl(normalizeVisualPath(point.visual));
+    }
+
+    function createEntry(point) {
+        const sourcePath = entrySource(point);
+        return {
+            imageMesh: null,
+            pointMesh: null,
+            thumbnailMesh: null,
+            visible: true,
+            position: new THREE.Vector3(
+                SCALE_FACTOR * Number(point.x || 0),
+                SCALE_FACTOR * Number(point.y || 0),
+                0,
+            ),
+            userData: {
+                label: prettifyEntryLabel(sourcePath).toLowerCase(),
+                selected: selection.has(sourcePath),
+                sourcePath,
+                thumbnail: validThumbnail(point.thumbnail),
+                visual: normalizeVisualPath(point.visual),
+            },
+        };
+    }
+
+    function validThumbnail(thumbnail) {
+        if (
+            !thumbnail
+            || typeof thumbnail.atlas !== "string"
+            || !Array.isArray(thumbnail.uv)
+            || thumbnail.uv.length !== 4
+        ) {
+            return null;
+        }
+        const uv = thumbnail.uv.map(Number);
+        return uv.every(Number.isFinite) ? { atlas: thumbnail.atlas, uv } : null;
+    }
+
+    function visibleEntries() {
+        return entries.filter((entry) => {
+            if (!entry.visible) {
+                return false;
+            }
+            return renderMode !== "images" || Boolean(entry.imageMesh);
+        });
+    }
+
+    function currentPickMeshes() {
+        if (renderMode === "images") {
+            return entries.map((entry) => entry.imageMesh).filter(Boolean);
+        }
+        if (renderMode === "hybrid") {
+            return [
+                ...entries.map((entry) => entry.thumbnailMesh).filter(Boolean),
+                ...entries.map((entry) => entry.pointMesh).filter(Boolean),
+            ];
+        }
+        return entries.map((entry) => entry.pointMesh).filter(Boolean);
+    }
+
+    function currentAnimatedMeshes() {
+        return entries.flatMap((entry) => [
+            entry.pointMesh,
+            entry.imageMesh,
+            entry.thumbnailMesh,
+        ].filter(Boolean));
+    }
 
     function setTotals() {
-        const visibleCount = planes.filter((plane) => plane.visible).length;
-        elements.discoveryTotal.textContent = `${visibleCount}`;
+        elements.discoveryTotal.textContent = `${visibleEntries().length}`;
         elements.selectionTotal.textContent = `${selection.size()}`;
     }
 
@@ -44,232 +139,359 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         title = "No discoveries available",
     ) {
         elements.emptyState.hidden = !visible;
-        const heading = elements.emptyState.querySelector("h2");
-        const text = elements.emptyState.querySelector("p");
-        if (heading) {
-            heading.textContent = title;
+        elements.emptyState.querySelector("h2").textContent = title;
+        elements.emptyState.querySelector("p").textContent = message;
+    }
+
+    function disposeMesh(mesh, disposeTexture = false) {
+        if (!mesh) {
+            return;
         }
-        if (text) {
-            text.textContent = message;
+        scene.remove(mesh);
+        if (disposeTexture && mesh.material?.map) {
+            mesh.material.map.dispose();
+        }
+        mesh.material?.dispose();
+        mesh.geometry?.dispose();
+    }
+
+    function clearPointMeshes() {
+        for (const entry of entries) {
+            if (entry.pointMesh) {
+                scene.remove(entry.pointMesh);
+            }
+            entry.pointMesh = null;
         }
     }
 
-    function visiblePlanes() {
-        return planes.filter((plane) => plane.visible);
-    }
-
-    function disposePlane(plane) {
-        scene.remove(plane);
-        if (plane.material?.map) {
-            plane.material.map.dispose();
+    function clearImageMeshes() {
+        for (const entry of entries) {
+            disposeMesh(entry.imageMesh, true);
+            entry.imageMesh = null;
         }
-        plane.material?.dispose();
-        plane.geometry?.dispose();
     }
 
-    function updatePlaneStyle(plane) {
-        const selected = plane.userData.selected;
-        const hovered = plane === hoveredPlane;
-        plane.material.color.set(selected ? "#bc6c25" : hovered ? "#255f56" : "#ffffff");
-        plane.material.opacity = hovered ? HOVER_OPACITY : POINT_OPACITY;
-        plane.userData.scaleBoost = selected ? 1.24 : hovered ? 1.16 : 1.0;
+    function clearThumbnailMeshes() {
+        for (const entry of entries) {
+            disposeMesh(entry.thumbnailMesh, false);
+            entry.thumbnailMesh = null;
+        }
+    }
+
+    function clearAtlasTextures() {
+        for (const texturePromise of atlasTextures.values()) {
+            texturePromise.then((texture) => texture?.dispose());
+        }
+        atlasTextures.clear();
+    }
+
+    function clearRenderedMeshes(clearAtlases = false) {
+        clearPointMeshes();
+        clearImageMeshes();
+        clearThumbnailMeshes();
+        if (clearAtlases) {
+            clearAtlasTextures();
+        }
+    }
+
+    function applyEntryStyle(entry) {
+        const selected = entry.userData.selected;
+        const hovered = entry === hoveredEntry;
+        const pointMaterialKey = selected ? "selected" : hovered ? "hover" : "normal";
+
+        if (entry.pointMesh) {
+            entry.pointMesh.material = pointMaterials[pointMaterialKey];
+            entry.pointMesh.userData.scaleBoost = selected ? 1.24 : hovered ? 1.16 : 1.0;
+        }
+        if (entry.imageMesh) {
+            entry.imageMesh.material.color.set(selected ? SELECTED_COLOR : hovered ? HOVER_COLOR : "#ffffff");
+            entry.imageMesh.material.opacity = hovered ? HOVER_OPACITY : POINT_OPACITY;
+            entry.imageMesh.userData.scaleBoost = selected ? 1.24 : hovered ? 1.16 : 1.0;
+        }
+        if (entry.thumbnailMesh) {
+            entry.thumbnailMesh.userData.scaleBoost = selected ? 1.2 : hovered ? 1.12 : 1.0;
+        }
+    }
+
+    function updateEntryStyle(entry) {
+        applyEntryStyle(entry);
+        scheduleHybridThumbnailRebuild();
     }
 
     const selection = createSelectionController({
         entriesList: elements.entriesList,
-        getPlanes: () => planes,
+        getPlanes: () => entries,
         preview,
-        updatePlaneStyle,
+        updatePlaneStyle: updateEntryStyle,
         updateTotals: setTotals,
     });
 
-    function updateAllPlaneStyles() {
-        for (const plane of planes) {
-            updatePlaneStyle(plane);
-        }
+    function createPointMesh(entry) {
+        const mesh = new THREE.Mesh(pointGeometry, pointMaterials.normal);
+        mesh.position.copy(entry.position);
+        mesh.visible = entry.visible;
+        mesh.userData = { ...entry.userData, baseScale: 0.56, entry };
+        entry.pointMesh = mesh;
+        applyEntryStyle(entry);
+        scene.add(mesh);
     }
 
-    function fitView() {
-        mapScene.fitView(visiblePlanes());
-    }
-
-    function pickPlaneAtPointer(event) {
-        return mapScene.pickPlaneAtPointer(event, visiblePlanes());
-    }
-
-    function updateHoverState(event) {
-        const nextHovered = pickPlaneAtPointer(event);
-        if (nextHovered !== hoveredPlane) {
-            const previous = hoveredPlane;
-            hoveredPlane = nextHovered;
-            if (previous) {
-                updatePlaneStyle(previous);
-            }
-            if (hoveredPlane) {
-                updatePlaneStyle(hoveredPlane);
-            }
-        }
-
-        if (hoveredPlane) {
-            renderer.domElement.style.cursor = "pointer";
-            preview.showForPlane(hoveredPlane, event);
-        } else {
-            renderer.domElement.style.cursor = "grab";
-            preview.hide();
-        }
-    }
-
-    function updatePlaneFromPoint(plane, point) {
-        const visual = normalizeVisualPath(point.visual);
-        const sourcePath = mediaUrl(visual);
-        plane.position.set(
-            SCALE_FACTOR * Number(point.x || 0),
-            SCALE_FACTOR * Number(point.y || 0),
-            0,
-        );
-        plane.userData.sourcePath = sourcePath;
-        plane.userData.label = prettifyEntryLabel(sourcePath).toLowerCase();
-        plane.userData.selected = selection.has(sourcePath);
-        updatePlaneStyle(plane);
-    }
-
-    async function loadDiscoveryPoint(point) {
-        const visual = normalizeVisualPath(point.visual);
-        const previewImagePath = visualToPreviewImage(visual);
-        const previewFallbackPath = fallbackPreviewImage(visual);
-
-        let texture;
-        try {
-            texture = await textureLoader.loadAsync(mediaUrl(previewImagePath));
-        } catch {
-            if (previewFallbackPath === previewImagePath) {
-                return null;
-            }
-            try {
-                texture = await textureLoader.loadAsync(mediaUrl(previewFallbackPath));
-            } catch {
-                return null;
-            }
+    async function createImageMesh(entry, version) {
+        const previewPath = visualToPreviewImage(entry.userData.visual);
+        const fallbackPath = fallbackPreviewImage(entry.userData.visual);
+        const texture = await loadPreviewTexture(previewPath, fallbackPath);
+        if (!texture || version !== renderVersion) {
+            texture?.dispose();
+            return;
         }
 
         const width = texture.image.width || 256;
         const height = texture.image.height || 256;
-        const ratio = width / Math.max(1, height);
         const baseHeight = 0.42;
-        const baseWidth = baseHeight * ratio;
-
-        const material = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            opacity: POINT_OPACITY,
-        });
-
-        const plane = new THREE.Mesh(new THREE.PlaneGeometry(baseWidth, baseHeight), material);
-        plane.userData.scaleBoost = 1.0;
-        updatePlaneFromPoint(plane, point);
-        return plane;
+        const mesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(baseHeight * width / Math.max(1, height), baseHeight),
+            new THREE.MeshBasicMaterial({
+                map: texture,
+                opacity: POINT_OPACITY,
+                transparent: true,
+            }),
+        );
+        mesh.position.copy(entry.position);
+        mesh.visible = entry.visible;
+        mesh.userData = { ...entry.userData, baseScale: 1.0, entry };
+        entry.imageMesh = mesh;
+        applyEntryStyle(entry);
+        scene.add(mesh);
     }
 
-    function removePlaneBySource(sourcePath) {
-        const plane = planesBySource.get(sourcePath);
-        if (!plane) {
+    async function loadPreviewTexture(previewPath, fallbackPath) {
+        try {
+            return await textureLoader.loadAsync(mediaUrl(previewPath));
+        } catch {
+            if (fallbackPath === previewPath) {
+                return null;
+            }
+            try {
+                return await textureLoader.loadAsync(mediaUrl(fallbackPath));
+            } catch {
+                return null;
+            }
+        }
+    }
+
+    async function atlasTexture(atlasName) {
+        if (atlasTextures.has(atlasName)) {
+            return atlasTextures.get(atlasName);
+        }
+        const texturePromise = textureLoader.loadAsync(`/static/${atlasName}?v=${renderVersion}`)
+            .then((texture) => {
+                texture.flipY = false;
+                texture.needsUpdate = true;
+                return texture;
+            })
+            .catch(() => null);
+        atlasTextures.set(atlasName, texturePromise);
+        return texturePromise;
+    }
+
+    async function createThumbnailMesh(entry, version) {
+        const thumbnail = entry.userData.thumbnail;
+        if (!thumbnail) {
             return;
         }
 
-        const idx = planes.indexOf(plane);
-        if (idx >= 0) {
-            planes.splice(idx, 1);
+        const texture = await atlasTexture(thumbnail.atlas);
+        if (!texture || version !== renderVersion || renderMode !== "hybrid") {
+            return;
         }
-        if (hoveredPlane === plane) {
-            hoveredPlane = null;
-            preview.hide();
-        }
-        planesBySource.delete(sourcePath);
-        disposePlane(plane);
+
+        const mesh = new THREE.Mesh(
+            thumbnailGeometry(thumbnail.uv),
+            new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                depthWrite: false,
+            }),
+        );
+        mesh.position.copy(entry.position);
+        mesh.position.z = 0.1;
+        mesh.visible = entry.visible;
+        mesh.userData = {
+            ...entry.userData,
+            baseScale: HYBRID_THUMBNAIL_WORLD_SIZE,
+            entry,
+        };
+        entry.thumbnailMesh = mesh;
+        applyEntryStyle(entry);
+        scene.add(mesh);
     }
 
-    function applyFilter() {
+    function thumbnailGeometry([u0, v0, u1, v1]) {
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.Float32BufferAttribute([
+            -0.5, -0.5, 0,
+            0.5, -0.5, 0,
+            0.5, 0.5, 0,
+            -0.5, 0.5, 0,
+        ], 3));
+        geometry.setAttribute("uv", new THREE.Float32BufferAttribute([
+            u0, v1,
+            u1, v1,
+            u1, v0,
+            u0, v0,
+        ], 2));
+        geometry.setIndex([0, 1, 2, 0, 2, 3]);
+        return geometry;
+    }
+
+    function representativeEntries() {
+        const chosen = new Map();
+        const cells = new Map();
+
+        for (const entry of entries) {
+            if (!entry.visible || !entry.userData.thumbnail) {
+                continue;
+            }
+            const screen = mapScene.screenPoint(entry.position);
+            if (!screen.inside) {
+                continue;
+            }
+
+            const cellX = Math.floor(screen.x / HYBRID_GRID_CELL_PX);
+            const cellY = Math.floor(screen.y / HYBRID_GRID_CELL_PX);
+            const key = `${cellX}:${cellY}`;
+            const score = Math.hypot(
+                screen.x - (cellX + 0.5) * HYBRID_GRID_CELL_PX,
+                screen.y - (cellY + 0.5) * HYBRID_GRID_CELL_PX,
+            );
+            const current = cells.get(key);
+            if (!current || score < current.score) {
+                cells.set(key, { entry, score });
+            }
+        }
+
+        for (const { entry } of cells.values()) {
+            if (chosen.size >= HYBRID_THUMBNAIL_LIMIT) {
+                break;
+            }
+            chosen.set(entry.userData.sourcePath, entry);
+        }
+        for (const sourcePath of selection.values()) {
+            const selected = entries.find((entry) => entry.userData.sourcePath === sourcePath);
+            if (selected?.visible && selected.userData.thumbnail) {
+                chosen.set(sourcePath, selected);
+            }
+        }
+        if (hoveredEntry?.visible && hoveredEntry.userData.thumbnail) {
+            chosen.set(hoveredEntry.userData.sourcePath, hoveredEntry);
+        }
+        return Array.from(chosen.values());
+    }
+
+    function scheduleHybridThumbnailRebuild() {
+        if (renderMode !== "hybrid" || hybridRebuildId !== null) {
+            return;
+        }
+        hybridRebuildId = requestAnimationFrame(() => {
+            hybridRebuildId = null;
+            rebuildHybridThumbnails();
+        });
+    }
+
+    async function rebuildHybridThumbnails() {
+        const version = renderVersion;
+        clearThumbnailMeshes();
+        if (renderMode !== "hybrid") {
+            return;
+        }
+        await Promise.all(representativeEntries().map((entry) => createThumbnailMesh(entry, version)));
+    }
+
+    async function renderCurrentMode(shouldFitInitialView = false) {
+        const version = ++renderVersion;
+        clearRenderedMeshes(false);
+
+        if (renderMode === "images") {
+            await Promise.all(entries.map((entry) => createImageMesh(entry, version)));
+        } else {
+            for (const entry of entries) {
+                createPointMesh(entry);
+            }
+        }
+
+        applyFilter(false, false);
+        if (renderMode === "hybrid") {
+            await rebuildHybridThumbnails();
+        }
+        setEmptyState(
+            visibleEntries().length === 0,
+            renderMode === "images"
+                ? "No usable preview images were found for these discoveries."
+                : "No displayable discoveries were found.",
+            renderMode === "images" ? "No previews available" : "No discoveries available",
+        );
+        if (shouldFitInitialView) {
+            fitView();
+        }
+    }
+
+    function applyFilter(emitStatus = true, rebuildHybrid = true) {
         const search = buildDiscoveryMatcher(elements.searchInput.value);
         if (search.error) {
             updateStatus(`Invalid search pattern: ${search.error}`);
             return;
         }
 
-        let firstVisible = null;
-        for (const plane of planes) {
-            const visible = search.matcher(plane.userData.label);
-            plane.visible = visible;
-            if (visible && !firstVisible) {
-                firstVisible = plane;
+        for (const entry of entries) {
+            entry.visible = search.matcher(entry.userData.label);
+            if (entry.pointMesh) {
+                entry.pointMesh.visible = entry.visible;
+            }
+            if (entry.imageMesh) {
+                entry.imageMesh.visible = entry.visible;
+            }
+            if (entry.thumbnailMesh) {
+                entry.thumbnailMesh.visible = entry.visible;
             }
         }
 
-        if (hoveredPlane && !hoveredPlane.visible) {
-            hoveredPlane = null;
+        if (hoveredEntry && !hoveredEntry.visible) {
+            hoveredEntry = null;
             preview.hide();
         }
-
         setTotals();
-        updateAllPlaneStyles();
-        if (planes.length > 0 && !firstVisible) {
+        if (rebuildHybrid) {
+            scheduleHybridThumbnailRebuild();
+        }
+
+        if (!emitStatus) {
+            return;
+        }
+        if (entries.length > 0 && visibleEntries().length === 0) {
             updateStatus("No discoveries match the filter.");
-        } else if (planes.length > 0) {
-            const shown = planes.filter((plane) => plane.visible).length;
+        } else if (entries.length > 0) {
             const modeLabel = search.mode === "empty" ? "" : ` (${search.mode})`;
-            updateStatus(`${shown}/${planes.length} discoveries shown${modeLabel}.`);
+            updateStatus(`${visibleEntries().length}/${entries.length} discoveries shown${modeLabel}.`);
+        }
+    }
+
+    function updateRenderModeButtons() {
+        for (const button of elements.viewModeControl.querySelectorAll("[data-render-mode]")) {
+            button.classList.toggle("active", button.dataset.renderMode === renderMode);
         }
     }
 
     async function syncPoints(pointsData, shouldFitInitialView = false) {
-        const existingCount = planes.length;
-        const expectedSources = new Set();
-        const newPoints = [];
-        let addedCount = 0;
-
-        for (const point of pointsData) {
-            const sourcePath = mediaUrl(point.visual);
-            expectedSources.add(sourcePath);
-
-            const existingPlane = planesBySource.get(sourcePath);
-            if (existingPlane) {
-                updatePlaneFromPoint(existingPlane, point);
-                continue;
-            }
-
-            newPoints.push(point);
-        }
-
-        const loadedPlanes = await Promise.all(newPoints.map(loadDiscoveryPoint));
-        for (const plane of loadedPlanes) {
-            if (!plane) {
-                continue;
-            }
-
-            planes.push(plane);
-            planesBySource.set(plane.userData.sourcePath, plane);
-            scene.add(plane);
-            addedCount += 1;
-        }
-
-        for (const sourcePath of Array.from(planesBySource.keys())) {
-            if (!expectedSources.has(sourcePath)) {
+        clearRenderedMeshes(true);
+        hoveredEntry = null;
+        preview.hide();
+        entries = pointsData.map(createEntry);
+        for (const sourcePath of selection.values()) {
+            if (!entries.some((entry) => entry.userData.sourcePath === sourcePath)) {
                 selection.unselect(sourcePath);
-                removePlaneBySource(sourcePath);
             }
         }
-
-        applyFilter();
-        setEmptyState(
-            planes.length === 0,
-            "No usable preview images were found for these discoveries.",
-            "No previews available",
-        );
-
-        if (shouldFitInitialView || existingCount === 0) {
-            fitView();
-        }
-
-        return addedCount;
+        await renderCurrentMode(shouldFitInitialView);
     }
 
     async function loadPoints(maxWaitMs = 0, shouldFitInitialView = false) {
@@ -278,6 +500,9 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         });
 
         if (pointsData.length === 0) {
+            clearRenderedMeshes(true);
+            entries = [];
+            setTotals();
             setEmptyState(
                 true,
                 "Start or refresh an experiment to populate this map.",
@@ -287,11 +512,8 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             return;
         }
 
-        const previousCount = planes.length;
-        const addedCount = await syncPoints(pointsData, shouldFitInitialView);
-        const shown = planes.filter((plane) => plane.visible).length;
-        const suffix = addedCount > 0 && previousCount > 0 ? `, ${addedCount} new` : "";
-        updateStatus(`${shown}/${pointsData.length} discoveries shown${suffix}.`);
+        await syncPoints(pointsData, shouldFitInitialView);
+        updateStatus(`${visibleEntries().length}/${pointsData.length} discoveries shown as ${renderMode}.`);
     }
 
     async function refreshDiscoveries(shouldFitInitialView = false) {
@@ -323,6 +545,70 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         }
     }
 
+    function pickEntryAtPointer(event) {
+        const picked = mapScene.pickPlaneAtPointer(event, currentPickMeshes());
+        return picked?.userData.entry || null;
+    }
+
+    function updateHoverState(event) {
+        const nextHovered = pickEntryAtPointer(event);
+        if (nextHovered !== hoveredEntry) {
+            const previous = hoveredEntry;
+            hoveredEntry = nextHovered;
+            if (previous) {
+                updateEntryStyle(previous);
+            }
+            if (hoveredEntry) {
+                updateEntryStyle(hoveredEntry);
+            }
+        }
+
+        if (hoveredEntry) {
+            renderer.domElement.style.cursor = "pointer";
+            preview.showForPlane(hoveredEntry, event);
+        } else {
+            renderer.domElement.style.cursor = "grab";
+            preview.hide();
+        }
+    }
+
+    function fitView() {
+        mapScene.fitView(visibleEntries());
+    }
+
+    function resizeRenderer() {
+        mapScene.resizeRenderer();
+        scheduleHybridThumbnailRebuild();
+    }
+
+    function startAnimation() {
+        mapScene.startAnimation(currentAnimatedMeshes);
+    }
+
+    function clearSelection() {
+        selection.clear();
+        updateStatus("Selection cleared.");
+    }
+
+    function selectedEntries() {
+        return selection.values();
+    }
+
+    async function setRenderMode(mode) {
+        if (!RENDER_MODES.has(mode) || mode === renderMode) {
+            return;
+        }
+        renderMode = mode;
+        updateRenderModeButtons();
+        updateStatus(`Switching display to ${mode}...`);
+        await renderCurrentMode(true);
+        updateStatus(`${visibleEntries().length}/${entries.length} discoveries shown as ${mode}.`);
+    }
+
+    function markLiveRefreshNow() {
+        lastLiveRefreshTimestamp = performance.now();
+    }
+
     function scheduleLiveRefresh() {
         if (liveRefreshTimerId !== null) {
             return;
@@ -347,62 +633,36 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
                 scheduleLiveRefresh();
             }
         };
-
         ws.onclose = () => {
             setTimeout(connectWebsocket, 1000);
         };
     }
 
-    function resizeRenderer() {
-        mapScene.resizeRenderer();
-    }
-
-    function startAnimation() {
-        mapScene.startAnimation(() => planes);
-    }
-
-    function clearSelection() {
-        selection.clear();
-        updateStatus("Selection cleared.");
-    }
-
-    function selectedEntries() {
-        return selection.values();
-    }
-
-    function markLiveRefreshNow() {
-        lastLiveRefreshTimestamp = performance.now();
-    }
-
     renderer.domElement.addEventListener("pointerdown", (event) => {
         pointerDown = { x: event.clientX, y: event.clientY };
     });
-
     renderer.domElement.addEventListener("pointermove", updateHoverState);
-
     renderer.domElement.addEventListener("pointerleave", () => {
-        const previous = hoveredPlane;
-        hoveredPlane = null;
+        const previous = hoveredEntry;
+        hoveredEntry = null;
         if (previous) {
-            updatePlaneStyle(previous);
+            updateEntryStyle(previous);
         }
         preview.hide();
     });
-
     renderer.domElement.addEventListener("click", (event) => {
-        if (pointerDown) {
-            const moved = Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y);
-            if (moved > 5) {
-                return;
-            }
+        if (pointerDown && Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y) > 5) {
+            return;
         }
 
-        const plane = pickPlaneAtPointer(event);
-        if (plane) {
-            selection.togglePlane(plane);
-            preview.showForPlane(plane, event);
+        const entry = pickEntryAtPointer(event);
+        if (entry) {
+            selection.togglePlane(entry);
+            preview.showForPlane(entry, event);
         }
     });
+    mapScene.onViewChange(scheduleHybridThumbnailRebuild);
+    updateRenderModeButtons();
 
     return {
         applyFilter,
@@ -413,6 +673,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         refreshDiscoveries,
         resizeRenderer,
         selectedEntries,
+        setRenderMode,
         startAnimation,
     };
 }

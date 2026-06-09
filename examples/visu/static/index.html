@@ -70,6 +70,30 @@
                         <button id="displayLimitApplyButton" type="button">Apply</button>
                     </div>
 
+                    <div id="viewModeControl" class="viewModeControl" aria-label="Discovery display mode">
+                        <span>Display</span>
+                        <div class="segmentedControl">
+                            <button class="active" type="button" data-render-mode="points">Points</button>
+                            <button type="button" data-render-mode="images">Images</button>
+                            <button type="button" data-render-mode="hybrid">Hybrid</button>
+                        </div>
+                    </div>
+
+                    <div id="projectionControl" class="projectionControl">
+                        <label for="projectionMethodSelect">Projection</label>
+                        <select id="projectionMethodSelect">
+                            <option value="umap" selected>UMAP</option>
+                            <option value="pca">PCA</option>
+                            <option value="tsne">t-SNE</option>
+                            <option value="axis">2 axis id</option>
+                        </select>
+                        <input id="projectionAxisXInput" type="number" min="0" step="1" value="0"
+                            placeholder="X axis" aria-label="X axis id" hidden>
+                        <input id="projectionAxisYInput" type="number" min="0" step="1" value="1"
+                            placeholder="Y axis" aria-label="Y axis id" hidden>
+                        <button id="projectionApplyButton" type="button">Apply</button>
+                    </div>
+
                     <div class="buttonRow">
                         <button id="fitViewButton" type="button">Fit View</button>
                         <button id="refreshButton" type="button">Refresh</button>

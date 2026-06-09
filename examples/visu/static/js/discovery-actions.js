@@ -9,12 +9,12 @@ export function createDiscoveryActions({
         elements.recomputeLayoutButton.disabled = true;
         elements.refreshButton.disabled = true;
         try {
-            updateStatus("Recomputing clustered layout...");
+            updateStatus("Recomputing layout...");
             await requestLayoutRecompute();
             await discoveryMap.refreshDiscoveries(true);
-            updateStatus("Clustered layout recomputed.");
-        } catch {
-            updateStatus("Failed to recompute clustered layout.");
+            updateStatus("Layout recomputed.");
+        } catch (error) {
+            updateStatus(error.message || "Failed to recompute layout.");
         } finally {
             elements.recomputeLayoutButton.disabled = false;
             elements.refreshButton.disabled = false;

@@ -29,9 +29,12 @@ if __package__:
     )
     from .runtime import (
         DEFAULT_DISPLAY_LIMIT,
+        DEFAULT_PROJECTION_AXES,
+        DEFAULT_PROJECTION_METHOD,
         DISPLAY_LIMIT_PRESETS,
         MAX_DISPLAY_LIMIT,
         MIN_DISPLAY_LIMIT,
+        PROJECTION_METHODS,
         RuntimeState,
         ServerConfig,
     )
@@ -53,9 +56,12 @@ else:
     )
     from runtime import (
         DEFAULT_DISPLAY_LIMIT,
+        DEFAULT_PROJECTION_AXES,
+        DEFAULT_PROJECTION_METHOD,
         DISPLAY_LIMIT_PRESETS,
         MAX_DISPLAY_LIMIT,
         MIN_DISPLAY_LIMIT,
+        PROJECTION_METHODS,
         RuntimeState,
         ServerConfig,
     )
@@ -86,6 +92,41 @@ def _validate_display_limit(payload: dict[str, Any]) -> int:
             detail=f"Display limit must be between {MIN_DISPLAY_LIMIT} and {MAX_DISPLAY_LIMIT}.",
         )
     return limit
+
+
+def _validate_projection_axes(raw_axes: Any) -> tuple[int, int]:
+    if not isinstance(raw_axes, (list, tuple)) or len(raw_axes) != 2:
+        raise HTTPException(status_code=422, detail="Projection axes must contain two ids.")
+
+    try:
+        x_axis = int(raw_axes[0])
+        y_axis = int(raw_axes[1])
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Projection axes must be integers.")
+
+    if x_axis < 0 or y_axis < 0:
+        raise HTTPException(status_code=422, detail="Projection axes must be non-negative.")
+    if x_axis == y_axis:
+        raise HTTPException(status_code=422, detail="Projection axes must be different.")
+    return x_axis, y_axis
+
+
+def _validate_projection(
+    payload: dict[str, Any],
+    current_axes: tuple[int, int],
+) -> tuple[str, tuple[int, int]]:
+    method = str(payload.get("method", "")).strip().lower()
+    if method not in PROJECTION_METHODS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Projection method must be one of: {', '.join(PROJECTION_METHODS)}.",
+        )
+
+    axes = current_axes
+    if "axes" in payload or method == "axis":
+        axes = _validate_projection_axes(payload.get("axes", current_axes))
+
+    return method, axes
 
 
 def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastAPI:
@@ -185,13 +226,50 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
 
     @app.post("/display_limit")
     async def set_display_limit(payload: dict[str, Any]):
+        old_limit = state.display_limit
         state.display_limit = _validate_display_limit(payload)
-        recompute_discoveries(config, state, ignore_interval=True)
+        try:
+            recompute_discoveries(config, state, ignore_interval=True)
+        except ValueError as error:
+            state.display_limit = old_limit
+            raise HTTPException(status_code=422, detail=str(error))
         return {"status": "ok", "limit": state.display_limit}
+
+    @app.get("/projection")
+    async def get_projection():
+        return {
+            "method": state.projection_method,
+            "axes": list(state.projection_axes),
+            "default_method": DEFAULT_PROJECTION_METHOD,
+            "default_axes": list(DEFAULT_PROJECTION_AXES),
+            "methods": PROJECTION_METHODS,
+        }
+
+    @app.post("/projection")
+    async def set_projection(payload: dict[str, Any]):
+        method, axes = _validate_projection(payload, state.projection_axes)
+        old_method = state.projection_method
+        old_axes = state.projection_axes
+        state.projection_method = method
+        state.projection_axes = axes
+        try:
+            recompute_discoveries(config, state, ignore_interval=True)
+        except ValueError as error:
+            state.projection_method = old_method
+            state.projection_axes = old_axes
+            raise HTTPException(status_code=422, detail=str(error))
+        return {
+            "status": "ok",
+            "method": state.projection_method,
+            "axes": list(state.projection_axes),
+        }
 
     @app.post("/recompute_layout")
     async def recompute_layout():
-        recompute_discoveries(config, state, ignore_interval=True)
+        try:
+            recompute_discoveries(config, state, ignore_interval=True)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error))
         return {"status": "ok"}
 
     @app.post("/analysis/random_run")
