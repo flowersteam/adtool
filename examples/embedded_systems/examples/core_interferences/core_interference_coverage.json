@@ -1,6 +1,6 @@
 {
   "dimensions": "all",
-  "dimension_pretreatment": "examples.embedded_systems.examples.core_interferences.coverage_pretreatment.compact_interference_metrics",
+  "dimension_pretreatment": "examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
   "plot": {
     "points": 512,
     "format": "png",
