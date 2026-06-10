@@ -1,9 +1,9 @@
 {
     "experiment": {
         "config": {
-            "save_location": "./discoveries/config_qmc_zscore_knn_1/",
-            "save_frequency": 400,
-            "bootstrap_size": 400
+            "save_location": "./discoveries/test/",
+            "save_frequency": 1000,
+            "bootstrap_size": 1
         }
     },
     "system": {
@@ -31,7 +31,7 @@
                     "path": "examples.embedded_systems.behavior_map.goal_sampler.QMCMinMaxGoalSampler"
                 },
                 "behavior_encoder_config": {
-                    "path": "examples.embedded_systems.examples.core_interferences.behavior_map.encoder.ZScoreMetricEncoder"
+                    "path": "examples.embedded_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder"
                 }
             },
             "parameter_map_config": {
