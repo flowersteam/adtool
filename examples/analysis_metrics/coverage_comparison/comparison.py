@@ -10,6 +10,7 @@ from typing import Any, Callable, Optional, Union
 import numpy as np
 
 from ..import_paths import ensure_adtool_examples_alias
+from .plotting import density_curve, plot_density_curves, plot_dimension_pair_scatter
 
 
 DEFAULT_OUTPUT_DIR = Path("coverage_runs")
@@ -67,6 +68,15 @@ class CoverageImageSummary:
     dimensions: list[int]
     bounds: list[tuple[float, float]] = field(default_factory=list)
 
+    def to_payload(self) -> dict[str, Any]:
+        return {
+            "file": self.file,
+            "title": self.title,
+            "plot_type": self.plot_type,
+            "dimensions": self.dimensions,
+            "bounds": [list(bounds) for bounds in self.bounds],
+        }
+
 
 @dataclass(frozen=True)
 class ComparisonConfig:
@@ -94,6 +104,22 @@ class CoverageComparisonSummary:
     dimension_pretreatment: Optional[str]
     bounds: list[tuple[float, float]]
     images: list[CoverageImageSummary]
+
+
+@dataclass(frozen=True)
+class DimensionPlotAnalysis:
+    integer_values: bool
+    bounds: tuple[float, float]
+
+
+@dataclass(frozen=True)
+class PreparedComparison:
+    values_a: np.ndarray
+    values_b: np.ndarray
+    dim_count: int
+    raw_labels: list[str]
+    resolved_dimensions: list[int]
+    resolved_additional_2d_graphs: list[tuple[int, int]]
 
 
 def _parse_dimensions(value: Any) -> Union[str, list[int]]:
@@ -393,10 +419,14 @@ def _apply_dimension_pretreatment(
     return treated_a, treated_b, labels
 
 
-def _bounds(values_a: np.ndarray, values_b: np.ndarray) -> tuple[float, float]:
-    values = np.concatenate([values_a, values_b])
-    min_value = float(np.min(values))
-    max_value = float(np.max(values))
+def _value_min_max(values_a: np.ndarray, values_b: np.ndarray) -> tuple[float, float]:
+    min_value = min(float(np.min(values_a)), float(np.min(values_b)))
+    max_value = max(float(np.max(values_a)), float(np.max(values_b)))
+    return min_value, max_value
+
+
+def _value_bounds(values_a: np.ndarray, values_b: np.ndarray) -> tuple[float, float]:
+    min_value, max_value = _value_min_max(values_a, values_b)
     if min_value == max_value:
         min_value -= 1.0
         max_value += 1.0
@@ -404,8 +434,10 @@ def _bounds(values_a: np.ndarray, values_b: np.ndarray) -> tuple[float, float]:
 
 
 def _integer_values(values_a: np.ndarray, values_b: np.ndarray) -> bool:
-    values = np.concatenate([values_a, values_b])
-    return bool(np.allclose(values, np.round(values)))
+    return bool(
+        np.allclose(values_a, np.round(values_a))
+        and np.allclose(values_b, np.round(values_b))
+    )
 
 
 def _plot_bounds(
@@ -414,11 +446,9 @@ def _plot_bounds(
     integer_values: bool,
 ) -> tuple[float, float]:
     if not integer_values:
-        return _bounds(values_a, values_b)
+        return _value_bounds(values_a, values_b)
 
-    values = np.concatenate([values_a, values_b])
-    min_value = float(np.min(values))
-    max_value = float(np.max(values))
+    min_value, max_value = _value_min_max(values_a, values_b)
     return min_value - 0.5, max_value + 0.5
 
 
@@ -464,16 +494,7 @@ def _summary_payload(
             else {}
         ),
         "bounds": [list(bounds) for bounds in summary.bounds],
-        "images": [
-            {
-                "file": image.file,
-                "title": image.title,
-                "plot_type": image.plot_type,
-                "dimensions": image.dimensions,
-                "bounds": [list(bounds) for bounds in image.bounds],
-            }
-            for image in summary.images
-        ],
+        "images": [image.to_payload() for image in summary.images],
         "plot_type": "coverage comparison plots",
         "timestamp": timestamp,
         "plot": {
@@ -505,10 +526,70 @@ def compare_discovery_sets(
     discovery_b_path = Path(discovery_b_path).resolve()
     label_a = label_a or _default_label(discovery_a_path)
     label_b = label_b or _default_label(discovery_b_path)
+    prepared = _prepare_comparison(
+        discovery_a_path,
+        discovery_b_path,
+        config,
+    )
+    run_dir, timestamp = _run_dir(Path(output_dir).resolve())
+    labels = _selected_dimension_labels(
+        prepared.raw_labels,
+        prepared.resolved_dimensions,
+    )
+    bounds, density_images = _generate_density_plots(
+        prepared,
+        labels,
+        run_dir,
+        label_a,
+        label_b,
+        config.plot,
+    )
+    scatter_images = _generate_scatter_plots(
+        prepared,
+        run_dir,
+        label_a,
+        label_b,
+        config.plot,
+    )
+    images = density_images + scatter_images
 
+    summary = CoverageComparisonSummary(
+        run_dir=run_dir,
+        discovery_a_path=discovery_a_path,
+        discovery_b_path=discovery_b_path,
+        label_a=label_a,
+        label_b=label_b,
+        count_a=prepared.values_a.shape[0],
+        count_b=prepared.values_b.shape[0],
+        dim_count=prepared.dim_count,
+        labels=labels,
+        resolved_dimensions=prepared.resolved_dimensions,
+        resolved_additional_2d_graphs=prepared.resolved_additional_2d_graphs,
+        dimension_pretreatment=(
+            config.dimension_pretreatment.path
+            if config.dimension_pretreatment is not None
+            else None
+        ),
+        bounds=bounds,
+        images=images,
+    )
+
+    payload = _summary_payload(summary, timestamp, config)
+    with (run_dir / "summary.json").open("w") as handle:
+        json.dump(payload, handle, indent=2)
+
+    return summary
+
+
+def _prepare_comparison(
+    discovery_a_path: Path,
+    discovery_b_path: Path,
+    config: ComparisonConfig,
+) -> PreparedComparison:
     dataset_a = load_discovery_set(discovery_a_path)
     dataset_b = load_discovery_set(discovery_b_path)
     _validate_matching_dimensions(dataset_a.outputs, dataset_b.outputs)
+
     pretreatment_fn = _load_dimension_pretreatment(config.dimension_pretreatment)
     pretreatment_config = (
         config.dimension_pretreatment.config
@@ -522,68 +603,96 @@ def compare_discovery_sets(
         pretreatment_config,
     )
     dim_count = _validate_matching_dimensions(values_a, values_b)
-    all_labels = pretreated_labels or [f"dim_{idx}" for idx in range(dim_count)]
-    dimensions = _select_dimensions(config.dimensions, dim_count)
-    additional_2d_graphs = _select_dimension_pairs(config.additional_2d_graphs, dim_count)
-    run_dir, timestamp = _run_dir(Path(output_dir).resolve())
-
-    labels = [_display_dimension_label(all_labels[idx], idx) for idx in dimensions]
-    bounds: list[tuple[float, float]] = []
-    images: list[CoverageImageSummary] = []
-    from .plotting import (
-        density_curve,
-        plot_density_curves,
-        plot_dimension_pair_scatter,
+    raw_labels = pretreated_labels or [f"dim_{idx}" for idx in range(dim_count)]
+    return PreparedComparison(
+        values_a=values_a,
+        values_b=values_b,
+        dim_count=dim_count,
+        raw_labels=raw_labels,
+        resolved_dimensions=_select_dimensions(config.dimensions, dim_count),
+        resolved_additional_2d_graphs=_select_dimension_pairs(
+            config.additional_2d_graphs,
+            dim_count,
+        ),
     )
 
-    for dim_index, dim_label in zip(dimensions, labels):
-        dim_values_a = values_a[:, dim_index]
-        dim_values_b = values_b[:, dim_index]
-        integer_values = _integer_values(dim_values_a, dim_values_b)
-        dim_bounds = _plot_bounds(dim_values_a, dim_values_b, integer_values)
-        bounds.append(dim_bounds)
 
-        image_name = f"dim_{dim_index}_density.{config.plot.output_format}"
+def _selected_dimension_labels(
+    raw_labels: list[str],
+    resolved_dimensions: list[int],
+) -> list[str]:
+    return [_display_dimension_label(raw_labels[idx], idx) for idx in resolved_dimensions]
+
+
+def _generate_density_plots(
+    prepared: PreparedComparison,
+    labels: list[str],
+    run_dir: Path,
+    label_a: str,
+    label_b: str,
+    plot_config: PlotConfig,
+) -> tuple[list[tuple[float, float]], list[CoverageImageSummary]]:
+    bounds: list[tuple[float, float]] = []
+    images: list[CoverageImageSummary] = []
+
+    for dim_index, dim_label in zip(prepared.resolved_dimensions, labels):
+        dim_values_a = prepared.values_a[:, dim_index]
+        dim_values_b = prepared.values_b[:, dim_index]
+        analysis = _analyze_dimension_plot(dim_values_a, dim_values_b)
+        image_name = f"dim_{dim_index}_density.{plot_config.output_format}"
+        bounds.append(analysis.bounds)
         images.append(
             CoverageImageSummary(
                 file=image_name,
                 title=dim_label,
                 plot_type="1d density",
                 dimensions=[dim_index],
-                bounds=[dim_bounds],
+                bounds=[analysis.bounds],
             )
         )
         plot_density_curves(
             run_dir / image_name,
             density_curve(
                 dim_values_a,
-                dim_bounds,
-                config.plot.points,
-                integer_values=integer_values,
+                analysis.bounds,
+                plot_config.points,
+                integer_values=analysis.integer_values,
             ),
             density_curve(
                 dim_values_b,
-                dim_bounds,
-                config.plot.points,
-                integer_values=integer_values,
+                analysis.bounds,
+                plot_config.points,
+                integer_values=analysis.integer_values,
             ),
             dim_label,
             label_a,
             label_b,
-            config.plot,
-            integer_x=integer_values,
+            plot_config,
+            integer_x=analysis.integer_values,
         )
 
-    for x_dim, y_dim in additional_2d_graphs:
-        x_label = _display_dimension_label(all_labels[x_dim], x_dim)
-        y_label = _display_dimension_label(all_labels[y_dim], y_dim)
-        x_values_a = values_a[:, x_dim]
-        x_values_b = values_b[:, x_dim]
-        y_values_a = values_a[:, y_dim]
-        y_values_b = values_b[:, y_dim]
-        image_name = f"dims_{x_dim}_{y_dim}_scatter.{config.plot.output_format}"
-        x_bounds = _bounds(x_values_a, x_values_b)
-        y_bounds = _bounds(y_values_a, y_values_b)
+    return bounds, images
+
+
+def _generate_scatter_plots(
+    prepared: PreparedComparison,
+    run_dir: Path,
+    label_a: str,
+    label_b: str,
+    plot_config: PlotConfig,
+) -> list[CoverageImageSummary]:
+    images: list[CoverageImageSummary] = []
+
+    for x_dim, y_dim in prepared.resolved_additional_2d_graphs:
+        x_label = _display_dimension_label(prepared.raw_labels[x_dim], x_dim)
+        y_label = _display_dimension_label(prepared.raw_labels[y_dim], y_dim)
+        x_values_a = prepared.values_a[:, x_dim]
+        x_values_b = prepared.values_b[:, x_dim]
+        y_values_a = prepared.values_a[:, y_dim]
+        y_values_b = prepared.values_b[:, y_dim]
+        image_name = f"dims_{x_dim}_{y_dim}_scatter.{plot_config.output_format}"
+        x_bounds = _value_bounds(x_values_a, x_values_b)
+        y_bounds = _value_bounds(y_values_a, y_values_b)
         images.append(
             CoverageImageSummary(
                 file=image_name,
@@ -603,35 +712,21 @@ def compare_discovery_sets(
             y_label,
             label_a,
             label_b,
-            config.plot,
+            plot_config,
         )
 
-    summary = CoverageComparisonSummary(
-        run_dir=run_dir,
-        discovery_a_path=discovery_a_path,
-        discovery_b_path=discovery_b_path,
-        label_a=label_a,
-        label_b=label_b,
-        count_a=values_a.shape[0],
-        count_b=values_b.shape[0],
-        dim_count=dim_count,
-        labels=labels,
-        resolved_dimensions=dimensions,
-        resolved_additional_2d_graphs=additional_2d_graphs,
-        dimension_pretreatment=(
-            config.dimension_pretreatment.path
-            if config.dimension_pretreatment is not None
-            else None
-        ),
-        bounds=bounds,
-        images=images,
+    return images
+
+
+def _analyze_dimension_plot(
+    values_a: np.ndarray,
+    values_b: np.ndarray,
+) -> DimensionPlotAnalysis:
+    integer_values = _integer_values(values_a, values_b)
+    return DimensionPlotAnalysis(
+        integer_values=integer_values,
+        bounds=_plot_bounds(values_a, values_b, integer_values),
     )
-
-    payload = _summary_payload(summary, timestamp, config)
-    with (run_dir / "summary.json").open("w") as handle:
-        json.dump(payload, handle, indent=2)
-
-    return summary
 
 
 run_coverage_comparison = compare_discovery_sets
