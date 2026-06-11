@@ -94,6 +94,14 @@ export async function setProjection(payload) {
     return postJson("/projection", payload, "projection update failed");
 }
 
+export async function getRenderSettings() {
+    return getJson("/render_settings", "render settings unavailable");
+}
+
+export async function setRenderSettings(payload) {
+    return postJson("/render_settings", payload, "render settings update failed");
+}
+
 export async function requestLayoutRecompute() {
     return postJson("/recompute_layout", undefined, "layout recompute failed");
 }

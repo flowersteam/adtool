@@ -80,9 +80,9 @@ code {
 }
 
 .topbar {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) auto auto;
     align-items: center;
-    justify-content: space-between;
     gap: 18px;
     padding: 0 18px;
     border-bottom: 1px solid var(--line);
@@ -98,6 +98,29 @@ code {
 
 .brandBlock > div {
     min-width: 0;
+}
+
+.topbarStats {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.topbarStat {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    min-width: 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.topbarStat strong {
+    color: var(--text);
+    font-size: 0.98rem;
+    font-variant-numeric: tabular-nums;
 }
 
 .topbar h1,
@@ -141,6 +164,7 @@ code {
 
 .navButton.active,
 .primaryButton {
+    max-height: fit-content;
     border-color: var(--accent);
     color: #ffffff;
     background: var(--accent);
@@ -174,7 +198,7 @@ code {
 .sidePanel {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0;
     min-height: 0;
     height: calc(100vh - var(--topbar-height));
     max-height: calc(100vh - var(--topbar-height));
@@ -185,9 +209,23 @@ code {
     background: var(--surface);
 }
 
-.panelSection {
+.controlSection {
     display: grid;
-    gap: 3px;
+    gap: 8px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+}
+
+.controlSection:first-child {
+    padding-top: 0;
+    border-top: none;
+}
+
+.selectionSection {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .eyebrow {
@@ -211,12 +249,6 @@ code {
 
 .sectionText {
     display: none;
-}
-
-.statsGrid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
 }
 
 .statBox {
@@ -874,9 +906,15 @@ code {
 
     .topbar,
     .coverageHeader {
+        display: flex;
         align-items: stretch;
         flex-direction: column;
         padding: 14px;
+    }
+
+    .topbarStats {
+        justify-content: space-between;
+        width: 100%;
     }
 
     .pageNav {

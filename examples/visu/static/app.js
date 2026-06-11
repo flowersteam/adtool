@@ -8,6 +8,7 @@ import { createGraphLightbox } from "./js/lightbox.js";
 import { createPageRouter } from "./js/page-router.js";
 import { createPreviewController } from "./js/preview.js";
 import { createProjectionController } from "./js/projection.js";
+import { createRenderSettingsController } from "./js/render-settings.js";
 
 const elements = getDom();
 
@@ -30,6 +31,11 @@ const projection = createProjectionController({
     refreshDiscoveries: discoveryMap.refreshDiscoveries,
     updateStatus,
 });
+const renderSettings = createRenderSettingsController({
+    discoveryMap,
+    elements,
+    updateStatus,
+});
 const discoveryActions = createDiscoveryActions({ discoveryMap, elements, updateStatus });
 const analysisActions = createAnalysisActions({
     coverage,
@@ -50,14 +56,16 @@ function bindEvents() {
     elements.searchInput.addEventListener("input", discoveryMap.applyFilter);
     elements.displayLimitSelect.addEventListener("change", displayLimit.syncCustomInputVisibility);
     elements.displayLimitApplyButton.addEventListener("click", displayLimit.apply);
-    elements.viewModeControl.addEventListener("click", (event) => {
+    elements.viewModeControl.addEventListener("click", async (event) => {
         const button = event.target.closest("[data-render-mode]");
         if (button) {
-            discoveryMap.setRenderMode(button.dataset.renderMode);
+            await discoveryMap.setRenderMode(button.dataset.renderMode);
+            renderSettings.setHybridActive(button.dataset.renderMode === "hybrid");
         }
     });
     elements.projectionMethodSelect.addEventListener("change", projection.syncAxisVisibility);
     elements.projectionApplyButton.addEventListener("click", projection.apply);
+    elements.stickerPreviewSizeInput.addEventListener("input", renderSettings.scheduleApply);
     elements.coverageActionsToggle.addEventListener("click", analysisActions.toggleCoverageActions);
     elements.randomRunButton.addEventListener("click", analysisActions.launchRandomRun);
     elements.coverageCompareButton.addEventListener("click", analysisActions.launchCoverageComparison);
@@ -87,8 +95,10 @@ async function initialize() {
     bindEvents();
     preview.applyScale(elements.previewSizeSlider.value);
     coverage.initializeNavigation();
-    displayLimit.initialize();
-    projection.initialize();
+    await displayLimit.initialize();
+    await projection.initialize();
+    await renderSettings.initialize();
+    renderSettings.setHybridActive(false);
     discoveryMap.resizeRenderer();
     discoveryMap.refreshDiscoveries(true).then(() => {
         discoveryMap.markLiveRefreshNow();

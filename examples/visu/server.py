@@ -31,9 +31,12 @@ if __package__:
         DEFAULT_DISPLAY_LIMIT,
         DEFAULT_PROJECTION_AXES,
         DEFAULT_PROJECTION_METHOD,
+        DEFAULT_STICKER_PREVIEW_WORLD_HEIGHT,
         DISPLAY_LIMIT_PRESETS,
         MAX_DISPLAY_LIMIT,
         MIN_DISPLAY_LIMIT,
+        MAX_STICKER_PREVIEW_WORLD_HEIGHT,
+        MIN_STICKER_PREVIEW_WORLD_HEIGHT,
         PROJECTION_METHODS,
         RuntimeState,
         ServerConfig,
@@ -58,9 +61,12 @@ else:
         DEFAULT_DISPLAY_LIMIT,
         DEFAULT_PROJECTION_AXES,
         DEFAULT_PROJECTION_METHOD,
+        DEFAULT_STICKER_PREVIEW_WORLD_HEIGHT,
         DISPLAY_LIMIT_PRESETS,
         MAX_DISPLAY_LIMIT,
         MIN_DISPLAY_LIMIT,
+        MAX_STICKER_PREVIEW_WORLD_HEIGHT,
+        MIN_STICKER_PREVIEW_WORLD_HEIGHT,
         PROJECTION_METHODS,
         RuntimeState,
         ServerConfig,
@@ -127,6 +133,27 @@ def _validate_projection(
         axes = _validate_projection_axes(payload.get("axes", current_axes))
 
     return method, axes
+
+
+def _validate_render_settings(payload: dict[str, Any]) -> float:
+    try:
+        sticker_preview_world_height = float(payload.get("sticker_preview_world_height"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Sticker preview size must be a number.")
+
+    if (
+        sticker_preview_world_height < MIN_STICKER_PREVIEW_WORLD_HEIGHT
+        or sticker_preview_world_height > MAX_STICKER_PREVIEW_WORLD_HEIGHT
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Sticker preview size must be between "
+                f"{MIN_STICKER_PREVIEW_WORLD_HEIGHT} and {MAX_STICKER_PREVIEW_WORLD_HEIGHT}."
+            ),
+        )
+
+    return sticker_preview_world_height
 
 
 def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastAPI:
@@ -262,6 +289,24 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
             "status": "ok",
             "method": state.projection_method,
             "axes": list(state.projection_axes),
+        }
+
+    @app.get("/render_settings")
+    async def get_render_settings():
+        return {
+            "sticker_preview_world_height": state.sticker_preview_world_height,
+            "default_sticker_preview_world_height": DEFAULT_STICKER_PREVIEW_WORLD_HEIGHT,
+            "min_sticker_preview_world_height": MIN_STICKER_PREVIEW_WORLD_HEIGHT,
+            "max_sticker_preview_world_height": MAX_STICKER_PREVIEW_WORLD_HEIGHT,
+        }
+
+    @app.post("/render_settings")
+    async def set_render_settings(payload: dict[str, Any]):
+        sticker_preview_world_height = _validate_render_settings(payload)
+        state.sticker_preview_world_height = sticker_preview_world_height
+        return {
+            "status": "ok",
+            "sticker_preview_world_height": state.sticker_preview_world_height,
         }
 
     @app.post("/recompute_layout")

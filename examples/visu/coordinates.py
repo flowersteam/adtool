@@ -23,11 +23,6 @@ VALID_VISUAL_SUFFIXES = (".mp4", ".png")
 VALID_PROJECTION_METHODS = ("umap", "pca", "tsne", "axis")
 DEFAULT_PROJECTION_METHOD = "umap"
 DEFAULT_PROJECTION_AXES = (0, 1)
-THUMBNAIL_ATLAS_PREFIX = "discovery_atlas_"
-THUMBNAIL_ATLAS_SUFFIX = ".png"
-THUMBNAIL_ATLAS_SIZE = 4096
-THUMBNAIL_TILE_SIZE = 32
-THUMBNAIL_TILE_PADDING = 1
 
 Discovery = dict[str, Any]
 
@@ -222,7 +217,6 @@ def _write_layout_status(static_dir: str | os.PathLike[str], payload: dict[str, 
 
 
 def _write_empty_layout(static_dir: str | os.PathLike[str], discoveries_path: Path) -> None:
-    _clean_thumbnail_atlases(Path(static_dir))
     _write_json_atomic(discoveries_path, [])
     _write_layout_status(
         static_dir,
@@ -388,102 +382,6 @@ def _project_layout(
     return _project_with_umap(x), "umap", len(x)
 
 
-def _preview_thumbnail_path(visual_path: Path) -> Path:
-    if visual_path.suffix.lower() == ".mp4":
-        image_path = visual_path.with_suffix(".jpg")
-        if image_path.exists():
-            return image_path
-        return visual_path.with_suffix(".png")
-    return visual_path
-
-
-def _read_thumbnail_tile(visual_path: Path) -> np.ndarray | None:
-    image = cv2.imread(os.fspath(_preview_thumbnail_path(visual_path)), cv2.IMREAD_UNCHANGED)
-    if image is None:
-        return None
-
-    if image.ndim == 2:
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGRA)
-    elif image.shape[2] == 3:
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
-    elif image.shape[2] != 4:
-        return None
-
-    return cv2.resize(
-        image,
-        (THUMBNAIL_TILE_SIZE, THUMBNAIL_TILE_SIZE),
-        interpolation=cv2.INTER_AREA,
-    )
-
-
-def _clean_thumbnail_atlases(static_dir: Path) -> None:
-    for atlas_path in static_dir.glob(f"{THUMBNAIL_ATLAS_PREFIX}*{THUMBNAIL_ATLAS_SUFFIX}"):
-        try:
-            atlas_path.unlink()
-        except OSError:
-            continue
-
-
-def _write_thumbnail_atlases(
-    discoveries: list[Discovery],
-    static_dir: Path,
-) -> dict[str, dict[str, Any]]:
-    _clean_thumbnail_atlases(static_dir)
-    if not discoveries:
-        return {}
-
-    pitch = THUMBNAIL_TILE_SIZE + THUMBNAIL_TILE_PADDING * 2
-    tiles_per_row = THUMBNAIL_ATLAS_SIZE // pitch
-    if tiles_per_row <= 0:
-        return {}
-
-    tiles_per_atlas = tiles_per_row * tiles_per_row
-    metadata: dict[str, dict[str, Any]] = {}
-    atlas = np.zeros((THUMBNAIL_ATLAS_SIZE, THUMBNAIL_ATLAS_SIZE, 4), dtype=np.uint8)
-    atlas_index = 0
-    tile_index = 0
-
-    def write_current_atlas() -> None:
-        if tile_index == 0:
-            return
-        atlas_path = static_dir / f"{THUMBNAIL_ATLAS_PREFIX}{atlas_index}{THUMBNAIL_ATLAS_SUFFIX}"
-        cv2.imwrite(os.fspath(atlas_path), atlas)
-
-    for discovery in discoveries:
-        visual_path = Path(os.fspath(discovery["visual"]))
-        tile = _read_thumbnail_tile(visual_path)
-        if tile is None:
-            continue
-
-        if tile_index >= tiles_per_atlas:
-            write_current_atlas()
-            atlas_index += 1
-            tile_index = 0
-            atlas = np.zeros((THUMBNAIL_ATLAS_SIZE, THUMBNAIL_ATLAS_SIZE, 4), dtype=np.uint8)
-
-        row = tile_index // tiles_per_row
-        col = tile_index % tiles_per_row
-        x0 = col * pitch + THUMBNAIL_TILE_PADDING
-        y0 = row * pitch + THUMBNAIL_TILE_PADDING
-        x1 = x0 + THUMBNAIL_TILE_SIZE
-        y1 = y0 + THUMBNAIL_TILE_SIZE
-        atlas[y0:y1, x0:x1] = tile
-
-        metadata[os.fspath(visual_path)] = {
-            "atlas": f"{THUMBNAIL_ATLAS_PREFIX}{atlas_index}{THUMBNAIL_ATLAS_SUFFIX}",
-            "uv": [
-                x0 / THUMBNAIL_ATLAS_SIZE,
-                y0 / THUMBNAIL_ATLAS_SIZE,
-                x1 / THUMBNAIL_ATLAS_SIZE,
-                y1 / THUMBNAIL_ATLAS_SIZE,
-            ],
-        }
-        tile_index += 1
-
-    write_current_atlas()
-    return metadata
-
-
 def _downsample_for_display(
     discoveries: list[Discovery],
     embedding: np.ndarray,
@@ -514,10 +412,8 @@ def _saved_coordinates(
     discoveries: list[Discovery],
     embedding: np.ndarray,
     root_path: str | os.PathLike[str],
-    thumbnail_metadata: dict[str, dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     root_path = os.fspath(root_path)
-    thumbnail_metadata = thumbnail_metadata or {}
     saved_coordinates = []
 
     for discovery, point in zip(discoveries, embedding):
@@ -530,10 +426,6 @@ def _saved_coordinates(
             "y": float(point[1]),
             "visual": visual_path.replace(os.sep, "/"),
         }
-
-        thumbnail = thumbnail_metadata.get(os.fspath(discovery["visual"]))
-        if thumbnail is not None:
-            saved_point["thumbnail"] = thumbnail
 
         saved_coordinates.append(saved_point)
 
@@ -604,12 +496,10 @@ def compute_coordinates(
         embedding,
         max_displayed,
     )
-    thumbnail_metadata = _write_thumbnail_atlases(display_discoveries, static_dir)
     saved_coordinates = _saved_coordinates(
         display_discoveries,
         display_embedding,
         path,
-        thumbnail_metadata,
     )
 
     _write_layout_result(

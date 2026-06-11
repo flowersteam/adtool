@@ -107,6 +107,27 @@ export function createMapScene(container) {
         };
     }
 
+    function planeScreenRect(position, geometryWidth, geometryHeight, baseScale = 1.0, scaleBoost = 1.0) {
+        const distance = Math.max(0.01, camera.position.z - position.z);
+        const uniformScale = distance * 0.19 * baseScale * scaleBoost;
+        const halfWidth = (geometryWidth * uniformScale) / 2;
+        const halfHeight = (geometryHeight * uniformScale) / 2;
+
+        const corners = [
+            new THREE.Vector3(position.x - halfWidth, position.y - halfHeight, position.z),
+            new THREE.Vector3(position.x + halfWidth, position.y - halfHeight, position.z),
+            new THREE.Vector3(position.x + halfWidth, position.y + halfHeight, position.z),
+            new THREE.Vector3(position.x - halfWidth, position.y + halfHeight, position.z),
+        ].map((corner) => screenPoint(corner));
+
+        return {
+            left: Math.min(...corners.map((corner) => corner.x)),
+            right: Math.max(...corners.map((corner) => corner.x)),
+            top: Math.min(...corners.map((corner) => corner.y)),
+            bottom: Math.max(...corners.map((corner) => corner.y)),
+        };
+    }
+
     function onViewChange(callback) {
         viewChangeCallbacks.add(callback);
         return () => viewChangeCallbacks.delete(callback);
@@ -140,6 +161,7 @@ export function createMapScene(container) {
         fitView,
         onViewChange,
         pickPlaneAtPointer,
+        planeScreenRect,
         renderer,
         resizeRenderer,
         scene,

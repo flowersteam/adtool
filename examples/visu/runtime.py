@@ -35,6 +35,10 @@ DEFAULT_PROJECTION_METHOD = "umap"
 DEFAULT_PROJECTION_AXES = (0, 1)
 PROJECTION_METHODS = ["umap", "pca", "tsne", "axis"]
 
+DEFAULT_STICKER_PREVIEW_WORLD_HEIGHT = 0.6
+MIN_STICKER_PREVIEW_WORLD_HEIGHT = 0.5
+MAX_STICKER_PREVIEW_WORLD_HEIGHT = 1.2
+
 DEFAULT_RANDOM_ITERATIONS = 100
 DEFAULT_RANDOM_SEED = 42
 
@@ -51,6 +55,7 @@ class RuntimeState:
     display_limit: int = DEFAULT_DISPLAY_LIMIT
     projection_method: str = DEFAULT_PROJECTION_METHOD
     projection_axes: tuple[int, int] = DEFAULT_PROJECTION_AXES
+    sticker_preview_world_height: float = DEFAULT_STICKER_PREVIEW_WORLD_HEIGHT
     last_recompute_time: float = 0.0
     analysis_lock: threading.Lock = field(default_factory=threading.Lock)
     recompute_lock: threading.Lock = field(default_factory=threading.Lock)

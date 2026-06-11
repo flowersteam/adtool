@@ -32,8 +32,6 @@ def _compute_coordinates(*args, **kwargs) -> None:
 
 def cleanup_static_discoveries(config: ServerConfig) -> None:
     (config.static_dir / "discoveries.json").unlink(missing_ok=True)
-    for atlas_path in config.static_dir.glob("discovery_atlas_*.png"):
-        atlas_path.unlink(missing_ok=True)
 
 
 def write_discovery_coordinates(config: ServerConfig, state: RuntimeState) -> None:

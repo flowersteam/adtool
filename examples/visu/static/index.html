@@ -25,6 +25,16 @@
                     <p id="statusLine">Loading discoveries...</p>
                 </div>
             </div>
+            <div class="topbarStats" aria-label="Discovery statistics">
+                <span class="topbarStat">
+                    <strong id="discoveryTotal">0</strong>
+                    <span>discoveries displayed</span>
+                </span>
+                <span class="topbarStat">
+                    <strong id="selectionTotal">0</strong>
+                    <span>selected</span>
+                </span>
+            </div>
             <nav class="pageNav" aria-label="Views">
                 <button id="discoveriesTab" class="navButton active" type="button">Discoveries</button>
                 <button id="coverageTab" class="navButton" type="button">Coverage</button>
@@ -34,87 +44,89 @@
         <main class="workspace">
             <section id="viewerPage" class="page active" aria-label="Discovery map">
                 <aside class="sidePanel">
-                    <div class="panelSection">
-                        <p class="eyebrow">Explorer</p>
-                        <h2>Discovery Map</h2>
-                        <p class="sectionText">Pan and zoom the map, hover for media, click entries to build an export set.</p>
+                    <div class="controlSection">
+                        <label class="fieldLabel" for="searchInput">Search discovery names</label>
+                        <input id="searchInput" class="searchInput" type="search"
+                            placeholder="Text or regex, e.g. /idx_[0-9]{3}_/">
+                        <p class="fieldHint">Plain text is matched directly. Use <code>/regex/</code> or <code>re:regex</code> for patterns.</p>
                     </div>
 
-                    <div class="statsGrid" aria-label="Discovery statistics">
-                        <div class="statBox">
-                            <span class="statValue" id="discoveryTotal">0</span>
-                            <span class="statLabel">discoveries</span>
-                        </div>
-                        <div class="statBox">
-                            <span class="statValue" id="selectionTotal">0</span>
-                            <span class="statLabel">selected</span>
-                        </div>
-                    </div>
-
-                    <label class="fieldLabel" for="searchInput">Search discovery names</label>
-                    <input id="searchInput" class="searchInput" type="search"
-                        placeholder="Text or regex, e.g. /idx_[0-9]{3}_/">
-                    <p class="fieldHint">Plain text is matched directly. Use <code>/regex/</code> or <code>re:regex</code> for patterns.</p>
-
-                    <div class="displayLimitControl">
-                        <label for="displayLimitSelect">Displayed discoveries</label>
-                        <select id="displayLimitSelect">
-                            <option value="250">250</option>
-                            <option value="500" selected>500</option>
-                            <option value="1000">1000</option>
-                            <option value="1500">1500</option>
-                            <option value="2000">2000</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                        <input id="displayLimitCustom" type="number" min="1" max="10000" step="1" value="500" hidden>
-                        <button id="displayLimitApplyButton" type="button">Apply</button>
-                    </div>
-
-                    <div id="viewModeControl" class="viewModeControl" aria-label="Discovery display mode">
-                        <span>Display</span>
-                        <div class="segmentedControl">
-                            <button class="active" type="button" data-render-mode="points">Points</button>
-                            <button type="button" data-render-mode="images">Images</button>
-                            <button type="button" data-render-mode="hybrid">Hybrid</button>
+                    <div class="controlSection">
+                        <div class="displayLimitControl">
+                            <label for="displayLimitSelect">Displayed amount</label>
+                            <select id="displayLimitSelect">
+                                <option value="250">250</option>
+                                <option value="500" selected>500</option>
+                                <option value="1000">1000</option>
+                                <option value="1500">1500</option>
+                                <option value="2000">2000</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                            <input id="displayLimitCustom" type="number" min="1" max="10000" step="1" value="500" hidden>
+                            <button id="displayLimitApplyButton" type="button">Apply</button>
                         </div>
                     </div>
 
-                    <div id="projectionControl" class="projectionControl">
-                        <label for="projectionMethodSelect">Projection</label>
-                        <select id="projectionMethodSelect">
-                            <option value="umap" selected>UMAP</option>
-                            <option value="pca">PCA</option>
-                            <option value="tsne">t-SNE</option>
-                            <option value="axis">2 axis id</option>
-                        </select>
-                        <input id="projectionAxisXInput" type="number" min="0" step="1" value="0"
-                            placeholder="X axis" aria-label="X axis id" hidden>
-                        <input id="projectionAxisYInput" type="number" min="0" step="1" value="1"
-                            placeholder="Y axis" aria-label="Y axis id" hidden>
-                        <button id="projectionApplyButton" type="button">Apply</button>
-                    </div>
-
-                    <div class="buttonRow">
-                        <button id="fitViewButton" type="button">Fit View</button>
-                        <button id="refreshButton" type="button">Refresh</button>
-                        <button id="recomputeLayoutButton" type="button">Recompute Layout</button>
-                    </div>
-
-                    <div class="rangeControl">
-                        <label for="previewSizeSlider">Preview size</label>
-                        <input id="previewSizeSlider" type="range" min="70" max="250" step="5" value="100">
-                        <span id="previewSizeValue">100%</span>
-                    </div>
-
-                    <div class="selectedHeader">
-                        <div>
-                            <p class="eyebrow">Selection</p>
-                            <h3>Export Set</h3>
+                    <div class="controlSection">
+                        <div id="viewModeControl" class="viewModeControl" aria-label="Discovery display mode">
+                            <span>Display mode</span>
+                            <div class="segmentedControl">
+                                <button class="active" type="button" data-render-mode="points">Points</button>
+                                <button type="button" data-render-mode="images">Images</button>
+                                <button type="button" data-render-mode="hybrid">Hybrid</button>
+                            </div>
                         </div>
-                        <button id="clearSelectionButton" class="ghostButton" type="button">Clear</button>
+                        <div id="renderSettingsControl" class="rangeControl" aria-label="Hybrid sticker settings" hidden>
+                            <label for="stickerPreviewSizeInput">Sticker preview size</label>
+                            <input id="stickerPreviewSizeInput" type="range" min="0.5" max="1.2" step="0.05" value="0.6">
+                            <span id="stickerPreviewSizeValue">0.60</span>
+                        </div>
                     </div>
-                    <ul id="entriesList" aria-label="Selected discoveries"></ul>
-                    <button id="exportButton" class="primaryButton" type="button">Export Selected</button>
+
+                    <div class="controlSection">
+                        <div id="projectionControl" class="projectionControl">
+                            <label for="projectionMethodSelect">Projection</label>
+                            <select id="projectionMethodSelect">
+                                <option value="umap" selected>UMAP</option>
+                                <option value="pca">PCA</option>
+                                <option value="tsne">t-SNE</option>
+                                <option value="axis">2 axis id</option>
+                            </select>
+                            <input id="projectionAxisXInput" type="number" min="0" step="1" value="0"
+                                placeholder="X axis" aria-label="X axis id" hidden>
+                            <input id="projectionAxisYInput" type="number" min="0" step="1" value="1"
+                                placeholder="Y axis" aria-label="Y axis id" hidden>
+                            <button id="projectionApplyButton" type="button">Apply</button>
+                        </div>
+                    </div>
+
+                    <div class="controlSection">
+                        <div class="buttonRow">
+                            <button id="fitViewButton" type="button">Fit View</button>
+                            <button id="refreshButton" type="button">Refresh</button>
+                            <button id="recomputeLayoutButton" type="button">Recompute Layout</button>
+                        </div>
+                    </div>
+
+                    <div class="controlSection">
+                        <div class="rangeControl">
+                            <label for="previewSizeSlider">Hover preview size</label>
+                            <input id="previewSizeSlider" type="range" min="70" max="250" step="5" value="100">
+                            <span id="previewSizeValue">100%</span>
+                        </div>
+                    </div>
+
+                    <div class="controlSection selectionSection">
+                        <div class="selectedHeader">
+                            <div>
+                                <p class="eyebrow">Selection</p>
+                                <h3>Export Set</h3>
+                            </div>
+                            <button id="clearSelectionButton" class="ghostButton" type="button">Clear</button>
+                        </div>
+                        <ul id="entriesList" aria-label="Selected discoveries"></ul>
+                        <button id="exportButton" class="primaryButton" type="button">Export Selected</button>
+                    </div>
                 </aside>
 
                 <div class="mapStage">

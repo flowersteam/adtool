@@ -3,9 +3,9 @@ import * as THREE from "three";
 import {
     DISCOVERY_LOAD_GRACE_MS,
     HOVER_OPACITY,
+    IMAGE_PREVIEW_WORLD_HEIGHT,
     HYBRID_GRID_CELL_PX,
-    HYBRID_THUMBNAIL_LIMIT,
-    HYBRID_THUMBNAIL_WORLD_SIZE,
+    HYBRID_PREVIEW_LIMIT,
     LIVE_REFRESH_COOLDOWN_MS,
     POINT_OPACITY,
     SCALE_FACTOR,
@@ -26,6 +26,8 @@ const RENDER_MODES = new Set(["points", "images", "hybrid"]);
 const POINT_COLOR = "#2f3a35";
 const HOVER_COLOR = "#255f56";
 const SELECTED_COLOR = "#bc6c25";
+const MAX_PREVIEW_SCALE_BOOST = 1.24;
+const HYBRID_VIEW_REBUILD_DEBOUNCE_MS = 120;
 
 export function createDiscoveryMap({ elements, preview, updateStatus }) {
     const mapScene = createMapScene(elements.app);
@@ -37,8 +39,6 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         hover: pointMaterial(HOVER_COLOR),
         selected: pointMaterial(SELECTED_COLOR),
     };
-    const atlasTextures = new Map();
-
     let entries = [];
     let renderMode = "points";
     let hoveredEntry = null;
@@ -49,6 +49,9 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     let lastLiveRefreshTimestamp = 0;
     let renderVersion = 0;
     let hybridRebuildId = null;
+    let hybridRebuildTimeoutId = null;
+    let hybridPreviewToken = 0;
+    let stickerPreviewWorldHeight = IMAGE_PREVIEW_WORLD_HEIGHT;
 
     function pointMaterial(color) {
         return new THREE.MeshBasicMaterial({
@@ -68,7 +71,6 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         return {
             imageMesh: null,
             pointMesh: null,
-            thumbnailMesh: null,
             visible: true,
             position: new THREE.Vector3(
                 SCALE_FACTOR * Number(point.x || 0),
@@ -79,23 +81,9 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
                 label: prettifyEntryLabel(sourcePath).toLowerCase(),
                 selected: selection.has(sourcePath),
                 sourcePath,
-                thumbnail: validThumbnail(point.thumbnail),
                 visual: normalizeVisualPath(point.visual),
             },
         };
-    }
-
-    function validThumbnail(thumbnail) {
-        if (
-            !thumbnail
-            || typeof thumbnail.atlas !== "string"
-            || !Array.isArray(thumbnail.uv)
-            || thumbnail.uv.length !== 4
-        ) {
-            return null;
-        }
-        const uv = thumbnail.uv.map(Number);
-        return uv.every(Number.isFinite) ? { atlas: thumbnail.atlas, uv } : null;
     }
 
     function visibleEntries() {
@@ -113,7 +101,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         }
         if (renderMode === "hybrid") {
             return [
-                ...entries.map((entry) => entry.thumbnailMesh).filter(Boolean),
+                ...entries.map((entry) => entry.imageMesh).filter(Boolean),
                 ...entries.map((entry) => entry.pointMesh).filter(Boolean),
             ];
         }
@@ -124,7 +112,6 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         return entries.flatMap((entry) => [
             entry.pointMesh,
             entry.imageMesh,
-            entry.thumbnailMesh,
         ].filter(Boolean));
     }
 
@@ -171,27 +158,9 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         }
     }
 
-    function clearThumbnailMeshes() {
-        for (const entry of entries) {
-            disposeMesh(entry.thumbnailMesh, false);
-            entry.thumbnailMesh = null;
-        }
-    }
-
-    function clearAtlasTextures() {
-        for (const texturePromise of atlasTextures.values()) {
-            texturePromise.then((texture) => texture?.dispose());
-        }
-        atlasTextures.clear();
-    }
-
-    function clearRenderedMeshes(clearAtlases = false) {
+    function clearRenderedMeshes() {
         clearPointMeshes();
         clearImageMeshes();
-        clearThumbnailMeshes();
-        if (clearAtlases) {
-            clearAtlasTextures();
-        }
     }
 
     function applyEntryStyle(entry) {
@@ -208,14 +177,13 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             entry.imageMesh.material.opacity = hovered ? HOVER_OPACITY : POINT_OPACITY;
             entry.imageMesh.userData.scaleBoost = selected ? 1.24 : hovered ? 1.16 : 1.0;
         }
-        if (entry.thumbnailMesh) {
-            entry.thumbnailMesh.userData.scaleBoost = selected ? 1.2 : hovered ? 1.12 : 1.0;
-        }
     }
 
-    function updateEntryStyle(entry) {
+    function updateEntryStyle(entry, rebuildHybrid = true) {
         applyEntryStyle(entry);
-        scheduleHybridThumbnailRebuild();
+        if (rebuildHybrid) {
+            queueHybridPreviewRebuild();
+        }
     }
 
     const selection = createSelectionController({
@@ -236,20 +204,48 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         scene.add(mesh);
     }
 
-    async function createImageMesh(entry, version) {
+    function rectsOverlap(a, b) {
+        return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+    }
+
+    async function createImageMesh(
+        entry,
+        version,
+        baseHeight = IMAGE_PREVIEW_WORLD_HEIGHT,
+        { rebuildToken = null, occupiedRects = null } = {},
+    ) {
         const previewPath = visualToPreviewImage(entry.userData.visual);
         const fallbackPath = fallbackPreviewImage(entry.userData.visual);
         const texture = await loadPreviewTexture(previewPath, fallbackPath);
-        if (!texture || version !== renderVersion) {
+        if (
+            !texture
+            || version !== renderVersion
+            || (rebuildToken !== null && rebuildToken !== hybridPreviewToken)
+        ) {
             texture?.dispose();
             return;
         }
 
         const width = texture.image.width || 256;
         const height = texture.image.height || 256;
-        const baseHeight = 0.42;
+        const geometryWidth = baseHeight * width / Math.max(1, height);
+        if (occupiedRects) {
+            const candidateRect = mapScene.planeScreenRect(
+                entry.position,
+                geometryWidth,
+                baseHeight,
+                baseHeight,
+                MAX_PREVIEW_SCALE_BOOST,
+            );
+            if (occupiedRects.some((occupiedRect) => rectsOverlap(candidateRect, occupiedRect))) {
+                texture.dispose();
+                return;
+            }
+            occupiedRects.push(candidateRect);
+        }
+
         const mesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(baseHeight * width / Math.max(1, height), baseHeight),
+            new THREE.PlaneGeometry(geometryWidth, baseHeight),
             new THREE.MeshBasicMaterial({
                 map: texture,
                 opacity: POINT_OPACITY,
@@ -258,7 +254,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         );
         mesh.position.copy(entry.position);
         mesh.visible = entry.visible;
-        mesh.userData = { ...entry.userData, baseScale: 1.0, entry };
+        mesh.userData = { ...entry.userData, baseScale: baseHeight, entry };
         entry.imageMesh = mesh;
         applyEntryStyle(entry);
         scene.add(mesh);
@@ -279,77 +275,12 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         }
     }
 
-    async function atlasTexture(atlasName) {
-        if (atlasTextures.has(atlasName)) {
-            return atlasTextures.get(atlasName);
-        }
-        const texturePromise = textureLoader.loadAsync(`/static/${atlasName}?v=${renderVersion}`)
-            .then((texture) => {
-                texture.flipY = false;
-                texture.needsUpdate = true;
-                return texture;
-            })
-            .catch(() => null);
-        atlasTextures.set(atlasName, texturePromise);
-        return texturePromise;
-    }
-
-    async function createThumbnailMesh(entry, version) {
-        const thumbnail = entry.userData.thumbnail;
-        if (!thumbnail) {
-            return;
-        }
-
-        const texture = await atlasTexture(thumbnail.atlas);
-        if (!texture || version !== renderVersion || renderMode !== "hybrid") {
-            return;
-        }
-
-        const mesh = new THREE.Mesh(
-            thumbnailGeometry(thumbnail.uv),
-            new THREE.MeshBasicMaterial({
-                map: texture,
-                transparent: true,
-                depthWrite: false,
-            }),
-        );
-        mesh.position.copy(entry.position);
-        mesh.position.z = 0.1;
-        mesh.visible = entry.visible;
-        mesh.userData = {
-            ...entry.userData,
-            baseScale: HYBRID_THUMBNAIL_WORLD_SIZE,
-            entry,
-        };
-        entry.thumbnailMesh = mesh;
-        applyEntryStyle(entry);
-        scene.add(mesh);
-    }
-
-    function thumbnailGeometry([u0, v0, u1, v1]) {
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute("position", new THREE.Float32BufferAttribute([
-            -0.5, -0.5, 0,
-            0.5, -0.5, 0,
-            0.5, 0.5, 0,
-            -0.5, 0.5, 0,
-        ], 3));
-        geometry.setAttribute("uv", new THREE.Float32BufferAttribute([
-            u0, v1,
-            u1, v1,
-            u1, v0,
-            u0, v0,
-        ], 2));
-        geometry.setIndex([0, 1, 2, 0, 2, 3]);
-        return geometry;
-    }
-
     function representativeEntries() {
-        const chosen = new Map();
+        const candidates = [];
         const cells = new Map();
 
         for (const entry of entries) {
-            if (!entry.visible || !entry.userData.thumbnail) {
+            if (!entry.visible) {
                 continue;
             }
             const screen = mapScene.screenPoint(entry.position);
@@ -370,46 +301,89 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             }
         }
 
-        for (const { entry } of cells.values()) {
-            if (chosen.size >= HYBRID_THUMBNAIL_LIMIT) {
+        for (const sourcePath of selection.values()) {
+            const selected = entries.find((entry) => entry.userData.sourcePath === sourcePath);
+            if (selected?.visible) {
+                candidates.push(selected);
+            }
+        }
+        const cellCandidates = Array.from(cells.values())
+            .sort((left, right) => left.score - right.score)
+            .map(({ entry }) => entry);
+        candidates.push(...cellCandidates);
+
+        const chosen = new Map();
+        for (const entry of candidates) {
+            if (chosen.size >= HYBRID_PREVIEW_LIMIT) {
                 break;
             }
             chosen.set(entry.userData.sourcePath, entry);
         }
-        for (const sourcePath of selection.values()) {
-            const selected = entries.find((entry) => entry.userData.sourcePath === sourcePath);
-            if (selected?.visible && selected.userData.thumbnail) {
-                chosen.set(sourcePath, selected);
-            }
-        }
-        if (hoveredEntry?.visible && hoveredEntry.userData.thumbnail) {
-            chosen.set(hoveredEntry.userData.sourcePath, hoveredEntry);
-        }
         return Array.from(chosen.values());
     }
 
-    function scheduleHybridThumbnailRebuild() {
-        if (renderMode !== "hybrid" || hybridRebuildId !== null) {
-            return;
-        }
-        hybridRebuildId = requestAnimationFrame(() => {
-            hybridRebuildId = null;
-            rebuildHybridThumbnails();
-        });
-    }
-
-    async function rebuildHybridThumbnails() {
-        const version = renderVersion;
-        clearThumbnailMeshes();
+    function queueHybridPreviewRebuild(delayMs = 0) {
         if (renderMode !== "hybrid") {
             return;
         }
-        await Promise.all(representativeEntries().map((entry) => createThumbnailMesh(entry, version)));
+        if (hybridRebuildTimeoutId !== null) {
+            clearTimeout(hybridRebuildTimeoutId);
+            hybridRebuildTimeoutId = null;
+        }
+
+        const scheduleFrame = () => {
+            if (hybridRebuildId !== null) {
+                return;
+            }
+            hybridRebuildId = requestAnimationFrame(() => {
+                hybridRebuildId = null;
+                rebuildHybridPreviews();
+            });
+        };
+
+        if (delayMs > 0) {
+            hybridRebuildTimeoutId = window.setTimeout(() => {
+                hybridRebuildTimeoutId = null;
+                scheduleFrame();
+            }, delayMs);
+            return;
+        }
+
+        scheduleFrame();
+    }
+
+    function cancelHybridPreviewRebuild() {
+        if (hybridRebuildTimeoutId !== null) {
+            clearTimeout(hybridRebuildTimeoutId);
+            hybridRebuildTimeoutId = null;
+        }
+        if (hybridRebuildId !== null) {
+            cancelAnimationFrame(hybridRebuildId);
+            hybridRebuildId = null;
+        }
+    }
+
+    async function rebuildHybridPreviews() {
+        const version = renderVersion;
+        const rebuildToken = ++hybridPreviewToken;
+        const occupiedRects = [];
+        clearImageMeshes();
+        if (renderMode !== "hybrid") {
+            return;
+        }
+        for (const entry of representativeEntries()) {
+            await createImageMesh(entry, version, stickerPreviewWorldHeight, {
+                rebuildToken,
+                occupiedRects,
+            });
+        }
     }
 
     async function renderCurrentMode(shouldFitInitialView = false) {
         const version = ++renderVersion;
-        clearRenderedMeshes(false);
+        cancelHybridPreviewRebuild();
+        hybridPreviewToken += 1;
+        clearRenderedMeshes();
 
         if (renderMode === "images") {
             await Promise.all(entries.map((entry) => createImageMesh(entry, version)));
@@ -421,7 +395,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
 
         applyFilter(false, false);
         if (renderMode === "hybrid") {
-            await rebuildHybridThumbnails();
+            await rebuildHybridPreviews();
         }
         setEmptyState(
             visibleEntries().length === 0,
@@ -450,9 +424,6 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             if (entry.imageMesh) {
                 entry.imageMesh.visible = entry.visible;
             }
-            if (entry.thumbnailMesh) {
-                entry.thumbnailMesh.visible = entry.visible;
-            }
         }
 
         if (hoveredEntry && !hoveredEntry.visible) {
@@ -461,7 +432,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         }
         setTotals();
         if (rebuildHybrid) {
-            scheduleHybridThumbnailRebuild();
+            queueHybridPreviewRebuild();
         }
 
         if (!emitStatus) {
@@ -482,7 +453,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     }
 
     async function syncPoints(pointsData, shouldFitInitialView = false) {
-        clearRenderedMeshes(true);
+        clearRenderedMeshes();
         hoveredEntry = null;
         preview.hide();
         entries = pointsData.map(createEntry);
@@ -500,7 +471,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         });
 
         if (pointsData.length === 0) {
-            clearRenderedMeshes(true);
+            clearRenderedMeshes();
             entries = [];
             setTotals();
             setEmptyState(
@@ -556,10 +527,10 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             const previous = hoveredEntry;
             hoveredEntry = nextHovered;
             if (previous) {
-                updateEntryStyle(previous);
+                updateEntryStyle(previous, false);
             }
             if (hoveredEntry) {
-                updateEntryStyle(hoveredEntry);
+                updateEntryStyle(hoveredEntry, false);
             }
         }
 
@@ -578,7 +549,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
 
     function resizeRenderer() {
         mapScene.resizeRenderer();
-        scheduleHybridThumbnailRebuild();
+        queueHybridPreviewRebuild(HYBRID_VIEW_REBUILD_DEBOUNCE_MS);
     }
 
     function startAnimation() {
@@ -603,6 +574,16 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         updateStatus(`Switching display to ${mode}...`);
         await renderCurrentMode(true);
         updateStatus(`${visibleEntries().length}/${entries.length} discoveries shown as ${mode}.`);
+    }
+
+    async function setRenderSettings(settings) {
+        const nextPreviewHeight = Number(settings.sticker_preview_world_height);
+        stickerPreviewWorldHeight = Number.isFinite(nextPreviewHeight)
+            ? nextPreviewHeight
+            : IMAGE_PREVIEW_WORLD_HEIGHT;
+        if (renderMode === "hybrid") {
+            await renderCurrentMode(false);
+        }
     }
 
     function markLiveRefreshNow() {
@@ -646,7 +627,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         const previous = hoveredEntry;
         hoveredEntry = null;
         if (previous) {
-            updateEntryStyle(previous);
+            updateEntryStyle(previous, false);
         }
         preview.hide();
     });
@@ -661,7 +642,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             preview.showForPlane(entry, event);
         }
     });
-    mapScene.onViewChange(scheduleHybridThumbnailRebuild);
+    mapScene.onViewChange(() => queueHybridPreviewRebuild(HYBRID_VIEW_REBUILD_DEBOUNCE_MS));
     updateRenderModeButtons();
 
     return {
@@ -673,6 +654,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         refreshDiscoveries,
         resizeRenderer,
         selectedEntries,
+        setRenderSettings,
         setRenderMode,
         startAnimation,
     };
