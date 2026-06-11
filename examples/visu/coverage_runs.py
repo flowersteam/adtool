@@ -42,6 +42,12 @@ def coverage_summary_error(summary_path: Path) -> str:
 
     if "images" not in summary or not isinstance(summary["images"], list):
         return f"Coverage summary is missing an images list: {summary_path}"
+    for image in summary["images"]:
+        if isinstance(image, str):
+            continue
+        if isinstance(image, dict) and isinstance(image.get("file"), str) and image["file"]:
+            continue
+        return f"Coverage summary has an invalid image entry: {summary_path}"
 
     return "Coverage summary could not be loaded."
 
@@ -51,6 +57,24 @@ def coverage_image_url(image: str, run_dir: Path, serving_root: Path) -> str:
     if is_relative_to(image_path, serving_root):
         return f"/coverage/{image_path.relative_to(serving_root).as_posix()}"
     return f"/coverage/{image}"
+
+
+def coverage_image_payload(
+    image: Any,
+    run_dir: Path,
+    serving_root: Path,
+) -> dict[str, Any]:
+    if isinstance(image, str):
+        payload = {"file": image}
+        image_file = image
+    elif isinstance(image, dict) and isinstance(image.get("file"), str) and image["file"]:
+        payload = dict(image)
+        image_file = str(image["file"])
+    else:
+        raise HTTPException(status_code=422, detail="Coverage summary has an invalid image entry.")
+
+    payload["url"] = coverage_image_url(image_file, run_dir, serving_root)
+    return payload
 
 
 def coverage_summary_payload(
@@ -75,10 +99,7 @@ def coverage_summary_payload(
 
     run_dir = summary_path.parent
     summary["images"] = [
-        {
-            "file": image,
-            "url": coverage_image_url(image, run_dir, serving_root),
-        }
+        coverage_image_payload(image, run_dir, serving_root)
         for image in summary.get("images", [])
     ]
     summary["run_name"] = run_dir.name

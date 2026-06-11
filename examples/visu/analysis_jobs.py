@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from dataclasses import asdict
 from typing import Any
 
 from fastapi import HTTPException
@@ -177,5 +178,5 @@ def coverage_comparison_payload(
         "dataset_a_count": summary.count_a,
         "dataset_b_count": summary.count_b,
         "dim_count": summary.dim_count,
-        "images": summary.images,
+        "images": [asdict(image) for image in summary.images],
     }

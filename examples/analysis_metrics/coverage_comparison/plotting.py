@@ -88,7 +88,7 @@ def plot_density_curves(
     )
     ax.fill_between(x_b, y_b, color=plot_config.color_b, alpha=plot_config.alpha)
 
-    ax.set_title(f"Coverage: {dim_label}")
+    ax.set_title(f"{dim_label}")
     ax.set_xlabel(dim_label)
     ax.set_ylabel("density")
     if integer_x and MaxNLocator is not None:
@@ -96,6 +96,47 @@ def plot_density_curves(
         all_x = np.concatenate([x_a, x_b])
         if all_x.size > 0:
             ax.set_xlim(float(np.min(all_x)) - 0.5, float(np.max(all_x)) + 0.5)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=140)
+    plt.close(fig)
+
+
+def plot_dimension_pair_scatter(
+    out_path: Path,
+    x_values_a: np.ndarray,
+    y_values_a: np.ndarray,
+    x_values_b: np.ndarray,
+    y_values_b: np.ndarray,
+    x_label: str,
+    y_label: str,
+    label_a: str,
+    label_b: str,
+    plot_config: Any,
+) -> None:
+    _ensure_matplotlib()
+
+    fig, ax = plt.subplots(figsize=plot_config.figsize)
+    ax.scatter(
+        x_values_a,
+        y_values_a,
+        color=plot_config.color_a,
+        alpha=plot_config.alpha,
+        label=label_a,
+        edgecolors="none",
+    )
+    ax.scatter(
+        x_values_b,
+        y_values_b,
+        color=plot_config.color_b,
+        alpha=plot_config.alpha,
+        label=label_b,
+        edgecolors="none",
+    )
+
+    ax.set_title(f"X = {x_label} | Y = {y_label}")
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
     ax.legend()
     fig.tight_layout()
     fig.savefig(out_path, dpi=140)

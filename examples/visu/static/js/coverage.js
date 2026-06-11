@@ -54,13 +54,29 @@ export function createCoverageController({ elements, lightbox }) {
         return summary.run_name || "coverage run";
     }
 
+    function formatCoverageBounds(bounds) {
+        if (Array.isArray(bounds) && Array.isArray(bounds[0])) {
+            const parts = [];
+            const xBounds = formatRange(bounds[0]);
+            const yBounds = formatRange(bounds[1]);
+            if (xBounds) {
+                parts.push(`X ${xBounds}`);
+            }
+            if (yBounds) {
+                parts.push(`Y ${yBounds}`);
+            }
+            return parts.join(" | ");
+        }
+        return formatRange(bounds);
+    }
+
     function renderImageCard(summary, image, index) {
         const imageInfo = typeof image === "string"
             ? { file: image, url: `/coverage/${image}` }
             : image;
         const labels = Array.isArray(summary.labels) ? summary.labels : [];
-        const bounds = Array.isArray(summary.bounds) ? summary.bounds : [];
-        const title = labels[index] || imageInfo.title || imageInfo.file || `Graph ${index + 1}`;
+        const title = imageInfo.title || labels[index] || imageInfo.file || `Graph ${index + 1}`;
+        const bounds = imageInfo.bounds ?? (Array.isArray(summary.bounds) ? summary.bounds[index] : undefined);
         const card = document.createElement("article");
         card.className = "coverageCard";
 
@@ -74,7 +90,7 @@ export function createCoverageController({ elements, lightbox }) {
 
         const metaNode = document.createElement("div");
         metaNode.className = "coverageCardMeta";
-        metaNode.textContent = formatRange(bounds[index]);
+        metaNode.textContent = formatCoverageBounds(bounds);
 
         const img = document.createElement("img");
         img.loading = "lazy";

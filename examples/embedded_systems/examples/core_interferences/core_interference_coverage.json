@@ -1,6 +1,35 @@
 {
   "dimensions": "all",
   "dimension_pretreatment": "examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+  "additional_2d_graphs": [
+    [0, 12],
+    [2, 12],
+    [4, 12],
+    [6, 12],
+    [8, 12],
+    [10, 12],
+
+    [1, 13],
+    [3, 13],
+    [5, 13],
+    [7, 13],
+    [9, 13],
+    [11, 13],
+
+    [0, 14],
+    [1, 14],
+    [2, 14],
+    [3, 14],
+    [4, 14],
+    [5, 14],
+    [6, 14],
+    [7, 14],
+    [8, 14],
+    [9, 14],
+    [10, 14],
+    [11, 14]
+
+  ],
   "plot": {
     "points": 512,
     "format": "png",

@@ -2,6 +2,7 @@
 
 from .comparison import (
     ComparisonConfig,
+    CoverageImageSummary,
     CoverageComparisonSummary,
     DimensionPretreatmentConfig,
     DiscoverySet,
@@ -13,6 +14,7 @@ from .comparison import (
 run_coverage_comparison = compare_discovery_sets
 
 __all__ = [
+    "CoverageImageSummary",
     "CoverageComparisonSummary",
     "ComparisonConfig",
     "DimensionPretreatmentConfig",

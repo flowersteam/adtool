@@ -21,6 +21,7 @@ DEFAULT_LINE_WIDTH = 2.0
 DEFAULT_FIGSIZE = (7.0, 4.0)
 DEFAULT_OUTPUT_FORMAT = "png"
 DEFAULT_DIMENSIONS = "all"
+DEFAULT_ADDITIONAL_2D_GRAPHS: list[tuple[int, int]] = []
 
 
 @dataclass(frozen=True)
@@ -59,8 +60,20 @@ class DimensionPretreatmentConfig:
 
 
 @dataclass(frozen=True)
+class CoverageImageSummary:
+    file: str
+    title: str
+    plot_type: str
+    dimensions: list[int]
+    bounds: list[tuple[float, float]] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class ComparisonConfig:
     dimensions: Union[str, list[int]] = DEFAULT_DIMENSIONS
+    additional_2d_graphs: list[tuple[int, int]] = field(
+        default_factory=lambda: list(DEFAULT_ADDITIONAL_2D_GRAPHS)
+    )
     dimension_pretreatment: Optional[DimensionPretreatmentConfig] = None
     plot: PlotConfig = field(default_factory=PlotConfig)
 
@@ -77,9 +90,10 @@ class CoverageComparisonSummary:
     dim_count: int
     labels: list[str]
     resolved_dimensions: list[int]
+    resolved_additional_2d_graphs: list[tuple[int, int]]
     dimension_pretreatment: Optional[str]
     bounds: list[tuple[float, float]]
-    images: list[str]
+    images: list[CoverageImageSummary]
 
 
 def _parse_dimensions(value: Any) -> Union[str, list[int]]:
@@ -89,22 +103,41 @@ def _parse_dimensions(value: Any) -> Union[str, list[int]]:
     if isinstance(value, str):
         if value.lower() == DEFAULT_DIMENSIONS:
             return DEFAULT_DIMENSIONS
-        raise ValueError("dimensions must be 'all' or a non-empty list of integers")
+        raise ValueError("dimensions must be 'all' or a list of integers")
 
     if isinstance(value, list):
-        if not value:
-            raise ValueError("dimensions list cannot be empty; use 'all' instead")
         if not all(isinstance(item, int) and not isinstance(item, bool) for item in value):
             raise ValueError("dimensions must contain only integer indices")
         return list(value)
 
-    raise ValueError("dimensions must be 'all' or a non-empty list of integers")
+    raise ValueError("dimensions must be 'all' or a list of integers")
 
 
 def _parse_figsize(value: Any) -> tuple[float, float]:
     if isinstance(value, (list, tuple)) and len(value) == 2:
         return float(value[0]), float(value[1])
     return DEFAULT_FIGSIZE
+
+
+def _parse_additional_2d_graphs(value: Any) -> list[tuple[int, int]]:
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise ValueError("additional_2d_graphs must be a list of [x_dim, y_dim] pairs")
+
+    resolved_pairs: list[tuple[int, int]] = []
+    for pair in value:
+        if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+            raise ValueError(
+                "additional_2d_graphs must contain only [x_dim, y_dim] pairs"
+            )
+        x_dim, y_dim = pair
+        if any(not isinstance(dim, int) or isinstance(dim, bool) for dim in (x_dim, y_dim)):
+            raise ValueError(
+                "additional_2d_graphs pairs must contain only integer indices"
+            )
+        resolved_pairs.append((x_dim, y_dim))
+    return resolved_pairs
 
 
 def _parse_output_format(value: Any) -> str:
@@ -171,6 +204,9 @@ def load_comparison_config(config_path: Optional[Union[str, Path]]) -> Compariso
 
     return ComparisonConfig(
         dimensions=_parse_dimensions(payload.get("dimensions", DEFAULT_DIMENSIONS)),
+        additional_2d_graphs=_parse_additional_2d_graphs(
+            payload.get("additional_2d_graphs")
+        ),
         dimension_pretreatment=_parse_dimension_pretreatment(
             payload.get(
                 "dimension_pretreatment",
@@ -275,19 +311,33 @@ def _validate_matching_dimensions(values_a: np.ndarray, values_b: np.ndarray) ->
     return dim_count
 
 
+def _resolve_dimension_index(dim_index: int, dim_count: int) -> int:
+    resolved = dim_index + dim_count if dim_index < 0 else dim_index
+    if resolved < 0 or resolved >= dim_count:
+        raise ValueError(
+            f"dimension index {dim_index} out of range for dim_count {dim_count}"
+        )
+    return resolved
+
+
 def _select_dimensions(dimensions: Union[str, list[int]], dim_count: int) -> list[int]:
     if dimensions == DEFAULT_DIMENSIONS:
         return list(range(dim_count))
 
-    resolved_dimensions: list[int] = []
-    for dim_index in dimensions:
-        resolved = dim_index + dim_count if dim_index < 0 else dim_index
-        if resolved < 0 or resolved >= dim_count:
-            raise ValueError(
-                f"dimension index {dim_index} out of range for dim_count {dim_count}"
-            )
-        resolved_dimensions.append(resolved)
-    return resolved_dimensions
+    return [_resolve_dimension_index(dim_index, dim_count) for dim_index in dimensions]
+
+
+def _select_dimension_pairs(
+    dimensions: list[tuple[int, int]],
+    dim_count: int,
+) -> list[tuple[int, int]]:
+    return [
+        (
+            _resolve_dimension_index(x_dim, dim_count),
+            _resolve_dimension_index(y_dim, dim_count),
+        )
+        for x_dim, y_dim in dimensions
+    ]
 
 
 def _validate_values(values: np.ndarray, name: str) -> None:
@@ -383,6 +433,10 @@ def _default_label(path: Path) -> str:
     return path.name or str(path)
 
 
+def _display_dimension_label(label: str, dim_index: int) -> str:
+    return f"{label} ({dim_index})"
+
+
 def _summary_payload(
     summary: CoverageComparisonSummary,
     timestamp: str,
@@ -400,6 +454,9 @@ def _summary_payload(
         "dim_count": summary.dim_count,
         "labels": summary.labels,
         "resolved_dimensions": summary.resolved_dimensions,
+        "resolved_additional_2d_graphs": [
+            list(dim_pair) for dim_pair in summary.resolved_additional_2d_graphs
+        ],
         "dimension_pretreatment": summary.dimension_pretreatment,
         "dimension_pretreatment_config": (
             config.dimension_pretreatment.config
@@ -407,8 +464,17 @@ def _summary_payload(
             else {}
         ),
         "bounds": [list(bounds) for bounds in summary.bounds],
-        "images": summary.images,
-        "plot_type": "1d histogram density",
+        "images": [
+            {
+                "file": image.file,
+                "title": image.title,
+                "plot_type": image.plot_type,
+                "dimensions": image.dimensions,
+                "bounds": [list(bounds) for bounds in image.bounds],
+            }
+            for image in summary.images
+        ],
+        "plot_type": "coverage comparison plots",
         "timestamp": timestamp,
         "plot": {
             "points": config.plot.points,
@@ -458,12 +524,17 @@ def compare_discovery_sets(
     dim_count = _validate_matching_dimensions(values_a, values_b)
     all_labels = pretreated_labels or [f"dim_{idx}" for idx in range(dim_count)]
     dimensions = _select_dimensions(config.dimensions, dim_count)
+    additional_2d_graphs = _select_dimension_pairs(config.additional_2d_graphs, dim_count)
     run_dir, timestamp = _run_dir(Path(output_dir).resolve())
 
-    labels = [all_labels[idx] for idx in dimensions]
+    labels = [_display_dimension_label(all_labels[idx], idx) for idx in dimensions]
     bounds: list[tuple[float, float]] = []
-    images: list[str] = []
-    from .plotting import density_curve, plot_density_curves
+    images: list[CoverageImageSummary] = []
+    from .plotting import (
+        density_curve,
+        plot_density_curves,
+        plot_dimension_pair_scatter,
+    )
 
     for dim_index, dim_label in zip(dimensions, labels):
         dim_values_a = values_a[:, dim_index]
@@ -473,7 +544,15 @@ def compare_discovery_sets(
         bounds.append(dim_bounds)
 
         image_name = f"dim_{dim_index}_density.{config.plot.output_format}"
-        images.append(image_name)
+        images.append(
+            CoverageImageSummary(
+                file=image_name,
+                title=dim_label,
+                plot_type="1d density",
+                dimensions=[dim_index],
+                bounds=[dim_bounds],
+            )
+        )
         plot_density_curves(
             run_dir / image_name,
             density_curve(
@@ -495,6 +574,38 @@ def compare_discovery_sets(
             integer_x=integer_values,
         )
 
+    for x_dim, y_dim in additional_2d_graphs:
+        x_label = _display_dimension_label(all_labels[x_dim], x_dim)
+        y_label = _display_dimension_label(all_labels[y_dim], y_dim)
+        x_values_a = values_a[:, x_dim]
+        x_values_b = values_b[:, x_dim]
+        y_values_a = values_a[:, y_dim]
+        y_values_b = values_b[:, y_dim]
+        image_name = f"dims_{x_dim}_{y_dim}_scatter.{config.plot.output_format}"
+        x_bounds = _bounds(x_values_a, x_values_b)
+        y_bounds = _bounds(y_values_a, y_values_b)
+        images.append(
+            CoverageImageSummary(
+                file=image_name,
+                title=f"X = {x_label} | Y = {y_label}",
+                plot_type="2d scatter",
+                dimensions=[x_dim, y_dim],
+                bounds=[x_bounds, y_bounds],
+            )
+        )
+        plot_dimension_pair_scatter(
+            run_dir / image_name,
+            x_values_a,
+            y_values_a,
+            x_values_b,
+            y_values_b,
+            x_label,
+            y_label,
+            label_a,
+            label_b,
+            config.plot,
+        )
+
     summary = CoverageComparisonSummary(
         run_dir=run_dir,
         discovery_a_path=discovery_a_path,
@@ -506,6 +617,7 @@ def compare_discovery_sets(
         dim_count=dim_count,
         labels=labels,
         resolved_dimensions=dimensions,
+        resolved_additional_2d_graphs=additional_2d_graphs,
         dimension_pretreatment=(
             config.dimension_pretreatment.path
             if config.dimension_pretreatment is not None
