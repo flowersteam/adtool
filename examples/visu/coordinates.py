@@ -3,9 +3,6 @@ from __future__ import annotations
 import json
 import os
 import threading
-from collections.abc import Iterator
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -25,15 +22,14 @@ DEFAULT_PROJECTION_METHOD = "umap"
 DEFAULT_PROJECTION_AXES = (0, 1)
 
 Discovery = dict[str, Any]
-
-
-@dataclass(frozen=True)
-class DiscoveryCacheEntry:
-    mtime: float
-    discovery: Discovery
-
-
-_discovery_cache: dict[str, DiscoveryCacheEntry] = {}
+DatasetSignature = tuple[tuple[str, float], ...]
+_CACHE_MISS = object()
+_discovery_cache: dict[str, tuple[float, Discovery | None]] = {}
+_dataset_cache: dict[tuple[str, DatasetSignature], tuple[list[Discovery], np.ndarray]] = {}
+_layout_cache: dict[
+    tuple[str, DatasetSignature, str, tuple[int, int]],
+    tuple[list[Discovery], np.ndarray, str, int],
+] = {}
 _cache_lock = threading.Lock()
 
 
@@ -44,33 +40,23 @@ def _cache_mtime(discovery_dir: Path, discovery_path: Path) -> float | None:
         return None
 
 
-def _cached_discovery(discovery_path: Path, cache_mtime: float) -> Discovery | None:
+def _cached_discovery(discovery_path: Path, cache_mtime: float) -> object:
     cache_key = os.fspath(discovery_path)
     with _cache_lock:
         cached = _discovery_cache.get(cache_key)
-        if cached is not None and cached.mtime == cache_mtime:
-            return cached.discovery
-    return None
+    if cached is not None and cached[0] == cache_mtime:
+        return cached[1]
+    return _CACHE_MISS
 
 
 def _store_cached_discovery(
     discovery_path: Path,
     cache_mtime: float,
-    discovery: Discovery,
+    discovery: Discovery | None,
 ) -> None:
     cache_key = os.fspath(discovery_path)
     with _cache_lock:
-        _discovery_cache[cache_key] = DiscoveryCacheEntry(cache_mtime, discovery)
-
-
-def _load_json(path: Path) -> dict[str, Any] | None:
-    try:
-        with path.open() as handle:
-            payload = json.load(handle)
-    except (json.JSONDecodeError, OSError):
-        return None
-
-    return payload if isinstance(payload, dict) else None
+        _discovery_cache[cache_key] = (cache_mtime, discovery)
 
 
 def _valid_embedding(payload: dict[str, Any]) -> list[float] | None:
@@ -94,6 +80,25 @@ def _valid_embedding(payload: dict[str, Any]) -> list[float] | None:
     return embedding.tolist()
 
 
+def _visual_from_rendered_outputs(payload: dict[str, Any], discovery_dir: Path) -> Path | None:
+    rendered_outputs = payload.get("rendered_outputs")
+    if not isinstance(rendered_outputs, list):
+        return None
+
+    for rendered_output in rendered_outputs:
+        if not isinstance(rendered_output, str):
+            continue
+
+        visual_path = discovery_dir / rendered_output
+        if (
+            visual_path.suffix.lower() in VALID_VISUAL_SUFFIXES
+            and visual_path.is_file()
+        ):
+            return visual_path
+
+    return None
+
+
 def _first_visual_file(discovery_dir: Path) -> Path | None:
     try:
         files = list(discovery_dir.iterdir())
@@ -107,30 +112,47 @@ def _first_visual_file(discovery_dir: Path) -> Path | None:
     return None
 
 
-def process_discovery(root: str | os.PathLike[str], name: str) -> Discovery | None:
-    discovery_dir = Path(root) / name
-    discovery_path = discovery_dir / "discovery.json"
-    if not discovery_path.exists():
-        return None
+def _resolve_visual_path(payload: dict[str, Any], discovery_dir: Path) -> Path | None:
+    visual_path = _visual_from_rendered_outputs(payload, discovery_dir)
+    if visual_path is not None:
+        return visual_path
+    return _first_visual_file(discovery_dir)
 
-    cache_mtime = _cache_mtime(discovery_dir, discovery_path)
+
+def process_discovery(
+    discovery_path: str | os.PathLike[str],
+    cache_mtime: float | None = None,
+) -> Discovery | None:
+    discovery_path = Path(discovery_path)
+    discovery_dir = discovery_path.parent
+
+    if cache_mtime is None:
+        cache_mtime = _cache_mtime(discovery_dir, discovery_path)
     if cache_mtime is None:
         return None
 
     cached = _cached_discovery(discovery_path, cache_mtime)
-    if cached is not None:
+    if cached is not _CACHE_MISS:
         return cached
 
-    payload = _load_json(discovery_path)
-    if payload is None:
+    try:
+        with discovery_path.open() as handle:
+            payload = json.load(handle)
+    except (json.JSONDecodeError, OSError):
+        _store_cached_discovery(discovery_path, cache_mtime, None)
+        return None
+    if not isinstance(payload, dict):
+        _store_cached_discovery(discovery_path, cache_mtime, None)
         return None
 
     embedding = _valid_embedding(payload)
     if embedding is None:
+        _store_cached_discovery(discovery_path, cache_mtime, None)
         return None
 
-    visual_path = _first_visual_file(discovery_dir)
+    visual_path = _resolve_visual_path(payload, discovery_dir)
     if visual_path is None:
+        _store_cached_discovery(discovery_path, cache_mtime, None)
         return None
 
     discovery = {
@@ -141,26 +163,36 @@ def process_discovery(root: str | os.PathLike[str], name: str) -> Discovery | No
     return discovery
 
 
-def _iter_discovery_candidates(path: str | os.PathLike[str]) -> Iterator[tuple[str, str]]:
-    for root, dirs, _ in os.walk(path):
-        for name in dirs:
-            yield root, name
+def _iter_discovery_paths(path: str | os.PathLike[str]) -> list[Path]:
+    return sorted(Path(path).rglob("discovery.json"))
+
+
+def _scan_discoveries(path: str | os.PathLike[str]) -> tuple[list[Discovery], DatasetSignature]:
+    discoveries: list[Discovery] = []
+    root_path = Path(path)
+    dataset_signature: list[tuple[str, float]] = []
+
+    for discovery_path in _iter_discovery_paths(root_path):
+        cache_mtime = _cache_mtime(discovery_path.parent, discovery_path)
+        if cache_mtime is None:
+            continue
+
+        relative_path = os.fspath(discovery_path.relative_to(root_path)).replace(os.sep, "/")
+        dataset_signature.append((relative_path, cache_mtime))
+
+        result = process_discovery(discovery_path, cache_mtime=cache_mtime)
+        if result:
+            discoveries.append(result)
+
+    discoveries.sort(key=lambda discovery: discovery["visual"])
+    return discoveries, tuple(dataset_signature)
 
 
 def list_discoveries(path: str | os.PathLike[str]) -> list[Discovery]:
-    discoveries: list[Discovery] = []
-    with ThreadPoolExecutor() as executor:
-        tasks = [
-            executor.submit(process_discovery, root, name)
-            for root, name in _iter_discovery_candidates(path)
-        ]
-        for future in as_completed(tasks):
-            result = future.result()
-            if result:
-                discoveries.append(result)
+    discoveries, _ = _scan_discoveries(path)
 
     print("Number of discoveries: ", len(discoveries))
-    return sorted(discoveries, key=lambda discovery: discovery["visual"])
+    return discoveries
 
 
 def _last_frame_needs_export(visual_path: Path, image_path: Path) -> bool:
@@ -256,6 +288,77 @@ def _valid_discoveries(discoveries: list[Discovery]) -> tuple[list[Discovery], n
         return [], np.empty((0, 0))
 
     return filtered, np.vstack(embeddings)
+
+
+def _purge_stale_caches(root_key: str, dataset_signature: DatasetSignature) -> None:
+    with _cache_lock:
+        stale_dataset_keys = [
+            cache_key
+            for cache_key in _dataset_cache
+            if cache_key[0] == root_key and cache_key[1] != dataset_signature
+        ]
+        stale_layout_keys = [
+            cache_key
+            for cache_key in _layout_cache
+            if cache_key[0] == root_key and cache_key[1] != dataset_signature
+        ]
+
+        for cache_key in stale_dataset_keys:
+            del _dataset_cache[cache_key]
+        for cache_key in stale_layout_keys:
+            del _layout_cache[cache_key]
+
+
+def _dataset_layout_input(
+    root_path: str | os.PathLike[str],
+    dataset_signature: DatasetSignature,
+    discoveries: list[Discovery],
+) -> tuple[list[Discovery], np.ndarray]:
+    cache_key = (os.fspath(root_path), dataset_signature)
+    with _cache_lock:
+        cached = _dataset_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    cached = _valid_discoveries(discoveries)
+    with _cache_lock:
+        _dataset_cache[cache_key] = cached
+    return cached
+
+
+def _cached_layout(
+    root_path: str | os.PathLike[str],
+    dataset_signature: DatasetSignature,
+    discoveries: list[Discovery],
+    projection_method: str,
+    projection_axes: tuple[int, int],
+) -> tuple[list[Discovery], np.ndarray, str, int]:
+    root_key = os.fspath(root_path)
+    cache_key = (
+        root_key,
+        dataset_signature,
+        projection_method.lower(),
+        projection_axes,
+    )
+    with _cache_lock:
+        cached = _layout_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    dataset_discoveries, matrix = _dataset_layout_input(root_key, dataset_signature, discoveries)
+    if len(dataset_discoveries) == 0:
+        cached = (dataset_discoveries, np.empty((0, 2)), "empty", 0)
+    else:
+        embedding, layout_mode, fit_count = _project_layout(
+            matrix,
+            projection_method=projection_method,
+            projection_axes=projection_axes,
+        )
+        cached = (dataset_discoveries, embedding, layout_mode, fit_count)
+
+    with _cache_lock:
+        _layout_cache[cache_key] = cached
+    return cached
 
 
 def _normalize_embedding_matrix(x: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -467,39 +570,44 @@ def compute_coordinates(
     projection_axes: tuple[int, int] = DEFAULT_PROJECTION_AXES,
 ) -> None:
     print("computing coordinates", path)
+    root_path = Path(path).resolve()
     static_dir = Path(static_dir)
     static_dir.mkdir(parents=True, exist_ok=True)
     discoveries_path = static_dir / "discoveries.json"
     concatenated_path = static_dir / "concatenated.webm"
 
-    discoveries = list_discoveries(path)
+    discoveries, dataset_signature = _scan_discoveries(root_path)
+    print("Number of discoveries: ", len(discoveries))
     if len(discoveries) == 0:
         _write_empty_layout(static_dir, discoveries_path)
         if concatenated_path.exists():
             concatenated_path.unlink()
         return
 
-    discoveries, x = _valid_discoveries(discoveries)
-    if len(discoveries) == 0:
-        _write_empty_layout(static_dir, discoveries_path)
-        return
-
-    embedding, layout_mode, fit_count = _project_layout(
-        x,
+    root_key = os.fspath(root_path)
+    _purge_stale_caches(root_key, dataset_signature)
+    layout_discoveries, layout_embedding, layout_mode, fit_count = _cached_layout(
+        root_key,
+        dataset_signature,
+        discoveries,
         projection_method=projection_method,
         projection_axes=projection_axes,
     )
-    export_last_frame(discoveries)
+    if len(layout_discoveries) == 0:
+        _write_empty_layout(static_dir, discoveries_path)
+        return
+
+    export_last_frame(layout_discoveries)
 
     display_discoveries, display_embedding = _downsample_for_display(
-        discoveries,
-        embedding,
+        layout_discoveries,
+        layout_embedding,
         max_displayed,
     )
     saved_coordinates = _saved_coordinates(
         display_discoveries,
         display_embedding,
-        path,
+        root_path,
     )
 
     _write_layout_result(
@@ -507,7 +615,7 @@ def compute_coordinates(
         discoveries_path,
         saved_coordinates,
         layout_mode,
-        len(discoveries),
+        len(layout_discoveries),
         fit_count,
         max_displayed,
         projection_method,
