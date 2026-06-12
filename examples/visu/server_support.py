@@ -6,10 +6,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
-if __package__:
-    from .runtime import EXAMPLES_DIR, MIME_TYPES, REPO_ROOT
-else:
-    from runtime import EXAMPLES_DIR, MIME_TYPES, REPO_ROOT
+from adtool.examples.visu.runtime import MIME_TYPES
 
 
 def is_relative_to(path: Path, parent: Path) -> bool:
@@ -34,13 +31,6 @@ def resolve_input_path(value: Any, field_name: str, required: bool = True) -> Pa
     path = Path(str(value).strip()).expanduser()
     if path.is_absolute():
         return path.resolve()
-
-    bases = (Path.cwd(), REPO_ROOT, EXAMPLES_DIR)
-    for base in bases:
-        candidate = (base / path).resolve()
-        if candidate.exists():
-            return candidate
-
     return (Path.cwd() / path).resolve()
 
 

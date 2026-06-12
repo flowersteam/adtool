@@ -5,29 +5,13 @@ from pathlib import Path
 
 from watchfiles import Change, watch
 
-if __package__:
-    from .runtime import (
-        RECOMPUTE_DEBOUNCE_SECONDS,
-        RECOMPUTE_MIN_INTERVAL_SECONDS,
-        RuntimeState,
-        ServerConfig,
-    )
-else:
-    from runtime import (
-        RECOMPUTE_DEBOUNCE_SECONDS,
-        RECOMPUTE_MIN_INTERVAL_SECONDS,
-        RuntimeState,
-        ServerConfig,
-    )
-
-
-def _compute_coordinates(*args, **kwargs) -> None:
-    if __package__:
-        from .coordinates import compute_coordinates
-    else:
-        from coordinates import compute_coordinates
-
-    compute_coordinates(*args, **kwargs)
+from adtool.examples.visu.coordinates import compute_coordinates
+from adtool.examples.visu.runtime import (
+    RECOMPUTE_DEBOUNCE_SECONDS,
+    RECOMPUTE_MIN_INTERVAL_SECONDS,
+    RuntimeState,
+    ServerConfig,
+)
 
 
 def cleanup_static_discoveries(config: ServerConfig) -> None:
@@ -35,7 +19,7 @@ def cleanup_static_discoveries(config: ServerConfig) -> None:
 
 
 def write_discovery_coordinates(config: ServerConfig, state: RuntimeState) -> None:
-    _compute_coordinates(
+    compute_coordinates(
         config.discoveries,
         static_dir=config.static_dir,
         max_displayed=state.display_limit,

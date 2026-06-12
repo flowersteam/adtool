@@ -5,8 +5,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-EXAMPLES_DIR = BASE_DIR.parent
-REPO_ROOT = EXAMPLES_DIR.parent
 STATIC_DIR = BASE_DIR / "static"
 
 MIME_TYPES = {

@@ -1,79 +1,27 @@
 from __future__ import annotations
 
-import sys
 from dataclasses import asdict
 from typing import Any
 
+from adtool.examples.analysis_metrics.coverage_comparison import compare_discovery_sets
+from adtool.examples.analysis_metrics.random_run import run_random_baseline
 from fastapi import HTTPException
-
-if __package__:
-    from .coverage_runs import coverage_runs_dir
-    from .runtime import (
-        DEFAULT_RANDOM_ITERATIONS,
-        DEFAULT_RANDOM_SEED,
-        EXAMPLES_DIR,
-        REPO_ROOT,
-        RuntimeState,
-        ServerConfig,
-    )
-    from .server_support import (
-        error_detail,
-        optional_payload_int,
-        payload_int,
-        require_directory,
-        require_file,
-        resolve_input_path,
-        timestamped_analysis_dir,
-    )
-else:
-    from coverage_runs import coverage_runs_dir
-    from runtime import (
-        DEFAULT_RANDOM_ITERATIONS,
-        DEFAULT_RANDOM_SEED,
-        EXAMPLES_DIR,
-        REPO_ROOT,
-        RuntimeState,
-        ServerConfig,
-    )
-    from server_support import (
-        error_detail,
-        optional_payload_int,
-        payload_int,
-        require_directory,
-        require_file,
-        resolve_input_path,
-        timestamped_analysis_dir,
-    )
-
-
-def _ensure_analysis_import_paths() -> None:
-    for import_root in (REPO_ROOT, EXAMPLES_DIR):
-        if str(import_root) not in sys.path:
-            sys.path.insert(0, str(import_root))
-
-
-def _load_random_baseline_runner():
-    _ensure_analysis_import_paths()
-    try:
-        from analysis_metrics.random_run import run_random_baseline
-    except ModuleNotFoundError as exc:
-        if exc.name != "analysis_metrics":
-            raise
-        from examples.analysis_metrics.random_run import run_random_baseline
-
-    return run_random_baseline
-
-
-def _load_coverage_comparator():
-    _ensure_analysis_import_paths()
-    try:
-        from analysis_metrics.coverage_comparison import compare_discovery_sets
-    except ModuleNotFoundError as exc:
-        if exc.name != "analysis_metrics":
-            raise
-        from examples.analysis_metrics.coverage_comparison import compare_discovery_sets
-
-    return compare_discovery_sets
+from adtool.examples.visu.coverage_runs import coverage_runs_dir
+from adtool.examples.visu.runtime import (
+    DEFAULT_RANDOM_ITERATIONS,
+    DEFAULT_RANDOM_SEED,
+    RuntimeState,
+    ServerConfig,
+)
+from adtool.examples.visu.server_support import (
+    error_detail,
+    optional_payload_int,
+    payload_int,
+    require_directory,
+    require_file,
+    resolve_input_path,
+    timestamped_analysis_dir,
+)
 
 
 def random_run_payload(
@@ -104,10 +52,9 @@ def random_run_payload(
         maximum=2**32 - 1,
     )
 
-    runner = _load_random_baseline_runner()
     with state.analysis_lock:
         try:
-            summary = runner(
+            summary = run_random_baseline(
                 config_file=config_file,
                 output_dir=output_dir,
                 nb_iterations=nb_iterations,
@@ -152,10 +99,9 @@ def coverage_comparison_payload(
     label_a = payload.get("label_a") or "IMGEP"
     label_b = payload.get("label_b") or "baseline"
 
-    comparator = _load_coverage_comparator()
     with state.analysis_lock:
         try:
-            summary = comparator(
+            summary = compare_discovery_sets(
                 config.discoveries,
                 comparison_path,
                 output_dir=coverage_runs_dir(config),

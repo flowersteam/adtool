@@ -6,12 +6,8 @@ from typing import Any
 
 from fastapi import HTTPException
 
-if __package__:
-    from .runtime import ServerConfig
-    from .server_support import is_relative_to
-else:
-    from runtime import ServerConfig
-    from server_support import is_relative_to
+from adtool.examples.visu.runtime import ServerConfig
+from adtool.examples.visu.server_support import is_relative_to
 
 
 def coverage_runs_dir(config: ServerConfig) -> Path:

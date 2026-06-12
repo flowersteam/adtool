@@ -12,66 +12,35 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from watchfiles import Change, awatch
 
-if __package__:
-    from .analysis_jobs import coverage_comparison_payload, random_run_payload
-    from .coverage_runs import (
-        coverage_runs_dir,
-        coverage_runs_payload,
-        coverage_status_payload,
-        latest_coverage_summary_payload,
-    )
-    from .exporter import export_selected_discoveries
-    from .layout import (
-        cleanup_static_discoveries,
-        recompute_discoveries,
-        watch_discoveries,
-        write_discovery_coordinates,
-    )
-    from .runtime import (
-        DEFAULT_DISPLAY_LIMIT,
-        DEFAULT_PROJECTION_AXES,
-        DEFAULT_PROJECTION_METHOD,
-        DEFAULT_STICKER_PREVIEW_WORLD_HEIGHT,
-        DISPLAY_LIMIT_PRESETS,
-        MAX_DISPLAY_LIMIT,
-        MIN_DISPLAY_LIMIT,
-        MAX_STICKER_PREVIEW_WORLD_HEIGHT,
-        MIN_STICKER_PREVIEW_WORLD_HEIGHT,
-        PROJECTION_METHODS,
-        RuntimeState,
-        ServerConfig,
-    )
-    from .server_support import is_relative_to, mime_type
-else:
-    from analysis_jobs import coverage_comparison_payload, random_run_payload
-    from coverage_runs import (
-        coverage_runs_dir,
-        coverage_runs_payload,
-        coverage_status_payload,
-        latest_coverage_summary_payload,
-    )
-    from exporter import export_selected_discoveries
-    from layout import (
-        cleanup_static_discoveries,
-        recompute_discoveries,
-        watch_discoveries,
-        write_discovery_coordinates,
-    )
-    from runtime import (
-        DEFAULT_DISPLAY_LIMIT,
-        DEFAULT_PROJECTION_AXES,
-        DEFAULT_PROJECTION_METHOD,
-        DEFAULT_STICKER_PREVIEW_WORLD_HEIGHT,
-        DISPLAY_LIMIT_PRESETS,
-        MAX_DISPLAY_LIMIT,
-        MIN_DISPLAY_LIMIT,
-        MAX_STICKER_PREVIEW_WORLD_HEIGHT,
-        MIN_STICKER_PREVIEW_WORLD_HEIGHT,
-        PROJECTION_METHODS,
-        RuntimeState,
-        ServerConfig,
-    )
-    from server_support import is_relative_to, mime_type
+from adtool.examples.visu.analysis_jobs import coverage_comparison_payload, random_run_payload
+from adtool.examples.visu.coverage_runs import (
+    coverage_runs_dir,
+    coverage_runs_payload,
+    coverage_status_payload,
+    latest_coverage_summary_payload,
+)
+from adtool.examples.visu.exporter import export_selected_discoveries
+from adtool.examples.visu.layout import (
+    cleanup_static_discoveries,
+    recompute_discoveries,
+    watch_discoveries,
+    write_discovery_coordinates,
+)
+from adtool.examples.visu.runtime import (
+    DEFAULT_DISPLAY_LIMIT,
+    DEFAULT_PROJECTION_AXES,
+    DEFAULT_PROJECTION_METHOD,
+    DEFAULT_STICKER_PREVIEW_WORLD_HEIGHT,
+    DISPLAY_LIMIT_PRESETS,
+    MAX_DISPLAY_LIMIT,
+    MIN_DISPLAY_LIMIT,
+    MAX_STICKER_PREVIEW_WORLD_HEIGHT,
+    MIN_STICKER_PREVIEW_WORLD_HEIGHT,
+    PROJECTION_METHODS,
+    RuntimeState,
+    ServerConfig,
+)
+from adtool.examples.visu.server_support import is_relative_to, mime_type
 
 
 def parse_args() -> ServerConfig:

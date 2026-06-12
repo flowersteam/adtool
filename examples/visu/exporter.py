@@ -5,12 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 
-if __package__:
-    from .runtime import ServerConfig
-    from .server_support import is_relative_to
-else:
-    from runtime import ServerConfig
-    from server_support import is_relative_to
+from adtool.examples.visu.runtime import ServerConfig
+from adtool.examples.visu.server_support import is_relative_to
 
 
 def _export_source_dir(config: ServerConfig, file_path: str) -> Path | None:
