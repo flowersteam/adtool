@@ -1,41 +1,18 @@
-from __future__ import annotations
-
 from pathlib import Path
-from typing import Any
 
+import matplotlib
 import numpy as np
 
-try:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    from matplotlib.ticker import MaxNLocator
-except Exception as exc:  # pragma: no cover - matplotlib optional
-    plt = None
-    MaxNLocator = None
-    _MATPLOTLIB_ERROR = exc
-else:
-    _MATPLOTLIB_ERROR = None
-
-
-DensityCurve = tuple[np.ndarray, np.ndarray]
-
-
-def _ensure_matplotlib() -> None:
-    if plt is None:
-        raise RuntimeError(
-            "matplotlib is required for coverage comparison plots; "
-            f"import failed with: {_MATPLOTLIB_ERROR}"
-        )
-
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
 def density_curve(
-    values: np.ndarray,
-    bounds: tuple[float, float],
-    points: int,
-    integer_values: bool = False,
-) -> DensityCurve:
+    values,
+    bounds,
+    points,
+    integer_values=False,
+):
     if integer_values:
         min_value = int(np.ceil(bounds[0]))
         max_value = int(np.floor(bounds[1]))
@@ -54,24 +31,23 @@ def density_curve(
     return xs, density
 
 
-def _new_figure(plot_config: Any) -> tuple[Any, Any]:
-    _ensure_matplotlib()
+def _new_figure(plot_config):
     return plt.subplots(figsize=plot_config.figsize)
 
 
-def _save_figure(fig: Any, out_path: Path) -> None:
+def _save_figure(fig, out_path):
     fig.tight_layout()
     fig.savefig(out_path, dpi=140)
     plt.close(fig)
 
 
 def _plot_density_series(
-    ax: Any,
-    curve: DensityCurve,
-    color: str,
-    label: str,
-    plot_config: Any,
-) -> None:
+    ax,
+    curve,
+    color,
+    label,
+    plot_config,
+):
     xs, ys = curve
     ax.plot(
         xs,
@@ -83,10 +59,7 @@ def _plot_density_series(
     ax.fill_between(xs, ys, color=color, alpha=plot_config.alpha)
 
 
-def _set_integer_x_axis(ax: Any, curve_a: DensityCurve, curve_b: DensityCurve) -> None:
-    if MaxNLocator is None:
-        return
-
+def _set_integer_x_axis(ax, curve_a, curve_b):
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     min_value = min(float(np.min(curve_a[0])), float(np.min(curve_b[0])))
     max_value = max(float(np.max(curve_a[0])), float(np.max(curve_b[0])))
@@ -94,15 +67,15 @@ def _set_integer_x_axis(ax: Any, curve_a: DensityCurve, curve_b: DensityCurve) -
 
 
 def plot_density_curves(
-    out_path: Path,
-    curve_a: DensityCurve,
-    curve_b: DensityCurve,
-    dim_label: str,
-    label_a: str,
-    label_b: str,
-    plot_config: Any,
-    integer_x: bool = False,
-) -> None:
+    out_path,
+    curve_a,
+    curve_b,
+    dim_label,
+    label_a,
+    label_b,
+    plot_config,
+    integer_x=False,
+):
     fig, ax = _new_figure(plot_config)
     _plot_density_series(ax, curve_a, plot_config.color_a, label_a, plot_config)
     _plot_density_series(ax, curve_b, plot_config.color_b, label_b, plot_config)
@@ -117,17 +90,17 @@ def plot_density_curves(
 
 
 def plot_dimension_pair_scatter(
-    out_path: Path,
-    x_values_a: np.ndarray,
-    y_values_a: np.ndarray,
-    x_values_b: np.ndarray,
-    y_values_b: np.ndarray,
-    x_label: str,
-    y_label: str,
-    label_a: str,
-    label_b: str,
-    plot_config: Any,
-) -> None:
+    out_path,
+    x_values_a,
+    y_values_a,
+    x_values_b,
+    y_values_b,
+    x_label,
+    y_label,
+    label_a,
+    label_b,
+    plot_config,
+):
     fig, ax = _new_figure(plot_config)
     ax.scatter(
         x_values_a,

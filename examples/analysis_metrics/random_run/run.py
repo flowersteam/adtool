@@ -10,15 +10,10 @@ for import_root in (REPO_ROOT, EXAMPLES_ROOT):
     if str(import_root) not in sys.path:
         sys.path.insert(0, str(import_root))
 
-try:
-    from analysis_metrics.random_run.baseline import run_random_baseline
-except ModuleNotFoundError as exc:
-    if exc.name != "analysis_metrics":
-        raise
-    from examples.analysis_metrics.random_run.baseline import run_random_baseline
+from examples.analysis_metrics.random_run.baseline import run_random_baseline
 
 
-def main() -> None:
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_file", type=Path, required=True)
     parser.add_argument("--output_dir", type=Path, required=True)

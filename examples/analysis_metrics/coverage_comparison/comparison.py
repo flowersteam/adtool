@@ -1,15 +1,11 @@
-from __future__ import annotations
-
 import json
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 from pathlib import Path
-from pydoc import ErrorDuringImport, locate
-from typing import Any, Callable, Optional, Union
+from pydoc import locate
 
 import numpy as np
 
-from ..import_paths import ensure_adtool_examples_alias
 from .plotting import density_curve, plot_density_curves, plot_dimension_pair_scatter
 
 
@@ -27,19 +23,9 @@ DEFAULT_DIMENSIONS = "all"
 @dataclass(frozen=True)
 class DiscoverySet:
     path: Path
-    files: list[Path]
-    payloads: list[dict[str, Any]]
-    outputs: np.ndarray
-
-
-PretreatmentResult = Union[
-    tuple[np.ndarray, np.ndarray],
-    tuple[np.ndarray, np.ndarray, list[str]],
-]
-DimensionPretreatmentFn = Callable[
-    [DiscoverySet, DiscoverySet, dict[str, Any]],
-    PretreatmentResult,
-]
+    files: list
+    payloads: list
+    outputs: object
 
 
 @dataclass(frozen=True)
@@ -49,14 +35,14 @@ class PlotConfig:
     color_b: str = DEFAULT_COLOR_B
     alpha: float = DEFAULT_ALPHA
     line_width: float = DEFAULT_LINE_WIDTH
-    figsize: tuple[float, float] = DEFAULT_FIGSIZE
+    figsize: tuple = DEFAULT_FIGSIZE
     output_format: str = DEFAULT_OUTPUT_FORMAT
 
 
 @dataclass(frozen=True)
 class DimensionPretreatmentConfig:
     path: str
-    config: dict[str, Any] = field(default_factory=dict)
+    config: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -64,10 +50,10 @@ class CoverageImageSummary:
     file: str
     title: str
     plot_type: str
-    dimensions: list[int]
-    bounds: list[tuple[float, float]] = field(default_factory=list)
+    dimensions: list
+    bounds: list = field(default_factory=list)
 
-    def to_payload(self) -> dict[str, Any]:
+    def to_payload(self):
         return {
             "file": self.file,
             "title": self.title,
@@ -79,10 +65,10 @@ class CoverageImageSummary:
 
 @dataclass(frozen=True)
 class ComparisonConfig:
-    dimensions: Union[str, list[int]] = DEFAULT_DIMENSIONS
-    additional_2d_graphs: list[tuple[int, int]] = field(default_factory=list)
-    dimension_pretreatment: Optional[DimensionPretreatmentConfig] = None
-    plot: PlotConfig = field(default_factory=PlotConfig)
+    dimensions: object = DEFAULT_DIMENSIONS
+    additional_2d_graphs: list = field(default_factory=list)
+    dimension_pretreatment: object = None
+    plot: object = field(default_factory=PlotConfig)
 
 
 @dataclass(frozen=True)
@@ -95,29 +81,27 @@ class CoverageComparisonSummary:
     count_a: int
     count_b: int
     dim_count: int
-    labels: list[str]
-    resolved_dimensions: list[int]
-    resolved_additional_2d_graphs: list[tuple[int, int]]
-    dimension_pretreatment: Optional[str]
-    bounds: list[tuple[float, float]]
-    images: list[CoverageImageSummary]
+    labels: list
+    resolved_dimensions: list
+    resolved_additional_2d_graphs: list
+    dimension_pretreatment: object
+    bounds: list
+    images: list
 
 
-def _parse_dimensions(value: Any) -> Union[str, list[int]]:
+def _parse_dimensions(value):
     if value is None or value == DEFAULT_DIMENSIONS:
         return DEFAULT_DIMENSIONS
-    if isinstance(value, list):
-        return [int(dim) for dim in value]
-    raise ValueError("dimensions must be 'all' or a list of integers")
+    return [int(dim) for dim in value]
 
 
-def _parse_additional_2d_graphs(value: Any) -> list[tuple[int, int]]:
+def _parse_additional_2d_graphs(value):
     if not value:
         return []
     return [(int(x_dim), int(y_dim)) for x_dim, y_dim in value]
 
 
-def _parse_plot_config(value: Any) -> PlotConfig:
+def _parse_plot_config(value):
     value = value or {}
     return PlotConfig(
         points=max(2, int(value.get("points", DEFAULT_POINTS))),
@@ -130,7 +114,7 @@ def _parse_plot_config(value: Any) -> PlotConfig:
     )
 
 
-def _parse_dimension_pretreatment(value: Any) -> Optional[DimensionPretreatmentConfig]:
+def _parse_dimension_pretreatment(value):
     if not value:
         return None
     if isinstance(value, str):
@@ -141,7 +125,7 @@ def _parse_dimension_pretreatment(value: Any) -> Optional[DimensionPretreatmentC
     )
 
 
-def load_comparison_config(config_path: Optional[Union[str, Path]]) -> ComparisonConfig:
+def load_comparison_config(config_path):
     if config_path is None:
         return ComparisonConfig()
 
@@ -160,36 +144,25 @@ def load_comparison_config(config_path: Optional[Union[str, Path]]) -> Compariso
     )
 
 
-def _locate_dotted_callable(path: str) -> DimensionPretreatmentFn:
-    ensure_adtool_examples_alias()
-    try:
-        fn = locate(path)
-    except ErrorDuringImport:
-        raise
-
+def _locate_dotted_callable(path):
+    fn = locate(path)
     if fn is None and path.startswith("adtool.examples."):
         fn = locate(f"examples.{path[len('adtool.examples.'):]}")
-    if fn is None or not callable(fn):
-        raise ValueError(f"Could not retrieve dimension pretreatment from path: {path}")
     return fn
 
 
-def _load_dimension_pretreatment(
-    config: Optional[DimensionPretreatmentConfig],
-) -> Optional[DimensionPretreatmentFn]:
+def _load_dimension_pretreatment(config):
     return None if config is None else _locate_dotted_callable(config.path)
 
 
-def _load_discovery_output(path: Path) -> tuple[dict[str, Any], np.ndarray]:
+def _load_discovery_output(path):
     with path.open("r") as handle:
         payload = json.load(handle)
     output = np.asarray(payload["output"], dtype=float).reshape(-1)
-    if output.size == 0:
-        raise ValueError(f"Discovery output is empty: {path}")
     return payload, output
 
 
-def load_discovery_set(discovery_path: Path) -> DiscoverySet:
+def load_discovery_set(discovery_path):
     discovery_path = Path(discovery_path)
     files = sorted(
         (
@@ -199,14 +172,9 @@ def load_discovery_set(discovery_path: Path) -> DiscoverySet:
         ),
         key=lambda path: path.stat().st_mtime,
     )
-    if not files:
-        raise ValueError(f"No discovery.json files found under: {discovery_path}")
-
     loaded = [_load_discovery_output(path) for path in files]
     payloads = [payload for payload, _ in loaded]
     outputs = np.vstack([output for _, output in loaded])
-    if len({output.shape[0] for _, output in loaded}) != 1:
-        raise ValueError(f"Discovery output dimension mismatch under: {discovery_path}")
 
     return DiscoverySet(
         path=discovery_path,
@@ -216,15 +184,11 @@ def load_discovery_set(discovery_path: Path) -> DiscoverySet:
     )
 
 
-def load_discovery_outputs(discovery_path: Path) -> np.ndarray:
+def load_discovery_outputs(discovery_path):
     return load_discovery_set(discovery_path).outputs
 
 
-def _apply_dimension_pretreatment(
-    dataset_a: DiscoverySet,
-    dataset_b: DiscoverySet,
-    config: Optional[DimensionPretreatmentConfig],
-) -> tuple[np.ndarray, np.ndarray, Optional[list[str]]]:
+def _apply_dimension_pretreatment(dataset_a, dataset_b, config):
     if config is None:
         return dataset_a.outputs, dataset_b.outputs, None
 
@@ -235,62 +199,53 @@ def _apply_dimension_pretreatment(
     return values_a, values_b, labels
 
 
-def _resolve_index(index: int, dim_count: int) -> int:
-    index = dim_count + index if index < 0 else index
-    if index < 0 or index >= dim_count:
-        raise ValueError(f"dimension index {index} out of range for dim_count {dim_count}")
-    return index
+def _resolve_index(index, dim_count):
+    return dim_count + index if index < 0 else index
 
 
-def _resolve_dimensions(
-    dimensions: Union[str, list[int]],
-    dim_count: int,
-) -> list[int]:
+def _resolve_dimensions(dimensions, dim_count):
     if dimensions == DEFAULT_DIMENSIONS:
         return list(range(dim_count))
     return [_resolve_index(dim, dim_count) for dim in dimensions]
 
 
-def _resolve_dimension_pairs(
-    dimension_pairs: list[tuple[int, int]],
-    dim_count: int,
-) -> list[tuple[int, int]]:
+def _resolve_dimension_pairs(dimension_pairs, dim_count):
     return [
         (_resolve_index(x_dim, dim_count), _resolve_index(y_dim, dim_count))
         for x_dim, y_dim in dimension_pairs
     ]
 
 
-def _display_dimension_label(label: str, dim_index: int) -> str:
+def _display_dimension_label(label, dim_index):
     return f"{label} ({dim_index})"
 
 
-def _default_label(path: Path) -> str:
+def _default_label(path):
     return path.name or str(path)
 
 
-def _value_min_max(values_a: np.ndarray, values_b: np.ndarray) -> tuple[float, float]:
+def _value_min_max(values_a, values_b):
     return (
         min(float(np.min(values_a)), float(np.min(values_b))),
         max(float(np.max(values_a)), float(np.max(values_b))),
     )
 
 
-def _value_bounds(values_a: np.ndarray, values_b: np.ndarray) -> tuple[float, float]:
+def _value_bounds(values_a, values_b):
     min_value, max_value = _value_min_max(values_a, values_b)
     if min_value == max_value:
         return min_value - 1.0, max_value + 1.0
     return min_value, max_value
 
 
-def _is_integer_values(values_a: np.ndarray, values_b: np.ndarray) -> bool:
+def _is_integer_values(values_a, values_b):
     return bool(
         np.allclose(values_a, np.round(values_a))
         and np.allclose(values_b, np.round(values_b))
     )
 
 
-def _plot_bounds(values_a: np.ndarray, values_b: np.ndarray) -> tuple[bool, tuple[float, float]]:
+def _plot_bounds(values_a, values_b):
     integer_values = _is_integer_values(values_a, values_b)
     min_value, max_value = _value_min_max(values_a, values_b)
     if integer_values:
@@ -300,18 +255,14 @@ def _plot_bounds(values_a: np.ndarray, values_b: np.ndarray) -> tuple[bool, tupl
     return False, (min_value, max_value)
 
 
-def _run_dir(output_dir: Path) -> tuple[Path, str]:
+def _run_dir(output_dir):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_dir = output_dir / f"coverage_run_{timestamp}"
     run_dir.mkdir(parents=True, exist_ok=True)
     return run_dir, timestamp
 
 
-def _summary_payload(
-    summary: CoverageComparisonSummary,
-    timestamp: str,
-    config: ComparisonConfig,
-) -> dict[str, Any]:
+def _summary_payload(summary, timestamp, config):
     return {
         "run_dir": str(summary.run_dir),
         "comparison_type": "discovery_vs_discovery",
@@ -348,14 +299,14 @@ def _summary_payload(
 
 
 def compare_discovery_sets(
-    discovery_a_path: Union[str, Path],
-    discovery_b_path: Union[str, Path],
-    output_dir: Union[str, Path] = DEFAULT_OUTPUT_DIR,
-    label_a: Optional[str] = None,
-    label_b: Optional[str] = None,
-    config_file: Optional[Union[str, Path]] = None,
-    points: Optional[int] = None,
-) -> CoverageComparisonSummary:
+    discovery_a_path,
+    discovery_b_path,
+    output_dir=DEFAULT_OUTPUT_DIR,
+    label_a=None,
+    label_b=None,
+    config_file=None,
+    points=None,
+):
     config = load_comparison_config(config_file)
     if points is not None:
         config = replace(config, plot=replace(config.plot, points=max(2, int(points))))
@@ -373,8 +324,6 @@ def compare_discovery_sets(
         config.dimension_pretreatment,
     )
     dim_count = values_a.shape[1]
-    if values_b.shape[1] != dim_count:
-        raise ValueError("Discovery sets must have the same output dimension count")
 
     raw_labels = custom_labels or [f"dim_{idx}" for idx in range(dim_count)]
     dimensions = _resolve_dimensions(config.dimensions, dim_count)
@@ -385,8 +334,8 @@ def compare_discovery_sets(
     labels = [_display_dimension_label(raw_labels[idx], idx) for idx in dimensions]
 
     run_dir, timestamp = _run_dir(Path(output_dir).resolve())
-    bounds: list[tuple[float, float]] = []
-    images: list[CoverageImageSummary] = []
+    bounds = []
+    images = []
 
     for dim_index, dim_label in zip(dimensions, labels):
         dim_values_a = values_a[:, dim_index]

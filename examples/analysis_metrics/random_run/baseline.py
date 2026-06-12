@@ -1,16 +1,11 @@
-from __future__ import annotations
-
 import json
 import random
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from pydoc import ErrorDuringImport, locate
-from typing import Any
+from pydoc import locate
 
 import numpy as np
-
-from ..import_paths import ensure_adtool_examples_alias
 
 
 @dataclass(frozen=True)
@@ -21,44 +16,26 @@ class RandomRunSummary:
     seed: int
 
 
-def _set_seed(seed: int) -> None:
+def _set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
-    try:
-        import torch
-    except ImportError:
-        return
+    import torch
     torch.manual_seed(seed)
 
 
-def _load_json(path: Path) -> dict[str, Any]:
+def _load_json(path):
     with Path(path).open("r") as handle:
-        payload = json.load(handle)
-    if not isinstance(payload, dict):
-        raise ValueError(f"Expected a JSON object in {path}")
-    return payload
+        return json.load(handle)
 
 
-def _locate_class(path: str) -> type:
-    ensure_adtool_examples_alias()
-    cls = None
-    try:
-        cls = locate(path)
-    except ErrorDuringImport:
-        raise
-
+def _locate_class(path):
+    cls = locate(path)
     if cls is None and path.startswith("adtool.examples."):
-        fallback_path = f"examples.{path[len('adtool.examples.'):]}"
-        cls = locate(fallback_path)
-
-    if cls is None:
-        raise ValueError(f"Could not retrieve class from path: {path}.")
-    if not isinstance(cls, type):
-        raise ValueError(f"Path must resolve to a class: {path}.")
+        cls = locate(f"examples.{path[len('adtool.examples.'):]}")
     return cls
 
 
-def _build_system_and_explorer(config: dict[str, Any]) -> tuple[Any, Any]:
+def _build_system_and_explorer(config):
     system_config = config["system"]
     explorer_config = config["explorer"]
 
@@ -70,7 +47,7 @@ def _build_system_and_explorer(config: dict[str, Any]) -> tuple[Any, Any]:
     return system, explorer_factory(system)
 
 
-def _to_jsonable(value: Any) -> Any:
+def _to_jsonable(value):
     if isinstance(value, dict):
         return {key: _to_jsonable(item) for key, item in value.items()}
     if isinstance(value, (list, tuple)):
@@ -86,7 +63,7 @@ def _to_jsonable(value: Any) -> Any:
     return value
 
 
-def _observe_behavior(system: Any, explorer: Any, params: Any) -> dict[str, Any]:
+def _observe_behavior(system, explorer, params):
     param_key = getattr(explorer, "postmap_key", "params")
     data = {
         param_key: params,
@@ -103,11 +80,9 @@ def _observe_behavior(system: Any, explorer: Any, params: Any) -> dict[str, Any]
     return data
 
 
-def _minimal_discovery(explorer: Any, observed: dict[str, Any]) -> dict[str, Any]:
+def _minimal_discovery(explorer, observed):
     param_key = getattr(explorer, "postmap_key", "params")
     behavior_key = getattr(explorer, "premap_key", "output")
-    if behavior_key not in observed:
-        raise ValueError(f"Behavior key '{behavior_key}' missing after behavior mapping")
 
     discovery = {
         param_key: _to_jsonable(observed.get(param_key)),
@@ -120,7 +95,7 @@ def _minimal_discovery(explorer: Any, observed: dict[str, Any]) -> dict[str, Any
     return discovery
 
 
-def _save_discovery(discoveries_dir: Path, run_idx: int, seed: int, discovery: dict[str, Any]) -> None:
+def _save_discovery(discoveries_dir, run_idx, seed, discovery):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     discovery_dir = discoveries_dir / f"{timestamp}_idx_{run_idx}_seed_{seed}"
     discovery_dir.mkdir(parents=True, exist_ok=True)
@@ -129,11 +104,11 @@ def _save_discovery(discoveries_dir: Path, run_idx: int, seed: int, discovery: d
 
 
 def run_random_baseline(
-    config_file: Path,
-    output_dir: Path,
-    nb_iterations: int,
-    seed: int = 42,
-) -> RandomRunSummary:
+    config_file,
+    output_dir,
+    nb_iterations,
+    seed=42,
+):
     _set_seed(seed)
     config = _load_json(config_file)
     system, explorer = _build_system_and_explorer(config)
