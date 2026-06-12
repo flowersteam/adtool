@@ -146,8 +146,8 @@ def load_comparison_config(config_path):
 
 def _locate_dotted_callable(path):
     fn = locate(path)
-    if fn is None and path.startswith("adtool.examples."):
-        fn = locate(f"examples.{path[len('adtool.examples.'):]}")
+    if fn is None or not callable(fn):
+        raise ValueError(f"Could not retrieve dimension pretreatment from path: {path}")
     return fn
 
 

@@ -4,13 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-EXAMPLES_ROOT = REPO_ROOT / "examples"
-for import_root in (REPO_ROOT, EXAMPLES_ROOT):
-    if str(import_root) not in sys.path:
-        sys.path.insert(0, str(import_root))
-
-from examples.analysis_metrics.random_run.baseline import run_random_baseline
+from adtool.examples.analysis_metrics.random_run.baseline import run_random_baseline
 
 
 def main():

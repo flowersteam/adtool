@@ -1,19 +1,9 @@
 """Compare coverage between two discovery folders."""
 
 import argparse
-import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-try:
-    from analysis_metrics.coverage_comparison import compare_discovery_sets
-except ModuleNotFoundError as exc:
-    if exc.name != "analysis_metrics":
-        raise
-    from examples.analysis_metrics.coverage_comparison import compare_discovery_sets
+from adtool.examples.analysis_metrics.coverage_comparison import compare_discovery_sets
 
 
 def main() -> None:
