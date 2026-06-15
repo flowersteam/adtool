@@ -1,16 +1,12 @@
 import json
 import os
-import pickle
 from datetime import datetime
 from hashlib import sha1
 from typing import Any, Dict, Type
 
-import numpy as np
-import torch
 from adtool.callbacks.on_discovery_callbacks.save_discovery import (
     SaveDiscovery,
 )
-from adtool.utils.leaf.Leaf import Leaf
 
 
 class SaveDiscoveryOnDisk(SaveDiscovery):
@@ -52,8 +48,17 @@ class SaveDiscoveryOnDisk(SaveDiscovery):
         discovery: Dict[str, Any],
         dir_path: str,
         json_encoder: Type[json.JSONEncoder],
+        run_idx: int = None,
+        experiment_id: int = None,
+        seed: int = None,
         **kwargs,
     ) -> None:
+        discovery["metadata"] = {
+            "run_idx": run_idx,
+            "experiment_id": experiment_id,
+            "seed": seed,
+            "created_at": datetime.now().isoformat(),
+        }
         # save dict_data to disk as JSON object
         file_path = os.path.join(dir_path, "discovery.json")
         with open(file_path, "w") as f:
