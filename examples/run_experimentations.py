@@ -1,6 +1,6 @@
 """
 Helper script which allows creation of `ExperimentPipeline`.
-This file `run.py` can also be run as `__main__`,
+This file `run_experimentations.py` can also be run as `__main__`,
 for example in remote configurations.
 """
 import argparse

@@ -42,10 +42,10 @@ def prepare_runtime_config(template_path: Path, run_dir: Path) -> Path:
 
 
 def run_experiment(spec: SmokeSpec, runtime_cfg: Path) -> ExperimentResult:
-    """Execute run.py for a single smoke spec."""
+    """Execute run_experimentations.py for a single smoke spec."""
     cmd = [
         sys.executable,
-        "examples/run.py",
+        "examples/run_experimentations.py",
         "--config_file",
         str(runtime_cfg),
         "--nb_iterations",
