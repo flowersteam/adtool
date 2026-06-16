@@ -1,10 +1,9 @@
 """Run a random-parameter baseline without goal search or rendered outputs."""
 
 import argparse
-import sys
 from pathlib import Path
 
-from adtool.examples.analysis_metrics.random_run.baseline import run_random_baseline
+from adtool.examples.analysis_metrics.random_run import run_random_baseline
 
 
 def main():

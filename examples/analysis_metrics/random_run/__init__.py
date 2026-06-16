@@ -1,6 +1,9 @@
 """Random parameter baseline runs for analysis metrics."""
 
-from .baseline import RandomRunSummary, run_random_baseline
+from adtool.examples.analysis_metrics.random_run.runner import (
+    RandomRunSummary,
+    run_random_baseline,
+)
 
 __all__ = [
     "RandomRunSummary",

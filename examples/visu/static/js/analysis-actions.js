@@ -1,4 +1,4 @@
-import { runCoverageComparison, runRandomRun } from "./api.js";
+import { runCoverageAnalysis, runRandomRun } from "./api.js";
 
 function trimmedValue(element) {
     return element.value.trim();
@@ -35,10 +35,10 @@ export function createAnalysisActions({
         }
     }
 
-    async function launchCoverageComparison() {
-        const comparisonPath = trimmedValue(elements.coverageComparePath);
-        if (!comparisonPath) {
-            updateStatus("Compare path is required.");
+    async function launchCoverageAnalysis() {
+        const discoveryPath = trimmedValue(elements.coverageComparePath);
+        if (!discoveryPath) {
+            updateStatus("Discoveries path is required.");
             elements.coverageComparePath.focus();
             return;
         }
@@ -50,19 +50,19 @@ export function createAnalysisActions({
 
         elements.coverageCompareButton.disabled = true;
         elements.reloadCoverageButton.disabled = true;
-        updateStatus("Running coverage comparison...");
+        updateStatus("Running coverage analysis...");
         try {
-            const payload = await runCoverageComparison({
-                path: comparisonPath,
+            const payload = await runCoverageAnalysis({
+                path: discoveryPath,
                 config_file: resolvedConfigFile || null,
                 label_a: labelA,
                 label_b: labelB,
             });
             coverage.setEnabled(true);
-            updateStatus(`Coverage comparison complete: ${payload.run_dir}`);
+            updateStatus(`Coverage analysis complete: ${payload.run_dir}`);
             showPage("coverage");
         } catch (error) {
-            updateStatus(error.message || "Coverage comparison failed. Check server logs.");
+            updateStatus(error.message || "Coverage analysis failed. Check server logs.");
         } finally {
             elements.coverageCompareButton.disabled = false;
             elements.reloadCoverageButton.disabled = false;
@@ -77,7 +77,7 @@ export function createAnalysisActions({
     }
 
     return {
-        launchCoverageComparison,
+        launchCoverageAnalysis,
         launchRandomRun,
         toggleCoverageActions,
     };

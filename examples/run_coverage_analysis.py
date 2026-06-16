@@ -1,9 +1,8 @@
-"""Compare coverage between two discovery folders."""
+"""Run configured analysis modules between two discovery folders."""
 
 import argparse
 from pathlib import Path
-
-from adtool.examples.analysis_metrics.coverage_comparison import compare_discovery_sets
+from adtool.examples.analysis_metrics.coverage_analysis import run_coverage_analysis
 
 
 def main() -> None:
@@ -14,20 +13,21 @@ def main() -> None:
     parser.add_argument("--output_dir", type=Path, default=Path("coverage_runs"))
     parser.add_argument("--label_a", type=str, default=None)
     parser.add_argument("--label_b", type=str, default=None)
-    parser.add_argument("--points", type=int, default=None)
     args = parser.parse_args()
 
-    summary = compare_discovery_sets(
+    summary = run_coverage_analysis(
         args.discovery_a,
         args.discovery_b,
         output_dir=args.output_dir,
         label_a=args.label_a,
         label_b=args.label_b,
         config_file=args.config_file,
-        points=args.points,
     )
-    print(f"Coverage comparison complete: {summary.run_dir}")
-    print(f"{summary.label_a}: {summary.count_a}, {summary.label_b}: {summary.count_b}")
+    print(f"Coverage analysis complete: {summary.run_dir}")
+    print(
+        f"{summary.dataset_a.label}: {summary.dataset_a.count}, "
+        f"{summary.dataset_b.label}: {summary.dataset_b.count}"
+    )
 
 
 if __name__ == "__main__":

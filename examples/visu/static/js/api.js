@@ -114,6 +114,6 @@ export async function runRandomRun(payload) {
     return postJson("/analysis/random_run", payload, "random run failed");
 }
 
-export async function runCoverageComparison(payload) {
-    return postJson("/analysis/coverage_comparison", payload, "coverage comparison failed");
+export async function runCoverageAnalysis(payload) {
+    return postJson("/analysis/coverage_analysis", payload, "coverage analysis failed");
 }

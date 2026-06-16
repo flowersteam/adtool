@@ -36,14 +36,14 @@ def coverage_summary_error(summary_path: Path) -> str:
     if not isinstance(summary, dict):
         return f"Coverage summary has the wrong format: expected a JSON object in {summary_path}"
 
-    if "images" not in summary or not isinstance(summary["images"], list):
-        return f"Coverage summary is missing an images list: {summary_path}"
-    for image in summary["images"]:
-        if isinstance(image, str):
-            continue
-        if isinstance(image, dict) and isinstance(image.get("file"), str) and image["file"]:
-            continue
-        return f"Coverage summary has an invalid image entry: {summary_path}"
+    if "modules" not in summary or "module_order" not in summary:
+        return f"Coverage summary is missing modules: {summary_path}"
+    for module_name in summary["module_order"]:
+        module = summary["modules"].get(module_name, {})
+        for image in module.get("images", []):
+            if isinstance(image, dict) and isinstance(image.get("file"), str) and image["file"]:
+                continue
+            return f"Coverage summary has an invalid image entry: {summary_path}"
 
     return "Coverage summary could not be loaded."
 
@@ -88,16 +88,18 @@ def coverage_summary_payload(
 
     if (
         not isinstance(summary, dict)
-        or "images" not in summary
-        or not isinstance(summary["images"], list)
+        or "modules" not in summary
+        or "module_order" not in summary
     ):
         raise HTTPException(status_code=422, detail=coverage_summary_error(summary_path))
 
     run_dir = summary_path.parent
-    summary["images"] = [
-        coverage_image_payload(image, run_dir, serving_root)
-        for image in summary.get("images", [])
-    ]
+    for module_name in summary["module_order"]:
+        module = summary["modules"][module_name]
+        module["images"] = [
+            coverage_image_payload(image, run_dir, serving_root)
+            for image in module.get("images", [])
+        ]
     summary["run_name"] = run_dir.name
     return summary
 

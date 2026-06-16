@@ -138,10 +138,10 @@
                 </div>
             </section>
 
-            <section id="coveragePage" class="page coveragePage" aria-label="Coverage comparison">
+            <section id="coveragePage" class="page coveragePage" aria-label="Coverage analysis">
                 <div class="coverageHeader">
                     <div>
-                        <p class="eyebrow">Coverage comparison</p>
+                        <p class="eyebrow">Coverage analysis</p>
                         <h2>Generated Graphs</h2>
                         <p id="coverageSubtitle" class="sectionText">Loading coverage summary...</p>
                     </div>
@@ -184,12 +184,12 @@
 
                         <div class="coverageActionGroup">
                             <div class="analysisHeader">
-                                <p class="eyebrow">Coverage run</p>
-                                <h3>Compare Discoveries</h3>
+                                <p class="eyebrow">Coverage analysis</p>
+                                <h3>Analyze Discoveries</h3>
                             </div>
                             <div class="analysisFields compareFields">
                                 <label class="compactField wideField" for="coverageComparePath">
-                                    <span>Comparison path</span>
+                                    <span>Discoveries path</span>
                                     <input id="coverageComparePath" class="pathInput" type="text"
                                         placeholder="/path/to/discoveries" autocomplete="off">
                                 </label>
@@ -206,7 +206,7 @@
                                     <span>Label B</span>
                                     <input id="coverageLabelB" type="text" value="baseline" autocomplete="off">
                                 </label>
-                                <button id="coverageCompareButton" class="primaryButton" type="button">Compare cover</button>
+                                <button id="coverageCompareButton" class="primaryButton" type="button">Run analysis</button>
                             </div>
                         </div>
                     </div>
@@ -216,7 +216,7 @@
                 <div id="coverageGrid" class="coverageGrid" aria-label="Coverage graphs"></div>
                 <div id="coverageEmpty" class="emptyPanel" hidden>
                     <h3>No coverage run found</h3>
-                    <p>Enter a comparison path above or run a random baseline, then compare it with the current discoveries.</p>
+                    <p>Enter a discovery path above or run a random baseline, then analyze it with the current discoveries.</p>
                 </div>
             </section>
         </main>

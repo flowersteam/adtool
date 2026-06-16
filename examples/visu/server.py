@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from watchfiles import Change, awatch
 
-from adtool.examples.visu.analysis_jobs import coverage_comparison_payload, random_run_payload
+from adtool.examples.visu.analysis_jobs import coverage_analysis_payload, random_run_payload
 from adtool.examples.visu.coverage_runs import (
     coverage_runs_dir,
     coverage_runs_payload,
@@ -290,9 +290,9 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
     def random_run(payload: dict[str, Any]):
         return random_run_payload(config, state, payload)
 
-    @app.post("/analysis/coverage_comparison")
-    def coverage_comparison(payload: dict[str, Any]):
-        return coverage_comparison_payload(config, state, payload)
+    @app.post("/analysis/coverage_analysis")
+    def coverage_analysis(payload: dict[str, Any]):
+        return coverage_analysis_payload(config, state, payload)
 
     @app.post("/export")
     async def export_files(files: list[str]):

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 from typing import Any
 
-from adtool.examples.analysis_metrics.coverage_comparison import compare_discovery_sets
+from adtool.examples.analysis_metrics.coverage_analysis import run_coverage_analysis
 from adtool.examples.analysis_metrics.random_run import run_random_baseline
 from fastapi import HTTPException
 from adtool.examples.visu.coverage_runs import coverage_runs_dir
@@ -15,7 +14,6 @@ from adtool.examples.visu.runtime import (
 )
 from adtool.examples.visu.server_support import (
     error_detail,
-    optional_payload_int,
     payload_int,
     require_directory,
     require_file,
@@ -75,18 +73,18 @@ def random_run_payload(
     }
 
 
-def coverage_comparison_payload(
+def coverage_analysis_payload(
     config: ServerConfig,
     state: RuntimeState,
     payload: dict[str, Any],
 ) -> dict[str, Any]:
-    comparison_path = resolve_input_path(
-        payload.get("path", payload.get("comparison_path")),
+    discovery_b_path = resolve_input_path(
+        payload.get("path"),
         "path",
     )
-    if comparison_path is None:
+    if discovery_b_path is None:
         raise HTTPException(status_code=422, detail="path is required.")
-    require_directory(comparison_path, "path")
+    require_directory(discovery_b_path, "path")
 
     raw_config_file = payload.get("config_file")
     if isinstance(raw_config_file, str) and raw_config_file.strip().lower() == "none":
@@ -95,34 +93,32 @@ def coverage_comparison_payload(
     if config_file is not None:
         require_file(config_file, "config_file")
 
-    points = optional_payload_int(payload, "points")
     label_a = payload.get("label_a") or "IMGEP"
     label_b = payload.get("label_b") or "baseline"
 
     with state.analysis_lock:
         try:
-            summary = compare_discovery_sets(
+            summary = run_coverage_analysis(
                 config.discoveries,
-                comparison_path,
+                discovery_b_path,
                 output_dir=coverage_runs_dir(config),
                 label_a=str(label_a),
                 label_b=str(label_b),
                 config_file=config_file,
-                points=points,
             )
         except Exception as exc:
             raise HTTPException(
                 status_code=500,
-                detail=error_detail("Coverage comparison failed", exc),
+                detail=error_detail("Coverage analysis failed", exc),
             ) from exc
 
     return {
         "status": "ok",
         "run_dir": str(summary.run_dir),
-        "dataset_a_path": str(summary.discovery_a_path),
-        "dataset_b_path": str(summary.discovery_b_path),
-        "dataset_a_count": summary.count_a,
-        "dataset_b_count": summary.count_b,
-        "dim_count": summary.dim_count,
-        "images": [asdict(image) for image in summary.images],
+        "dataset_a_path": str(summary.dataset_a.path),
+        "dataset_b_path": str(summary.dataset_b.path),
+        "dataset_a_count": summary.dataset_a.count,
+        "dataset_b_count": summary.dataset_b.count,
+        "module_order": list(summary.module_order),
+        "modules": dict(summary.modules),
     }

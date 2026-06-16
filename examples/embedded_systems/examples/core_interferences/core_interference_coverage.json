@@ -1,55 +1,83 @@
 {
-  "dimensions": "all",
-  "dimension_pretreatment": "examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
-  "coverage_space_metric": {
-    "path": "examples.embedded_systems.examples.core_interferences.behavior_map.space_coverage.GridSpaceCoverageMetric",
-    "config": {
-      "dimensions": [12, 13, 14],
-      "boundaries": [
-        [-10.0, 10.0],
-        [-10.0, 100.0],
-        [-20.0, 100.0]
-      ],
-      "bins_per_dimension": [8, 8, 8],
-      "title": "Timing-space coverage progression"
+  "comparison_1d": {
+    "projection": {
+      "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+      "config": {}
+    },
+    "dimensions": "all",
+    "plot": {
+      "points": 512,
+      "format": "png",
+      "color_a": "#4c78a8",
+      "color_b": "#f58518",
+      "alpha": 0.35,
+      "line_width": 2.0,
+      "figsize": [7.0, 4.0]
     }
   },
-  "additional_2d_graphs": [
-    [0, 12],
-    [2, 12],
-    [4, 12],
-    [6, 12],
-    [8, 12],
-    [10, 12],
-
-    [1, 13],
-    [3, 13],
-    [5, 13],
-    [7, 13],
-    [9, 13],
-    [11, 13],
-
-    [0, 14],
-    [1, 14],
-    [2, 14],
-    [3, 14],
-    [4, 14],
-    [5, 14],
-    [6, 14],
-    [7, 14],
-    [8, 14],
-    [9, 14],
-    [10, 14],
-    [11, 14]
-
-  ],
-  "plot": {
-    "points": 512,
-    "format": "png",
-    "color_a": "#4c78a8",
-    "color_b": "#f58518",
-    "alpha": 0.35,
-    "line_width": 2.0,
-    "figsize": [7.0, 4.0]
+  "comparison_2d": {
+    "projection": {
+      "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+      "config": {}
+    },
+    "pairs": [
+      [0, 12],
+      [2, 12],
+      [4, 12],
+      [6, 12],
+      [8, 12],
+      [10, 12],
+      [1, 13],
+      [3, 13],
+      [5, 13],
+      [7, 13],
+      [9, 13],
+      [11, 13],
+      [0, 14],
+      [1, 14],
+      [2, 14],
+      [3, 14],
+      [4, 14],
+      [5, 14],
+      [6, 14],
+      [7, 14],
+      [8, 14],
+      [9, 14],
+      [10, 14],
+      [11, 14]
+    ],
+    "plot": {
+      "format": "png",
+      "color_a": "#4c78a8",
+      "color_b": "#f58518",
+      "alpha": 0.35,
+      "figsize": [7.0, 4.0]
+    }
+  },
+  "space_coverage": {
+    "projection": {
+      "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+      "config": {}
+    },
+    "metric": {
+      "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.space_coverage.GridSpaceCoverageMetric",
+      "config": {
+        "dimensions": [12, 13, 14],
+        "boundaries": [
+          [-10.0, 10.0],
+          [-10.0, 100.0],
+          [-20.0, 100.0]
+        ],
+        "bins_per_dimension": [8, 8, 8],
+        "title": "Timing-space coverage progression"
+      }
+    },
+    "plot": {
+      "format": "png",
+      "color_a": "#4c78a8",
+      "color_b": "#f58518",
+      "line_width": 2.0,
+      "figsize": [7.0, 4.0]
+    }
   }
 }

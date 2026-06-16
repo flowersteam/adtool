@@ -68,7 +68,7 @@ function bindEvents() {
     elements.stickerPreviewSizeInput.addEventListener("input", renderSettings.scheduleApply);
     elements.coverageActionsToggle.addEventListener("click", analysisActions.toggleCoverageActions);
     elements.randomRunButton.addEventListener("click", analysisActions.launchRandomRun);
-    elements.coverageCompareButton.addEventListener("click", analysisActions.launchCoverageComparison);
+    elements.coverageCompareButton.addEventListener("click", analysisActions.launchCoverageAnalysis);
     elements.previewSizeSlider.addEventListener("input", (event) => {
         preview.applyScale(event.target.value);
     });

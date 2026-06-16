@@ -54,6 +54,14 @@ export function createCoverageController({ elements, lightbox }) {
         return summary.run_name || "coverage run";
     }
 
+    function moduleEntries(summary) {
+        const order = Array.isArray(summary.module_order) ? summary.module_order : [];
+        const modules = summary.modules || {};
+        return order
+            .filter((moduleName) => modules[moduleName])
+            .map((moduleName) => [moduleName, modules[moduleName]]);
+    }
+
     function formatCoverageBounds(bounds) {
         if (Array.isArray(bounds) && Array.isArray(bounds[0])) {
             const parts = [];
@@ -70,13 +78,9 @@ export function createCoverageController({ elements, lightbox }) {
         return formatRange(bounds);
     }
 
-    function renderImageCard(summary, image, index) {
-        const imageInfo = typeof image === "string"
-            ? { file: image, url: `/coverage/${image}` }
-            : image;
-        const labels = Array.isArray(summary.labels) ? summary.labels : [];
-        const title = imageInfo.title || labels[index] || imageInfo.file || `Graph ${index + 1}`;
-        const bounds = imageInfo.bounds ?? (Array.isArray(summary.bounds) ? summary.bounds[index] : undefined);
+    function renderImageCard(runName, imageInfo, fallbackTitle, fallbackBounds) {
+        const title = imageInfo.title || fallbackTitle || imageInfo.file || "Graph";
+        const bounds = imageInfo.bounds ?? fallbackBounds;
         const card = document.createElement("article");
         card.className = "coverageCard";
 
@@ -103,7 +107,7 @@ export function createCoverageController({ elements, lightbox }) {
         imageButton.type = "button";
         imageButton.setAttribute("aria-label", `Open ${title} larger`);
         imageButton.addEventListener("click", () => {
-            lightbox.open(img.src, `${runTitle(summary)} / ${title}`);
+            lightbox.open(img.src, `${runName} / ${title}`);
         });
 
         header.appendChild(titleNode);
@@ -112,6 +116,67 @@ export function createCoverageController({ elements, lightbox }) {
         imageButton.appendChild(img);
         card.appendChild(imageButton);
         return card;
+    }
+
+    function moduleMeta(moduleName, moduleSummary) {
+        if (moduleName === "comparison_1d") {
+            return `${formatNumber((moduleSummary.dimensions || []).length)} dims`;
+        }
+        if (moduleName === "comparison_2d") {
+            return `${formatNumber((moduleSummary.pairs || []).length)} pairs`;
+        }
+        if (moduleName === "space_coverage") {
+            const progression = moduleSummary.progression || {};
+            const datasetA = progression.dataset_a || {};
+            return `${formatNumber((datasetA.steps || []).length)} steps`;
+        }
+        return `${formatNumber((moduleSummary.images || []).length)} graphs`;
+    }
+
+    function renderModule(summary, moduleName, moduleSummary) {
+        const section = document.createElement("section");
+        section.className = "coverageRunSection";
+
+        const header = document.createElement("div");
+        header.className = "coverageRunHeader";
+
+        const titleNode = document.createElement("h3");
+        titleNode.textContent = moduleSummary.title || moduleName;
+        titleNode.title = titleNode.textContent;
+
+        const metaNode = document.createElement("div");
+        metaNode.className = "coverageRunMeta";
+        metaNode.textContent = moduleMeta(moduleName, moduleSummary);
+
+        const grid = document.createElement("div");
+        grid.className = "coverageRunGrid";
+
+        const images = Array.isArray(moduleSummary.images) ? moduleSummary.images : [];
+        const labels = Array.isArray(moduleSummary.labels) ? moduleSummary.labels : [];
+        const bounds = Array.isArray(moduleSummary.bounds) ? moduleSummary.bounds : [];
+        for (const [index, image] of images.entries()) {
+            grid.appendChild(
+                renderImageCard(
+                    runTitle(summary),
+                    image,
+                    labels[index] || `${moduleSummary.title || moduleName} ${index + 1}`,
+                    bounds[index],
+                ),
+            );
+        }
+
+        if (images.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "emptyPanel compactEmptyPanel";
+            empty.textContent = "This module has no generated graphs.";
+            grid.appendChild(empty);
+        }
+
+        header.appendChild(titleNode);
+        header.appendChild(metaNode);
+        section.appendChild(header);
+        section.appendChild(grid);
+        return section;
     }
 
     function renderRun(summary) {
@@ -127,33 +192,32 @@ export function createCoverageController({ elements, lightbox }) {
 
         const metaNode = document.createElement("div");
         metaNode.className = "coverageRunMeta";
-        const datasetALabel = summary.dataset_a_label || "first set";
-        const datasetBLabel = summary.dataset_b_label || "second set";
+        const datasetALabel = summary.dataset_a?.label || "first set";
+        const datasetBLabel = summary.dataset_b?.label || "second set";
+        const moduleCount = moduleEntries(summary).length;
         metaNode.textContent = [
-            `${datasetALabel}: ${formatNumber(summary.dataset_a_count)}`,
-            `${datasetBLabel}: ${formatNumber(summary.dataset_b_count)}`,
-            `${formatNumber(summary.dim_count)} dims`,
+            `${datasetALabel}: ${formatNumber(summary.dataset_a?.count || 0)}`,
+            `${datasetBLabel}: ${formatNumber(summary.dataset_b?.count || 0)}`,
+            `${formatNumber(moduleCount)} modules`,
         ].join(" | ");
 
-        const grid = document.createElement("div");
-        grid.className = "coverageRunGrid";
-
-        const images = Array.isArray(summary.images) ? summary.images : [];
-        for (const [index, image] of images.entries()) {
-            grid.appendChild(renderImageCard(summary, image, index));
+        const body = document.createElement("div");
+        const modules = moduleEntries(summary);
+        for (const [moduleName, moduleSummary] of modules) {
+            body.appendChild(renderModule(summary, moduleName, moduleSummary));
         }
 
-        if (images.length === 0) {
+        if (modules.length === 0) {
             const empty = document.createElement("div");
             empty.className = "emptyPanel compactEmptyPanel";
-            empty.textContent = "This run has no generated graphs.";
-            grid.appendChild(empty);
+            empty.textContent = "This run has no generated modules.";
+            body.appendChild(empty);
         }
 
         header.appendChild(titleNode);
         header.appendChild(metaNode);
         section.appendChild(header);
-        section.appendChild(grid);
+        section.appendChild(body);
         return section;
     }
 
@@ -164,7 +228,10 @@ export function createCoverageController({ elements, lightbox }) {
         setEmpty(false);
 
         const graphCount = runs.reduce(
-            (total, run) => total + (Array.isArray(run.images) ? run.images.length : 0),
+            (total, run) => total + moduleEntries(run).reduce(
+                (moduleTotal, [, moduleSummary]) => moduleTotal + ((moduleSummary.images || []).length),
+                0,
+            ),
             0,
         );
         elements.coverageSubtitle.textContent = payload.coverage_runs_dir
@@ -175,8 +242,8 @@ export function createCoverageController({ elements, lightbox }) {
         elements.coverageStats.appendChild(statBox(formatNumber(graphCount), "graphs"));
         if (runs.length > 0) {
             const latest = runs[0];
-            elements.coverageStats.appendChild(statBox(formatNumber(latest.dataset_a_count), latest.dataset_a_label || "first set"));
-            elements.coverageStats.appendChild(statBox(formatNumber(latest.dataset_b_count), latest.dataset_b_label || "second set"));
+            elements.coverageStats.appendChild(statBox(formatNumber(latest.dataset_a?.count || 0), latest.dataset_a?.label || "first set"));
+            elements.coverageStats.appendChild(statBox(formatNumber(latest.dataset_b?.count || 0), latest.dataset_b?.label || "second set"));
         }
 
         for (const summary of runs) {
@@ -187,7 +254,7 @@ export function createCoverageController({ elements, lightbox }) {
             setEmpty(
                 true,
                 "No coverage run found",
-                "Run a coverage comparison to create coverage_runs/coverage_run_* outputs.",
+                "Run a coverage analysis to create coverage_runs/coverage_run_* outputs.",
             );
         }
     }
