@@ -99,6 +99,11 @@ def _save_discovery(discoveries_dir, run_idx, seed, discovery):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     discovery_dir = discoveries_dir / f"{timestamp}_idx_{run_idx}_seed_{seed}"
     discovery_dir.mkdir(parents=True, exist_ok=True)
+    discovery["metadata"] = {
+        "run_idx": run_idx,
+        "seed": seed,
+        "created_at": datetime.now().isoformat(),
+    }
     with (discovery_dir / "discovery.json").open("w") as handle:
         json.dump(discovery, handle)
 
