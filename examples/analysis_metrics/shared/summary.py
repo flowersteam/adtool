@@ -43,7 +43,7 @@ class AnalysisImage:
 
 
 @dataclass(frozen=True)
-class CoverageAnalysisSummary:
+class AnalysisRunSummary:
     run_dir: Path
     dataset_a: DatasetInfo
     dataset_b: DatasetInfo

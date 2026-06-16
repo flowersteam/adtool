@@ -127,8 +127,8 @@ code {
 .topbar p,
 .sidePanel h2,
 .sidePanel h3,
-.coverageHeader h2,
-.coverageHeader p,
+.analysisHeaderBar h2,
+.analysisHeaderBar p,
 .emptyState h2,
 .emptyState p,
 .emptyPanel h3,
@@ -238,7 +238,7 @@ code {
 }
 
 .sidePanel h2,
-.coverageHeader h2 {
+.analysisHeaderBar h2 {
     font-size: 1rem;
     line-height: 1.15;
 }
@@ -426,7 +426,7 @@ code {
 }
 
 .analysisHeader h3,
-.coverageActionsHeader h3 {
+.analysisActionsHeader h3 {
     margin: 0;
     font-size: 0.95rem;
     line-height: 1.2;
@@ -612,7 +612,7 @@ code {
     font-size: 1.1rem;
 }
 
-.coveragePage {
+.analysisPage {
     align-content: start;
     gap: 18px;
     min-height: 0;
@@ -620,14 +620,14 @@ code {
     padding: 24px;
 }
 
-.coverageHeader {
+.analysisHeaderBar {
     display: flex;
     align-items: start;
     justify-content: space-between;
     gap: 20px;
 }
 
-.coverageActions {
+.analysisActionsPanel {
     display: grid;
     gap: 10px;
     border: 1px solid var(--line);
@@ -636,24 +636,24 @@ code {
     background: var(--surface);
 }
 
-.coverageActionsHeader {
+.analysisActionsHeader {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
 }
 
-.coverageActionsHeader > div {
+.analysisActionsHeader > div {
     min-width: 0;
 }
 
-.coverageActionsBody {
+.analysisActionsBody {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 12px;
 }
 
-.coverageActionGroup {
+.analysisActionGroup {
     display: grid;
     gap: 7px;
     min-width: 0;
@@ -682,13 +682,13 @@ code {
     white-space: nowrap;
 }
 
-.coverageStats {
+.analysisStats {
     display: grid;
     grid-template-columns: repeat(4, minmax(140px, 1fr));
     gap: 12px;
 }
 
-.coverageGrid {
+.analysisGrid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
@@ -696,7 +696,7 @@ code {
     padding-bottom: 24px;
 }
 
-.coverageRunSection {
+.analysisRunSection {
     min-width: 0;
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -704,7 +704,7 @@ code {
     overflow: hidden;
 }
 
-.coverageRunHeader {
+.analysisRunHeader {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -714,7 +714,7 @@ code {
     background: var(--surface-muted);
 }
 
-.coverageRunHeader h3 {
+.analysisRunHeader h3 {
     min-width: 0;
     margin: 0;
     overflow: hidden;
@@ -723,21 +723,21 @@ code {
     white-space: nowrap;
 }
 
-.coverageRunMeta {
+.analysisRunMeta {
     flex: 0 0 auto;
     color: var(--muted);
     font-size: 0.78rem;
     white-space: nowrap;
 }
 
-.coverageRunGrid {
+.analysisRunGrid {
     display: grid;
     grid-template-columns: repeat(4, minmax(320px, 1fr));
     gap: 14px;
     padding: 14px;
 }
 
-.coverageCard {
+.analysisCard {
     min-width: 0;
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -745,7 +745,7 @@ code {
     overflow: hidden;
 }
 
-.coverageCardHeader {
+.analysisCardHeader {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -754,7 +754,7 @@ code {
     border-bottom: 1px solid var(--line);
 }
 
-.coverageCardTitle {
+.analysisCardTitle {
     min-width: 0;
     overflow: hidden;
     font-size: 0.95rem;
@@ -763,13 +763,13 @@ code {
     white-space: nowrap;
 }
 
-.coverageCardMeta {
+.analysisCardMeta {
     flex: 0 0 auto;
     color: var(--muted);
     font-size: 0.78rem;
 }
 
-.coverageImageButton {
+.analysisImageButton {
     display: block;
     width: 100%;
     height: auto;
@@ -781,12 +781,12 @@ code {
     cursor: zoom-in;
 }
 
-.coverageImageButton:hover {
+.analysisImageButton:hover {
     border: 0;
     background: var(--surface);
 }
 
-.coverageImageButton img {
+.analysisImageButton img {
     display: block;
     width: 100%;
     height: auto;
@@ -905,7 +905,7 @@ code {
     }
 
     .topbar,
-    .coverageHeader {
+    .analysisHeaderBar {
         display: flex;
         align-items: stretch;
         flex-direction: column;
@@ -948,20 +948,20 @@ code {
         min-height: 58vh;
     }
 
-    .coverageStats {
+    .analysisStats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .coverageRunHeader {
+    .analysisRunHeader {
         align-items: stretch;
         flex-direction: column;
     }
 
-    .coverageRunMeta {
+    .analysisRunMeta {
         white-space: normal;
     }
 
-    .coverageRunGrid {
+    .analysisRunGrid {
         grid-template-columns: 1fr;
     }
 
@@ -974,7 +974,7 @@ code {
         width: 100%;
     }
 
-    .coveragePage {
+    .analysisPage {
         overflow: visible;
         padding: 18px;
     }

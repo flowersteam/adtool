@@ -8,20 +8,20 @@ from adtool.examples.analysis_metrics.space_coverage import load_space_coverage_
 
 
 @dataclass(frozen=True)
-class CoverageAnalysisConfig:
+class AnalysisRunConfig:
     comparison_1d: object = None
     comparison_2d: object = None
     space_coverage: object = None
 
 
-def load_coverage_analysis_config(config_path):
+def load_analysis_run_config(config_path):
     if config_path is None:
-        return CoverageAnalysisConfig()
+        return AnalysisRunConfig()
 
     with Path(config_path).open("r") as handle:
         payload = json.load(handle)
 
-    return CoverageAnalysisConfig(
+    return AnalysisRunConfig(
         comparison_1d=None
         if payload.get("comparison_1d") is None
         else load_comparison_1d_config(payload["comparison_1d"]),

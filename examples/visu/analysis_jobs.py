@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from adtool.examples.analysis_metrics.coverage_analysis import run_coverage_analysis
+from adtool.examples.analysis_metrics.analysis_run import run_analysis
 from adtool.examples.analysis_metrics.random_run import run_random_baseline
 from fastapi import HTTPException
-from adtool.examples.visu.coverage_runs import coverage_runs_dir
+from adtool.examples.visu.analysis_runs import analysis_runs_dir
 from adtool.examples.visu.runtime import (
     DEFAULT_RANDOM_ITERATIONS,
     DEFAULT_RANDOM_SEED,
@@ -73,7 +73,7 @@ def random_run_payload(
     }
 
 
-def coverage_analysis_payload(
+def run_analysis_payload(
     config: ServerConfig,
     state: RuntimeState,
     payload: dict[str, Any],
@@ -98,10 +98,10 @@ def coverage_analysis_payload(
 
     with state.analysis_lock:
         try:
-            summary = run_coverage_analysis(
+            summary = run_analysis(
                 config.discoveries,
                 discovery_b_path,
-                output_dir=coverage_runs_dir(config),
+                output_dir=analysis_runs_dir(config),
                 label_a=str(label_a),
                 label_b=str(label_b),
                 config_file=config_file,
@@ -109,7 +109,7 @@ def coverage_analysis_payload(
         except Exception as exc:
             raise HTTPException(
                 status_code=500,
-                detail=error_detail("Coverage analysis failed", exc),
+                detail=error_detail("Analysis run failed", exc),
             ) from exc
 
     return {

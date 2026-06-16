@@ -1,5 +1,5 @@
 import { createAnalysisActions } from "./js/analysis-actions.js";
-import { createCoverageController } from "./js/coverage.js";
+import { createAnalysisController } from "./js/analysis.js";
 import { createDiscoveryActions } from "./js/discovery-actions.js";
 import { createDiscoveryMap } from "./js/discovery-map.js";
 import { createDisplayLimitController } from "./js/display-limit.js";
@@ -18,9 +18,9 @@ function updateStatus(text) {
 
 const preview = createPreviewController(elements);
 const lightbox = createGraphLightbox(elements);
-const coverage = createCoverageController({ elements, lightbox });
+const analysis = createAnalysisController({ elements, lightbox });
 const discoveryMap = createDiscoveryMap({ elements, preview, updateStatus });
-const router = createPageRouter({ coverage, discoveryMap, elements, preview });
+const router = createPageRouter({ analysis, discoveryMap, elements, preview });
 const displayLimit = createDisplayLimitController({
     elements,
     refreshDiscoveries: discoveryMap.refreshDiscoveries,
@@ -38,7 +38,7 @@ const renderSettings = createRenderSettingsController({
 });
 const discoveryActions = createDiscoveryActions({ discoveryMap, elements, updateStatus });
 const analysisActions = createAnalysisActions({
-    coverage,
+    analysis,
     elements,
     showPage: router.showPage,
     updateStatus,
@@ -46,8 +46,8 @@ const analysisActions = createAnalysisActions({
 
 function bindEvents() {
     elements.discoveriesTab.addEventListener("click", () => router.showPage("discoveries"));
-    elements.coverageTab.addEventListener("click", () => router.showPage("coverage"));
-    elements.reloadCoverageButton.addEventListener("click", coverage.load);
+    elements.analysisTab.addEventListener("click", () => router.showPage("analysis"));
+    elements.reloadAnalysisButton.addEventListener("click", analysis.load);
     elements.fitViewButton.addEventListener("click", discoveryMap.fitView);
     elements.refreshButton.addEventListener("click", () => discoveryMap.refreshDiscoveries(false));
     elements.recomputeLayoutButton.addEventListener("click", discoveryActions.recomputeLayout);
@@ -66,9 +66,9 @@ function bindEvents() {
     elements.projectionMethodSelect.addEventListener("change", projection.syncAxisVisibility);
     elements.projectionApplyButton.addEventListener("click", projection.apply);
     elements.stickerPreviewSizeInput.addEventListener("input", renderSettings.scheduleApply);
-    elements.coverageActionsToggle.addEventListener("click", analysisActions.toggleCoverageActions);
+    elements.analysisPanelToggle.addEventListener("click", analysisActions.toggleAnalysisPanel);
     elements.randomRunButton.addEventListener("click", analysisActions.launchRandomRun);
-    elements.coverageCompareButton.addEventListener("click", analysisActions.launchCoverageAnalysis);
+    elements.runAnalysisButton.addEventListener("click", analysisActions.launchAnalysis);
     elements.previewSizeSlider.addEventListener("input", (event) => {
         preview.applyScale(event.target.value);
     });
@@ -94,7 +94,7 @@ function bindEvents() {
 async function initialize() {
     bindEvents();
     preview.applyScale(elements.previewSizeSlider.value);
-    coverage.initializeNavigation();
+    analysis.initializeNavigation();
     await displayLimit.initialize();
     await projection.initialize();
     await renderSettings.initialize();

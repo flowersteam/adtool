@@ -37,7 +37,7 @@
             </div>
             <nav class="pageNav" aria-label="Views">
                 <button id="discoveriesTab" class="navButton active" type="button">Discoveries</button>
-                <button id="coverageTab" class="navButton" type="button">Coverage</button>
+                <button id="analysisTab" class="navButton" type="button">Analysis</button>
             </nav>
         </header>
 
@@ -138,28 +138,28 @@
                 </div>
             </section>
 
-            <section id="coveragePage" class="page coveragePage" aria-label="Coverage analysis">
-                <div class="coverageHeader">
+            <section id="analysisPage" class="page analysisPage" aria-label="Analysis results">
+                <div class="analysisHeaderBar">
                     <div>
-                        <p class="eyebrow">Coverage analysis</p>
-                        <h2>Generated Graphs</h2>
-                        <p id="coverageSubtitle" class="sectionText">Loading coverage summary...</p>
+                        <p class="eyebrow">Analysis</p>
+                        <h2>Analysis Results</h2>
+                        <p id="analysisSubtitle" class="sectionText">Loading analysis summary...</p>
                     </div>
-                    <button id="reloadCoverageButton" type="button">Reload Coverage</button>
+                    <button id="reloadAnalysisButton" type="button">Reload Analysis</button>
                 </div>
 
-                <div class="coverageActions" aria-label="Analysis runs">
-                    <div class="coverageActionsHeader">
+                <div class="analysisActionsPanel" aria-label="Analysis runs">
+                    <div class="analysisActionsHeader">
                         <div>
                             <p class="eyebrow">Analysis</p>
-                            <h3>Run Metrics</h3>
+                            <h3>Run Operations</h3>
                         </div>
-                        <button id="coverageActionsToggle" class="ghostButton" type="button" aria-expanded="true"
-                            aria-controls="coverageActionsBody">Hide</button>
+                        <button id="analysisPanelToggle" class="ghostButton" type="button" aria-expanded="true"
+                            aria-controls="analysisPanelBody">Hide</button>
                     </div>
 
-                    <div id="coverageActionsBody" class="coverageActionsBody">
-                        <div class="coverageActionGroup">
+                    <div id="analysisPanelBody" class="analysisActionsBody">
+                        <div class="analysisActionGroup">
                             <div class="analysisHeader">
                                 <p class="eyebrow">Random baseline</p>
                                 <h3>Generate Discoveries</h3>
@@ -182,40 +182,40 @@
                             </div>
                         </div>
 
-                        <div class="coverageActionGroup">
+                        <div class="analysisActionGroup">
                             <div class="analysisHeader">
-                                <p class="eyebrow">Coverage analysis</p>
+                                <p class="eyebrow">Analysis run</p>
                                 <h3>Analyze Discoveries</h3>
                             </div>
                             <div class="analysisFields compareFields">
-                                <label class="compactField wideField" for="coverageComparePath">
+                                <label class="compactField wideField" for="analysisTargetPath">
                                     <span>Discoveries path</span>
-                                    <input id="coverageComparePath" class="pathInput" type="text"
+                                    <input id="analysisTargetPath" class="pathInput" type="text"
                                         placeholder="/path/to/discoveries" autocomplete="off">
                                 </label>
-                                <label class="compactField wideField" for="coverageConfigPath">
+                                <label class="compactField wideField" for="analysisConfigPath">
                                     <span>Config file</span>
-                                    <input id="coverageConfigPath" class="pathInput" type="text"
+                                    <input id="analysisConfigPath" class="pathInput" type="text"
                                         placeholder="None" autocomplete="off">
                                 </label>
-                                <label class="compactField" for="coverageLabelA">
+                                <label class="compactField" for="analysisLabelA">
                                     <span>Label A</span>
-                                    <input id="coverageLabelA" type="text" value="IMGEP" autocomplete="off">
+                                    <input id="analysisLabelA" type="text" value="IMGEP" autocomplete="off">
                                 </label>
-                                <label class="compactField" for="coverageLabelB">
+                                <label class="compactField" for="analysisLabelB">
                                     <span>Label B</span>
-                                    <input id="coverageLabelB" type="text" value="baseline" autocomplete="off">
+                                    <input id="analysisLabelB" type="text" value="baseline" autocomplete="off">
                                 </label>
-                                <button id="coverageCompareButton" class="primaryButton" type="button">Run analysis</button>
+                                <button id="runAnalysisButton" class="primaryButton" type="button">Run analysis</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div id="coverageStats" class="coverageStats" aria-label="Global coverage statistics"></div>
-                <div id="coverageGrid" class="coverageGrid" aria-label="Coverage graphs"></div>
-                <div id="coverageEmpty" class="emptyPanel" hidden>
-                    <h3>No coverage run found</h3>
+                <div id="analysisStats" class="analysisStats" aria-label="Global analysis statistics"></div>
+                <div id="analysisGrid" class="analysisGrid" aria-label="Analysis graphs"></div>
+                <div id="analysisEmpty" class="emptyPanel" hidden>
+                    <h3>No analysis run found</h3>
                     <p>Enter a discovery path above or run a random baseline, then analyze it with the current discoveries.</p>
                 </div>
             </section>
@@ -230,11 +230,11 @@
 
     <div id="graphLightbox" class="graphLightbox" hidden>
         <div class="graphLightboxHeader">
-            <h2 id="graphLightboxTitle">Coverage graph</h2>
+            <h2 id="graphLightboxTitle">Analysis graph</h2>
             <button id="graphLightboxClose" type="button">Close</button>
         </div>
         <div class="graphLightboxBody">
-            <img id="graphLightboxImage" alt="Expanded coverage graph">
+            <img id="graphLightboxImage" alt="Expanded analysis graph">
         </div>
     </div>
 

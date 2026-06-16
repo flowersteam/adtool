@@ -2,11 +2,11 @@ from pathlib import Path
 
 from adtool.examples.analysis_metrics.comparison_1d import run_comparison_1d
 from adtool.examples.analysis_metrics.comparison_2d import run_comparison_2d
-from adtool.examples.analysis_metrics.coverage_analysis.config import (
-    load_coverage_analysis_config,
+from adtool.examples.analysis_metrics.analysis_run.config import (
+    load_analysis_run_config,
 )
 from adtool.examples.analysis_metrics.shared import (
-    CoverageAnalysisSummary,
+    AnalysisRunSummary,
     DatasetInfo,
     create_run_dir,
     load_discovery_set,
@@ -15,14 +15,14 @@ from adtool.examples.analysis_metrics.shared import (
 from adtool.examples.analysis_metrics.space_coverage import run_space_coverage
 
 
-DEFAULT_OUTPUT_DIR = Path("coverage_runs")
+DEFAULT_OUTPUT_DIR = Path("analysis_runs")
 
 
 def _default_label(path):
     return path.name or str(path)
 
 
-def run_coverage_analysis(
+def run_analysis(
     discovery_a_path,
     discovery_b_path,
     output_dir=DEFAULT_OUTPUT_DIR,
@@ -30,7 +30,7 @@ def run_coverage_analysis(
     label_b=None,
     config_file=None,
 ):
-    config = load_coverage_analysis_config(config_file)
+    config = load_analysis_run_config(config_file)
     if (
         config.comparison_1d is None
         and config.comparison_2d is None
@@ -80,7 +80,7 @@ def run_coverage_analysis(
             run_dir,
         )
 
-    summary = CoverageAnalysisSummary(
+    summary = AnalysisRunSummary(
         run_dir=run_dir,
         dataset_a=DatasetInfo(
             path=discovery_a_path,

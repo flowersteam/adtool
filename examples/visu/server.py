@@ -12,12 +12,12 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from watchfiles import Change, awatch
 
-from adtool.examples.visu.analysis_jobs import coverage_analysis_payload, random_run_payload
-from adtool.examples.visu.coverage_runs import (
-    coverage_runs_dir,
-    coverage_runs_payload,
-    coverage_status_payload,
-    latest_coverage_summary_payload,
+from adtool.examples.visu.analysis_jobs import random_run_payload, run_analysis_payload
+from adtool.examples.visu.analysis_runs import (
+    analysis_runs_dir,
+    analysis_runs_payload,
+    analysis_status_payload,
+    latest_analysis_summary_payload,
 )
 from adtool.examples.visu.exporter import export_selected_discoveries
 from adtool.examples.visu.layout import (
@@ -132,7 +132,7 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
     async def lifespan(app: FastAPI):
         config.static_dir.mkdir(parents=True, exist_ok=True)
         config.discoveries.mkdir(parents=True, exist_ok=True)
-        coverage_runs_dir(config).mkdir(parents=True, exist_ok=True)
+        analysis_runs_dir(config).mkdir(parents=True, exist_ok=True)
         write_discovery_coordinates(config, state)
 
         if config.refresh:
@@ -169,9 +169,9 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
             raise HTTPException(status_code=404, detail="File not found")
         return FileResponse(str(full_path), media_type=mime_type(file_path))
 
-    @app.get("/coverage/{file_path:path}")
-    async def serve_coverage_file(file_path: str):
-        runs_dir = coverage_runs_dir(config)
+    @app.get("/analysis_files/{file_path:path}")
+    async def serve_analysis_file(file_path: str):
+        runs_dir = analysis_runs_dir(config)
         full_path = (runs_dir / file_path).resolve()
         if not is_relative_to(full_path, runs_dir):
             raise HTTPException(status_code=400, detail="Invalid file path")
@@ -180,17 +180,17 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
 
         return FileResponse(str(full_path), media_type=mime_type(file_path))
 
-    @app.get("/coverage_status")
-    async def coverage_status():
-        return coverage_status_payload(config)
+    @app.get("/analysis_status")
+    async def analysis_status():
+        return analysis_status_payload(config)
 
-    @app.get("/coverage_summary")
-    async def coverage_summary():
-        return latest_coverage_summary_payload(config)
+    @app.get("/analysis_summary")
+    async def analysis_summary():
+        return latest_analysis_summary_payload(config)
 
-    @app.get("/coverage_runs")
-    async def coverage_runs():
-        return coverage_runs_payload(config)
+    @app.get("/analysis_runs")
+    async def analysis_runs():
+        return analysis_runs_payload(config)
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):
@@ -290,9 +290,9 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
     def random_run(payload: dict[str, Any]):
         return random_run_payload(config, state, payload)
 
-    @app.post("/analysis/coverage_analysis")
-    def coverage_analysis(payload: dict[str, Any]):
-        return coverage_analysis_payload(config, state, payload)
+    @app.post("/analysis/run")
+    def run_analysis(payload: dict[str, Any]):
+        return run_analysis_payload(config, state, payload)
 
     @app.post("/export")
     async def export_files(files: list[str]):

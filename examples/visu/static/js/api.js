@@ -32,15 +32,15 @@ export async function readDiscoveries(maxWaitMs = 0, onWaiting = () => {}) {
     }
 }
 
-export async function getCoverageStatus() {
-    return getJson("/coverage_status", "coverage status unavailable");
+export async function getAnalysisStatus() {
+    return getJson("/analysis_status", "analysis status unavailable");
 }
 
-export async function getCoverageRuns() {
-    return fetch("/coverage_runs", { cache: "no-store" });
+export async function getAnalysisRuns() {
+    return fetch("/analysis_runs", { cache: "no-store" });
 }
 
-export async function responseErrorMessage(response, fallback = "Coverage summary could not be loaded.") {
+export async function responseErrorMessage(response, fallback = "Analysis summary could not be loaded.") {
     try {
         const payload = await response.json();
         if (typeof payload.detail === "string") {
@@ -114,6 +114,6 @@ export async function runRandomRun(payload) {
     return postJson("/analysis/random_run", payload, "random run failed");
 }
 
-export async function runCoverageAnalysis(payload) {
-    return postJson("/analysis/coverage_analysis", payload, "coverage analysis failed");
+export async function runAnalysis(payload) {
+    return postJson("/analysis/run", payload, "analysis run failed");
 }

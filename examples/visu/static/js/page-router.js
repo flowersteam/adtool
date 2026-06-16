@@ -1,20 +1,20 @@
 export function createPageRouter({
-    coverage,
+    analysis,
     discoveryMap,
     elements,
     preview,
 }) {
     function showPage(pageName) {
-        const isCoverage = pageName === "coverage";
+        const isAnalysis = pageName === "analysis";
 
-        elements.viewerPage.classList.toggle("active", !isCoverage);
-        elements.coveragePage.classList.toggle("active", isCoverage);
-        elements.discoveriesTab.classList.toggle("active", !isCoverage);
-        elements.coverageTab.classList.toggle("active", isCoverage);
+        elements.viewerPage.classList.toggle("active", !isAnalysis);
+        elements.analysisPage.classList.toggle("active", isAnalysis);
+        elements.discoveriesTab.classList.toggle("active", !isAnalysis);
+        elements.analysisTab.classList.toggle("active", isAnalysis);
 
-        if (isCoverage) {
+        if (isAnalysis) {
             preview.hide();
-            coverage.load();
+            analysis.load();
         } else {
             discoveryMap.resizeRenderer();
         }

@@ -11,14 +11,14 @@ from adtool.examples.analysis_metrics.shared.projection import (
 from adtool.examples.analysis_metrics.shared.run_io import create_run_dir, write_summary
 from adtool.examples.analysis_metrics.shared.summary import (
     AnalysisImage,
-    CoverageAnalysisSummary,
+    AnalysisRunSummary,
     DatasetInfo,
     DiscoverySet,
 )
 
 __all__ = [
     "AnalysisImage",
-    "CoverageAnalysisSummary",
+    "AnalysisRunSummary",
     "DatasetInfo",
     "DiscoverySet",
     "ProjectionConfig",

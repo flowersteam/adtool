@@ -10,52 +10,52 @@ from adtool.examples.visu.runtime import ServerConfig
 from adtool.examples.visu.server_support import is_relative_to
 
 
-def coverage_runs_dir(config: ServerConfig) -> Path:
-    return (config.discoveries.parent / "coverage_runs").resolve()
+def analysis_runs_dir(config: ServerConfig) -> Path:
+    return (config.discoveries.parent / "analysis_runs").resolve()
 
 
-def coverage_summary_paths(runs_dir: Path) -> list[Path]:
+def analysis_summary_paths(runs_dir: Path) -> list[Path]:
     if not runs_dir.exists() or not runs_dir.is_dir():
         return []
 
     summaries = [
         summary
-        for summary in runs_dir.glob("coverage_run_*/summary.json")
+        for summary in runs_dir.glob("analysis_run_*/summary.json")
         if summary.is_file()
     ]
     return sorted(summaries, key=lambda path: path.stat().st_mtime, reverse=True)
 
 
-def coverage_summary_error(summary_path: Path) -> str:
+def analysis_summary_error(summary_path: Path) -> str:
     try:
         with summary_path.open() as handle:
             summary = json.load(handle)
     except json.JSONDecodeError:
-        return f"Coverage summary is not valid JSON: {summary_path}"
+        return f"Analysis summary is not valid JSON: {summary_path}"
 
     if not isinstance(summary, dict):
-        return f"Coverage summary has the wrong format: expected a JSON object in {summary_path}"
+        return f"Analysis summary has the wrong format: expected a JSON object in {summary_path}"
 
     if "modules" not in summary or "module_order" not in summary:
-        return f"Coverage summary is missing modules: {summary_path}"
+        return f"Analysis summary is missing modules: {summary_path}"
     for module_name in summary["module_order"]:
         module = summary["modules"].get(module_name, {})
         for image in module.get("images", []):
             if isinstance(image, dict) and isinstance(image.get("file"), str) and image["file"]:
                 continue
-            return f"Coverage summary has an invalid image entry: {summary_path}"
+            return f"Analysis summary has an invalid image entry: {summary_path}"
 
-    return "Coverage summary could not be loaded."
+    return "Analysis summary could not be loaded."
 
 
-def coverage_image_url(image: str, run_dir: Path, serving_root: Path) -> str:
+def analysis_file_url(image: str, run_dir: Path, serving_root: Path) -> str:
     image_path = (run_dir / image).resolve()
     if is_relative_to(image_path, serving_root):
-        return f"/coverage/{image_path.relative_to(serving_root).as_posix()}"
-    return f"/coverage/{image}"
+        return f"/analysis_files/{image_path.relative_to(serving_root).as_posix()}"
+    return f"/analysis_files/{image}"
 
 
-def coverage_image_payload(
+def analysis_image_payload(
     image: Any,
     run_dir: Path,
     serving_root: Path,
@@ -67,13 +67,13 @@ def coverage_image_payload(
         payload = dict(image)
         image_file = str(image["file"])
     else:
-        raise HTTPException(status_code=422, detail="Coverage summary has an invalid image entry.")
+        raise HTTPException(status_code=422, detail="Analysis summary has an invalid image entry.")
 
-    payload["url"] = coverage_image_url(image_file, run_dir, serving_root)
+    payload["url"] = analysis_file_url(image_file, run_dir, serving_root)
     return payload
 
 
-def coverage_summary_payload(
+def analysis_summary_payload(
     summary_path: Path,
     serving_root: Path,
 ) -> dict[str, Any]:
@@ -83,7 +83,7 @@ def coverage_summary_payload(
     except json.JSONDecodeError:
         raise HTTPException(
             status_code=422,
-            detail=coverage_summary_error(summary_path),
+            detail=analysis_summary_error(summary_path),
         ) from None
 
     if (
@@ -91,22 +91,22 @@ def coverage_summary_payload(
         or "modules" not in summary
         or "module_order" not in summary
     ):
-        raise HTTPException(status_code=422, detail=coverage_summary_error(summary_path))
+        raise HTTPException(status_code=422, detail=analysis_summary_error(summary_path))
 
     run_dir = summary_path.parent
     for module_name in summary["module_order"]:
         module = summary["modules"][module_name]
         module["images"] = [
-            coverage_image_payload(image, run_dir, serving_root)
+            analysis_image_payload(image, run_dir, serving_root)
             for image in module.get("images", [])
         ]
     summary["run_name"] = run_dir.name
     return summary
 
 
-def coverage_status_payload(config: ServerConfig) -> dict[str, Any]:
-    runs_dir = coverage_runs_dir(config)
-    summaries = coverage_summary_paths(runs_dir)
+def analysis_status_payload(config: ServerConfig) -> dict[str, Any]:
+    runs_dir = analysis_runs_dir(config)
+    summaries = analysis_summary_paths(runs_dir)
     return {
         "enabled": True,
         "has_run": len(summaries) > 0,
@@ -115,25 +115,25 @@ def coverage_status_payload(config: ServerConfig) -> dict[str, Any]:
     }
 
 
-def latest_coverage_summary_payload(config: ServerConfig) -> dict[str, Any]:
-    runs_dir = coverage_runs_dir(config)
-    summaries = coverage_summary_paths(runs_dir)
+def latest_analysis_summary_payload(config: ServerConfig) -> dict[str, Any]:
+    runs_dir = analysis_runs_dir(config)
+    summaries = analysis_summary_paths(runs_dir)
     if not summaries:
         raise HTTPException(
             status_code=404,
-            detail=f"No coverage runs found in: {runs_dir}",
+            detail=f"No analysis runs found in: {runs_dir}",
         )
 
-    return coverage_summary_payload(summaries[0], runs_dir)
+    return analysis_summary_payload(summaries[0], runs_dir)
 
 
-def coverage_runs_payload(config: ServerConfig) -> dict[str, Any]:
-    runs_dir = coverage_runs_dir(config)
+def analysis_runs_payload(config: ServerConfig) -> dict[str, Any]:
+    runs_dir = analysis_runs_dir(config)
     runs = [
-        coverage_summary_payload(summary_path, runs_dir)
-        for summary_path in coverage_summary_paths(runs_dir)
+        analysis_summary_payload(summary_path, runs_dir)
+        for summary_path in analysis_summary_paths(runs_dir)
     ]
     return {
-        "coverage_runs_dir": str(runs_dir),
+        "analysis_runs_dir": str(runs_dir),
         "runs": runs,
     }

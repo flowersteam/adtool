@@ -1,14 +1,14 @@
-import { getCoverageRuns, getCoverageStatus, responseErrorMessage } from "./api.js";
+import { getAnalysisRuns, getAnalysisStatus, responseErrorMessage } from "./api.js";
 import { formatNumber, formatRange } from "./utils.js";
 
-export function createCoverageController({ elements, lightbox }) {
-    let coverageRequestId = 0;
-    let coverageEnabled = true;
+export function createAnalysisController({ elements, lightbox }) {
+    let analysisRequestId = 0;
+    let analysisEnabled = true;
 
-    function setEmpty(visible, title = "No coverage run found", message = "") {
-        elements.coverageEmpty.hidden = !visible;
-        const heading = elements.coverageEmpty.querySelector("h3");
-        const text = elements.coverageEmpty.querySelector("p");
+    function setEmpty(visible, title = "No analysis run found", message = "") {
+        elements.analysisEmpty.hidden = !visible;
+        const heading = elements.analysisEmpty.querySelector("h3");
+        const text = elements.analysisEmpty.querySelector("p");
         if (heading) {
             heading.textContent = title;
         }
@@ -19,18 +19,18 @@ export function createCoverageController({ elements, lightbox }) {
 
     async function initializeNavigation() {
         try {
-            await getCoverageStatus();
+            await getAnalysisStatus();
         } catch {
             // Navigation remains available; load() will show the actionable empty state.
         }
 
         setEnabled(true);
-        return coverageEnabled;
+        return analysisEnabled;
     }
 
     function setEnabled(enabled) {
-        coverageEnabled = Boolean(enabled);
-        elements.coverageTab.hidden = !coverageEnabled;
+        analysisEnabled = Boolean(enabled);
+        elements.analysisTab.hidden = !analysisEnabled;
     }
 
     function statBox(value, label) {
@@ -51,7 +51,7 @@ export function createCoverageController({ elements, lightbox }) {
     }
 
     function runTitle(summary) {
-        return summary.run_name || "coverage run";
+        return summary.run_name || "analysis run";
     }
 
     function moduleEntries(summary) {
@@ -62,7 +62,7 @@ export function createCoverageController({ elements, lightbox }) {
             .map((moduleName) => [moduleName, modules[moduleName]]);
     }
 
-    function formatCoverageBounds(bounds) {
+    function formatAnalysisBounds(bounds) {
         if (Array.isArray(bounds) && Array.isArray(bounds[0])) {
             const parts = [];
             const xBounds = formatRange(bounds[0]);
@@ -82,28 +82,28 @@ export function createCoverageController({ elements, lightbox }) {
         const title = imageInfo.title || fallbackTitle || imageInfo.file || "Graph";
         const bounds = imageInfo.bounds ?? fallbackBounds;
         const card = document.createElement("article");
-        card.className = "coverageCard";
+        card.className = "analysisCard";
 
         const header = document.createElement("div");
-        header.className = "coverageCardHeader";
+        header.className = "analysisCardHeader";
 
         const titleNode = document.createElement("div");
-        titleNode.className = "coverageCardTitle";
+        titleNode.className = "analysisCardTitle";
         titleNode.textContent = title;
         titleNode.title = title;
 
         const metaNode = document.createElement("div");
-        metaNode.className = "coverageCardMeta";
-        metaNode.textContent = formatCoverageBounds(bounds);
+        metaNode.className = "analysisCardMeta";
+        metaNode.textContent = formatAnalysisBounds(bounds);
 
         const img = document.createElement("img");
         img.loading = "lazy";
         img.decoding = "async";
-        img.alt = `Coverage graph for ${title}`;
-        img.src = imageInfo.url || `/coverage/${imageInfo.file}`;
+        img.alt = `Analysis graph for ${title}`;
+        img.src = imageInfo.url || `/analysis_files/${imageInfo.file}`;
 
         const imageButton = document.createElement("button");
-        imageButton.className = "coverageImageButton";
+        imageButton.className = "analysisImageButton";
         imageButton.type = "button";
         imageButton.setAttribute("aria-label", `Open ${title} larger`);
         imageButton.addEventListener("click", () => {
@@ -135,21 +135,21 @@ export function createCoverageController({ elements, lightbox }) {
 
     function renderModule(summary, moduleName, moduleSummary) {
         const section = document.createElement("section");
-        section.className = "coverageRunSection";
+        section.className = "analysisRunSection";
 
         const header = document.createElement("div");
-        header.className = "coverageRunHeader";
+        header.className = "analysisRunHeader";
 
         const titleNode = document.createElement("h3");
         titleNode.textContent = moduleSummary.title || moduleName;
         titleNode.title = titleNode.textContent;
 
         const metaNode = document.createElement("div");
-        metaNode.className = "coverageRunMeta";
+        metaNode.className = "analysisRunMeta";
         metaNode.textContent = moduleMeta(moduleName, moduleSummary);
 
         const grid = document.createElement("div");
-        grid.className = "coverageRunGrid";
+        grid.className = "analysisRunGrid";
 
         const images = Array.isArray(moduleSummary.images) ? moduleSummary.images : [];
         const labels = Array.isArray(moduleSummary.labels) ? moduleSummary.labels : [];
@@ -181,17 +181,17 @@ export function createCoverageController({ elements, lightbox }) {
 
     function renderRun(summary) {
         const section = document.createElement("section");
-        section.className = "coverageRunSection";
+        section.className = "analysisRunSection";
 
         const header = document.createElement("div");
-        header.className = "coverageRunHeader";
+        header.className = "analysisRunHeader";
 
         const titleNode = document.createElement("h3");
         titleNode.textContent = runTitle(summary);
         titleNode.title = titleNode.textContent;
 
         const metaNode = document.createElement("div");
-        metaNode.className = "coverageRunMeta";
+        metaNode.className = "analysisRunMeta";
         const datasetALabel = summary.dataset_a?.label || "first set";
         const datasetBLabel = summary.dataset_b?.label || "second set";
         const moduleCount = moduleEntries(summary).length;
@@ -223,8 +223,8 @@ export function createCoverageController({ elements, lightbox }) {
 
     function render(payload) {
         const runs = Array.isArray(payload.runs) ? payload.runs : [];
-        elements.coverageGrid.innerHTML = "";
-        elements.coverageStats.innerHTML = "";
+        elements.analysisGrid.innerHTML = "";
+        elements.analysisStats.innerHTML = "";
         setEmpty(false);
 
         const graphCount = runs.reduce(
@@ -234,74 +234,74 @@ export function createCoverageController({ elements, lightbox }) {
             ),
             0,
         );
-        elements.coverageSubtitle.textContent = payload.coverage_runs_dir
-            ? `Showing ${runs.length} coverage runs from ${payload.coverage_runs_dir}`
-            : `Showing ${runs.length} coverage runs`;
+        elements.analysisSubtitle.textContent = payload.analysis_runs_dir
+            ? `Showing ${runs.length} analysis runs from ${payload.analysis_runs_dir}`
+            : `Showing ${runs.length} analysis runs`;
 
-        elements.coverageStats.appendChild(statBox(formatNumber(runs.length), "coverage runs"));
-        elements.coverageStats.appendChild(statBox(formatNumber(graphCount), "graphs"));
+        elements.analysisStats.appendChild(statBox(formatNumber(runs.length), "analysis runs"));
+        elements.analysisStats.appendChild(statBox(formatNumber(graphCount), "graphs"));
         if (runs.length > 0) {
             const latest = runs[0];
-            elements.coverageStats.appendChild(statBox(formatNumber(latest.dataset_a?.count || 0), latest.dataset_a?.label || "first set"));
-            elements.coverageStats.appendChild(statBox(formatNumber(latest.dataset_b?.count || 0), latest.dataset_b?.label || "second set"));
+            elements.analysisStats.appendChild(statBox(formatNumber(latest.dataset_a?.count || 0), latest.dataset_a?.label || "first set"));
+            elements.analysisStats.appendChild(statBox(formatNumber(latest.dataset_b?.count || 0), latest.dataset_b?.label || "second set"));
         }
 
         for (const summary of runs) {
-            elements.coverageGrid.appendChild(renderRun(summary));
+            elements.analysisGrid.appendChild(renderRun(summary));
         }
 
         if (runs.length === 0) {
             setEmpty(
                 true,
-                "No coverage run found",
-                "Run a coverage analysis to create coverage_runs/coverage_run_* outputs.",
+                "No analysis run found",
+                "Run an analysis to create analysis_runs/analysis_run_* outputs.",
             );
         }
     }
 
     async function load() {
-        const requestId = ++coverageRequestId;
-        let lastErrorMessage = "Coverage runs could not be loaded.";
-        let emptyTitle = "Coverage format issue";
+        const requestId = ++analysisRequestId;
+        let lastErrorMessage = "Analysis runs could not be loaded.";
+        let emptyTitle = "Analysis format issue";
 
-        elements.reloadCoverageButton.disabled = true;
-        elements.coverageSubtitle.textContent = "Loading coverage runs...";
-        elements.coverageGrid.innerHTML = "";
-        elements.coverageStats.innerHTML = "";
+        elements.reloadAnalysisButton.disabled = true;
+        elements.analysisSubtitle.textContent = "Loading analysis runs...";
+        elements.analysisGrid.innerHTML = "";
+        elements.analysisStats.innerHTML = "";
         setEmpty(false);
 
         try {
-            const response = await getCoverageRuns();
+            const response = await getAnalysisRuns();
             if (!response.ok) {
                 lastErrorMessage = await responseErrorMessage(response, lastErrorMessage);
                 if (response.status === 404) {
-                    emptyTitle = "No coverage run found";
+                    emptyTitle = "No analysis run found";
                 }
                 throw new Error(lastErrorMessage);
             }
 
-            if (requestId !== coverageRequestId) {
+            if (requestId !== analysisRequestId) {
                 return;
             }
             render(await response.json());
         } catch {
-            if (requestId !== coverageRequestId) {
+            if (requestId !== analysisRequestId) {
                 return;
             }
-            elements.coverageGrid.innerHTML = "";
-            elements.coverageStats.innerHTML = "";
-            elements.coverageSubtitle.textContent = "Coverage could not be loaded.";
+            elements.analysisGrid.innerHTML = "";
+            elements.analysisStats.innerHTML = "";
+            elements.analysisSubtitle.textContent = "Analysis could not be loaded.";
             setEmpty(true, emptyTitle, lastErrorMessage);
         } finally {
-            if (requestId === coverageRequestId) {
-                elements.reloadCoverageButton.disabled = false;
+            if (requestId === analysisRequestId) {
+                elements.reloadAnalysisButton.disabled = false;
             }
         }
     }
 
     return {
         initializeNavigation,
-        isEnabled: () => coverageEnabled,
+        isEnabled: () => analysisEnabled,
         load,
         setEnabled,
     };
