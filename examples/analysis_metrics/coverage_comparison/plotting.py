@@ -124,3 +124,38 @@ def plot_dimension_pair_scatter(
     ax.set_ylabel(y_label)
     ax.legend()
     _save_figure(fig, out_path)
+
+
+def plot_progression_curves(
+    out_path,
+    steps_a,
+    counts_a,
+    steps_b,
+    counts_b,
+    title,
+    label_a,
+    label_b,
+    y_label,
+    plot_config,
+):
+    fig, ax = _new_figure(plot_config)
+    ax.plot(
+        steps_a,
+        counts_a,
+        color=plot_config.color_a,
+        linewidth=plot_config.line_width,
+        label=label_a,
+    )
+    ax.plot(
+        steps_b,
+        counts_b,
+        color=plot_config.color_b,
+        linewidth=plot_config.line_width,
+        label=label_b,
+    )
+
+    ax.set_title(title)
+    ax.set_xlabel("step")
+    ax.set_ylabel(y_label)
+    ax.legend()
+    _save_figure(fig, out_path)

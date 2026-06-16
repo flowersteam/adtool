@@ -1,6 +1,19 @@
 {
   "dimensions": "all",
   "dimension_pretreatment": "examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+  "coverage_space_metric": {
+    "path": "examples.embedded_systems.examples.core_interferences.behavior_map.space_coverage.GridSpaceCoverageMetric",
+    "config": {
+      "dimensions": [12, 13, 14],
+      "boundaries": [
+        [-10.0, 10.0],
+        [-10.0, 100.0],
+        [-20.0, 100.0]
+      ],
+      "bins_per_dimension": [8, 8, 8],
+      "title": "Timing-space coverage progression"
+    }
+  },
   "additional_2d_graphs": [
     [0, 12],
     [2, 12],

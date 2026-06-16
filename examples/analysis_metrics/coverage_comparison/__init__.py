@@ -1,5 +1,6 @@
 """Compare coverage between two discovery folders."""
 
+from ..space_coverage import SpaceCoverageMetricConfig
 from .comparison import (
     ComparisonConfig,
     CoverageImageSummary,
@@ -20,6 +21,7 @@ __all__ = [
     "DimensionPretreatmentConfig",
     "DiscoverySet",
     "PlotConfig",
+    "SpaceCoverageMetricConfig",
     "compare_discovery_sets",
     "load_comparison_config",
     "run_coverage_comparison",

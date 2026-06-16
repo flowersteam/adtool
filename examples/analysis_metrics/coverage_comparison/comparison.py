@@ -6,7 +6,17 @@ from pydoc import locate
 
 import numpy as np
 
-from .plotting import density_curve, plot_density_curves, plot_dimension_pair_scatter
+from ..space_coverage import (
+    SpaceCoverageMetricConfig,
+    compute_space_coverage_progression,
+    load_space_coverage_metric,
+)
+from .plotting import (
+    density_curve,
+    plot_density_curves,
+    plot_dimension_pair_scatter,
+    plot_progression_curves,
+)
 
 
 DEFAULT_OUTPUT_DIR = Path("coverage_runs")
@@ -68,6 +78,7 @@ class ComparisonConfig:
     dimensions: object = DEFAULT_DIMENSIONS
     additional_2d_graphs: list = field(default_factory=list)
     dimension_pretreatment: object = None
+    coverage_space_metric: object = None
     plot: object = field(default_factory=PlotConfig)
 
 
@@ -85,6 +96,8 @@ class CoverageComparisonSummary:
     resolved_dimensions: list
     resolved_additional_2d_graphs: list
     dimension_pretreatment: object
+    coverage_space_metric: object
+    space_coverage_progression: object
     bounds: list
     images: list
 
@@ -125,6 +138,17 @@ def _parse_dimension_pretreatment(value):
     )
 
 
+def _parse_space_coverage_metric(value):
+    if not value:
+        return None
+    if isinstance(value, str):
+        return SpaceCoverageMetricConfig(path=value)
+    return SpaceCoverageMetricConfig(
+        path=str(value["path"]),
+        config=dict(value.get("config") or {}),
+    )
+
+
 def load_comparison_config(config_path):
     if config_path is None:
         return ComparisonConfig()
@@ -139,6 +163,9 @@ def load_comparison_config(config_path):
         ),
         dimension_pretreatment=_parse_dimension_pretreatment(
             payload.get("dimension_pretreatment", payload.get("pretreatment"))
+        ),
+        coverage_space_metric=_parse_space_coverage_metric(
+            payload.get("coverage_space_metric")
         ),
         plot=_parse_plot_config(payload.get("plot")),
     )
@@ -262,6 +289,15 @@ def _run_dir(output_dir):
     return run_dir, timestamp
 
 
+def _progression_bounds(summary_a, summary_b):
+    x_values = summary_a.steps + summary_b.steps
+    y_values = summary_a.counts + summary_b.counts
+    return (
+        (float(min(x_values)), float(max(x_values))),
+        (float(min(y_values)), float(max(y_values))),
+    )
+
+
 def _summary_payload(summary, timestamp, config):
     return {
         "run_dir": str(summary.run_dir),
@@ -282,6 +318,11 @@ def _summary_payload(summary, timestamp, config):
         "dimension_pretreatment_config": (
             {} if config.dimension_pretreatment is None else config.dimension_pretreatment.config
         ),
+        "coverage_space_metric": summary.coverage_space_metric,
+        "coverage_space_metric_config": (
+            {} if config.coverage_space_metric is None else config.coverage_space_metric.config
+        ),
+        "space_coverage_progression": summary.space_coverage_progression,
         "bounds": [list(bounds) for bounds in summary.bounds],
         "images": [image.to_payload() for image in summary.images],
         "plot_type": "coverage comparison plots",
@@ -406,6 +447,60 @@ def compare_discovery_sets(
             config.plot,
         )
 
+    space_coverage_progression = None
+    if config.coverage_space_metric is not None:
+        metric = load_space_coverage_metric(config.coverage_space_metric)
+        progression_a = compute_space_coverage_progression(
+            metric,
+            values_a,
+            dataset_a.payloads,
+            dataset_a.files,
+        )
+        progression_b = compute_space_coverage_progression(
+            metric,
+            values_b,
+            dataset_b.payloads,
+            dataset_b.files,
+        )
+        progression_dimensions = list(progression_a.dimensions)
+        dimension_labels = [
+            _display_dimension_label(raw_labels[idx], idx)
+            for idx in progression_dimensions
+            if 0 <= idx < len(raw_labels)
+        ]
+        x_bounds, y_bounds = _progression_bounds(progression_a, progression_b)
+        image_name = f"space_coverage_progression.{config.plot.output_format}"
+        images.append(
+            CoverageImageSummary(
+                file=image_name,
+                title=progression_a.title,
+                plot_type="space coverage progression",
+                dimensions=progression_dimensions,
+                bounds=[x_bounds, y_bounds],
+            )
+        )
+        plot_progression_curves(
+            run_dir / image_name,
+            progression_a.steps,
+            progression_a.counts,
+            progression_b.steps,
+            progression_b.counts,
+            progression_a.title,
+            label_a,
+            label_b,
+            progression_a.y_label,
+            config.plot,
+        )
+        space_coverage_progression = {
+            "metric_path": config.coverage_space_metric.path,
+            "title": progression_a.title,
+            "y_label": progression_a.y_label,
+            "dimensions": progression_dimensions,
+            "dimension_labels": dimension_labels,
+            "dataset_a": progression_a.to_payload(),
+            "dataset_b": progression_b.to_payload(),
+        }
+
     summary = CoverageComparisonSummary(
         run_dir=run_dir,
         discovery_a_path=discovery_a_path,
@@ -421,6 +516,10 @@ def compare_discovery_sets(
         dimension_pretreatment=(
             None if config.dimension_pretreatment is None else config.dimension_pretreatment.path
         ),
+        coverage_space_metric=(
+            None if config.coverage_space_metric is None else config.coverage_space_metric.path
+        ),
+        space_coverage_progression=space_coverage_progression,
         bounds=bounds,
         images=images,
     )
