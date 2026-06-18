@@ -27,7 +27,7 @@ Then you can import the main modules like so:
 
 ```python
 from adtool.systems.System import System
-from adtool.utils.expose_config.expose_config import expose
+from adtool.maps.Map import Map
 from adtool.examples.run import main
 ```
 
