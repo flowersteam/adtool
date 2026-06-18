@@ -49,8 +49,9 @@ class MySystem(System):
 
     def map(self, data_dict):
         # Read the parameters chosen by the explorer
-        # And run one simulation
+        # And run one rollout of your system
         data_dict["output"] = run_system(data_dict["params"])
+        # The run_system method should be a full run of your specific system (ex: full lenia rollout, full grayscott rollout...)
         return data_dict
 
     def render(self, data_dict):
@@ -144,14 +145,11 @@ In practice, the explorer must:
 ```text
 my_adtool_project/
   config.json
-  run.py
   my_project/
     __init__.py
     systems/
       __init__.py
       MySystem.py
-      simulator/
-        __init__.py
     behavior_map/
       __init__.py
       MyBehaviorMap.py
