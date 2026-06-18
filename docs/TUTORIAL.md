@@ -10,6 +10,7 @@ Use Python 3.9 to 3.12.
 You can create a virtual environment in 3.12 with this command:
 ```bash
 python3.12 -m venv .venv
+source .venv/bin/activate
 ```
 
 ```bash
