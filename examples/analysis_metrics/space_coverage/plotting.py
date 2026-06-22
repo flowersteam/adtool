@@ -3,34 +3,26 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from adtool.examples.analysis_metrics.shared import series_colors
+
 
 def plot_progression_curves(
     out_path,
-    steps_a,
-    counts_a,
-    steps_b,
-    counts_b,
+    series,
     title,
-    label_a,
-    label_b,
     y_label,
     plot_config,
 ):
     fig, ax = plt.subplots(figsize=plot_config.figsize)
-    ax.plot(
-        steps_a,
-        counts_a,
-        color=plot_config.color_a,
-        linewidth=plot_config.line_width,
-        label=label_a,
-    )
-    ax.plot(
-        steps_b,
-        counts_b,
-        color=plot_config.color_b,
-        linewidth=plot_config.line_width,
-        label=label_b,
-    )
+    colors = series_colors(len(series), [plot_config.color_a, plot_config.color_b])
+    for index, (steps, counts, label) in enumerate(series):
+        ax.plot(
+            steps,
+            counts,
+            color=colors[index],
+            linewidth=plot_config.line_width,
+            label=label,
+        )
     ax.set_title(title)
     ax.set_xlabel("step")
     ax.set_ylabel(y_label)

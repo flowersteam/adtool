@@ -69,6 +69,7 @@ function bindEvents() {
     elements.stickerPreviewSizeInput.addEventListener("input", renderSettings.scheduleApply);
     elements.analysisPanelToggle.addEventListener("click", analysisActions.toggleAnalysisPanel);
     elements.randomRunButton.addEventListener("click", analysisActions.launchRandomRun);
+    elements.addAnalysisComparisonButton.addEventListener("click", analysisActions.addComparisonRow);
     elements.runAnalysisButton.addEventListener("click", analysisActions.launchAnalysis);
     elements.previewSizeSlider.addEventListener("input", (event) => {
         preview.applyScale(event.target.value);

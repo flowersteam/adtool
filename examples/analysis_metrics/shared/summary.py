@@ -15,12 +15,14 @@ class DatasetInfo:
     path: Path
     label: str
     count: int
+    role: str
 
     def to_payload(self) -> dict:
         return {
             "path": str(self.path),
             "label": self.label,
             "count": self.count,
+            "role": self.role,
         }
 
 
@@ -45,16 +47,14 @@ class AnalysisImage:
 @dataclass(frozen=True)
 class AnalysisRunSummary:
     run_dir: Path
-    dataset_a: DatasetInfo
-    dataset_b: DatasetInfo
+    datasets: list
     module_order: list
     modules: dict
 
     def to_payload(self) -> dict:
         return {
             "run_dir": str(self.run_dir),
-            "dataset_a": self.dataset_a.to_payload(),
-            "dataset_b": self.dataset_b.to_payload(),
+            "datasets": [dataset.to_payload() for dataset in self.datasets],
             "module_order": list(self.module_order),
             "modules": dict(self.modules),
         }

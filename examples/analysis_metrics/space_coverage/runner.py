@@ -15,17 +15,18 @@ def _display_dimension_label(label, dim_index):
     return f"{label} ({dim_index})"
 
 
-def _progression_bounds(steps_a, counts_a, steps_b, counts_b):
-    x_values = list(steps_a) + list(steps_b)
-    y_values = list(counts_a) + list(counts_b)
+def _progression_bounds(series):
+    x_values = [value for steps, _, _ in series for value in steps]
+    y_values = [value for _, counts, _ in series for value in counts]
     return (
         (float(min(x_values)), float(max(x_values))),
         (float(min(y_values)), float(max(y_values))),
     )
 
 
-def _progression_payload(title, y_label, dimensions, dimension_labels, metric_path, run_indices, counts, details):
+def _progression_payload(title, y_label, dimensions, dimension_labels, metric_path, run_indices, counts, details, label):
     return {
+        "label": label,
         "title": title,
         "y_label": y_label,
         "dimensions": list(dimensions),
@@ -40,50 +41,40 @@ def _progression_payload(title, y_label, dimensions, dimension_labels, metric_pa
     }
 
 
-def run_space_coverage(config, dataset_a, dataset_b, label_a, label_b, run_dir):
-    values_a, values_b, raw_labels = apply_projection(
-        config.projection,
-        dataset_a,
-        dataset_b,
-    )
+def run_space_coverage(config, datasets, labels, run_dir):
+    projected_values, raw_labels = apply_projection(config.projection, datasets)
     metric = load_space_coverage_metric(config.metric)
 
-    ordered_values_a, run_indices_a = order_sequence_by_run_idx(
-        values_a,
-        dataset_a.payloads,
-        dataset_a.files,
-    )
-    ordered_values_b, run_indices_b = order_sequence_by_run_idx(
-        values_b,
-        dataset_b.payloads,
-        dataset_b.files,
-    )
+    progressions = []
+    for dataset, values, label in zip(datasets, projected_values, labels):
+        ordered_values, run_indices = order_sequence_by_run_idx(
+            values,
+            dataset.payloads,
+            dataset.files,
+        )
+        counts, details = metric.compute_progression(ordered_values)
+        progressions.append((ordered_values, run_indices, counts, details, label))
 
-    counts_a, details_a = metric.compute_progression(ordered_values_a)
-    counts_b, details_b = metric.compute_progression(ordered_values_b)
-
-    dimensions = list(details_a.get("dimensions", range(ordered_values_a.shape[1])))
-    raw_labels = raw_labels or [f"dim_{idx}" for idx in range(ordered_values_a.shape[1])]
+    first_values, _, _, first_details, _ = progressions[0]
+    dimensions = list(first_details.get("dimensions", range(first_values.shape[1])))
+    raw_labels = raw_labels or [f"dim_{idx}" for idx in range(first_values.shape[1])]
     dimension_labels = [
         _display_dimension_label(raw_labels[idx], idx)
         for idx in dimensions
     ]
-    title = str(details_a.get("title", metric.title))
-    y_label = str(details_a.get("y_label", metric.y_label))
+    title = str(first_details.get("title", metric.title))
+    y_label = str(first_details.get("y_label", metric.y_label))
 
-    steps_a = [int(run_idx) + 1 for run_idx in run_indices_a.tolist()]
-    steps_b = [int(run_idx) + 1 for run_idx in run_indices_b.tolist()]
-    x_bounds, y_bounds = _progression_bounds(steps_a, counts_a, steps_b, counts_b)
+    series = [
+        ([int(run_idx) + 1 for run_idx in run_indices.tolist()], counts, label)
+        for _, run_indices, counts, _, label in progressions
+    ]
+    x_bounds, y_bounds = _progression_bounds(series)
     image_name = f"space_coverage_progression.{config.plot.output_format}"
     plot_progression_curves(
         run_dir / image_name,
-        steps_a,
-        counts_a,
-        steps_b,
-        counts_b,
+        series,
         title,
-        label_a,
-        label_b,
         y_label,
         config.plot,
     )
@@ -101,25 +92,20 @@ def run_space_coverage(config, dataset_a, dataset_b, label_a, label_b, run_dir):
         "title": title,
         "images": images,
         "progression": {
-            "dataset_a": _progression_payload(
-                title,
-                y_label,
-                dimensions,
-                dimension_labels,
-                config.metric.path,
-                run_indices_a,
-                counts_a,
-                details_a,
-            ),
-            "dataset_b": _progression_payload(
-                title,
-                y_label,
-                dimensions,
-                dimension_labels,
-                config.metric.path,
-                run_indices_b,
-                counts_b,
-                details_b,
-            ),
+            "datasets": [
+                _progression_payload(
+                    title,
+                    y_label,
+                    dimensions,
+                    dimension_labels,
+                    config.metric.path,
+                    run_indices,
+                    counts,
+                    details,
+                    label,
+                )
+                for _, run_indices, counts, details, label in progressions
+            ],
         },
+        "series": list(labels),
     }

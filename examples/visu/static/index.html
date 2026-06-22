@@ -205,25 +205,32 @@
                                 <h3>Analyze Discoveries</h3>
                             </div>
                             <div class="analysisFields compareFields">
-                                <label class="compactField wideField" for="analysisTargetPath">
-                                    <span>Discoveries path</span>
-                                    <input id="analysisTargetPath" class="pathInput" type="text"
-                                        placeholder="/path/to/discoveries" autocomplete="off">
-                                </label>
                                 <label class="compactField wideField" for="analysisConfigPath">
                                     <span>Config file</span>
                                     <input id="analysisConfigPath" class="pathInput" type="text"
                                         placeholder="None" autocomplete="off">
                                 </label>
                                 <label class="compactField" for="analysisLabelA">
-                                    <span>Label A</span>
+                                    <span>Primary label</span>
                                     <input id="analysisLabelA" type="text" value="IMGEP" autocomplete="off">
                                 </label>
-                                <label class="compactField" for="analysisLabelB">
-                                    <span>Label B</span>
-                                    <input id="analysisLabelB" type="text" value="baseline" autocomplete="off">
-                                </label>
                                 <button id="runAnalysisButton" class="primaryButton" type="button">Run analysis</button>
+                            </div>
+                            <div id="analysisComparisonList" class="analysisComparisonList">
+                                <div class="analysisComparisonRow analysisComparisonRowBase">
+                                    <label class="compactField wideField" for="analysisTargetPath">
+                                        <span>Comparison discoveries path</span>
+                                        <input id="analysisTargetPath" class="pathInput analysisComparisonPathInput" type="text"
+                                            placeholder="/path/to/discoveries" autocomplete="off">
+                                    </label>
+                                    <label class="compactField" for="analysisLabelB">
+                                        <span>Comparison label</span>
+                                        <input id="analysisLabelB" class="analysisComparisonLabelInput" type="text" value="baseline" autocomplete="off">
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="analysisComparisonActions">
+                                <button id="addAnalysisComparisonButton" type="button">Add Dataset</button>
                             </div>
                         </div>
                     </div>

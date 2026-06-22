@@ -3,6 +3,7 @@ from adtool.examples.analysis_metrics.shared.discovery import (
     order_sequence_by_run_idx,
 )
 from adtool.examples.analysis_metrics.shared.imports import load_dotted_object
+from adtool.examples.analysis_metrics.shared.plotting import series_colors
 from adtool.examples.analysis_metrics.shared.projection import (
     ProjectionConfig,
     apply_projection,
@@ -28,5 +29,6 @@ __all__ = [
     "load_dotted_object",
     "load_projection_config",
     "order_sequence_by_run_idx",
+    "series_colors",
     "write_summary",
 ]

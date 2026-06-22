@@ -19,14 +19,14 @@ def load_projection_config(section):
     )
 
 
-def apply_projection(config, dataset_a, dataset_b):
+def apply_projection(config, datasets):
     projection = load_dotted_object(config.path)
-    result = projection(dataset_a, dataset_b, config.config)
-    values_a = np.asarray(result[0], dtype=float)
-    values_b = np.asarray(result[1], dtype=float)
-    if values_a.ndim == 1:
-        values_a = values_a.reshape(-1, 1)
-    if values_b.ndim == 1:
-        values_b = values_b.reshape(-1, 1)
-    labels = None if len(result) < 3 else list(result[2])
-    return values_a, values_b, labels
+    result = projection(datasets, config.config)
+    values = [np.asarray(value, dtype=float) for value in result[:-1]]
+    normalized = []
+    for value in values:
+        if value.ndim == 1:
+            value = value.reshape(-1, 1)
+        normalized.append(value)
+    labels = None if len(result) < 2 else list(result[-1])
+    return normalized, labels

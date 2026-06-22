@@ -925,13 +925,42 @@ code {
 }
 
 .analysisFields.compareFields {
-    grid-template-columns: minmax(220px, 1.1fr) minmax(180px, 0.9fr) 112px 112px 152px;
+    grid-template-columns: minmax(220px, 1fr) 140px 152px;
 }
 
 .analysisFields button {
     width: 100%;
     min-width: 0;
     white-space: nowrap;
+}
+
+.analysisComparisonList {
+    display: grid;
+    gap: 8px;
+}
+
+.analysisComparisonRow {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) 140px 100px;
+    align-items: end;
+    gap: 8px;
+}
+
+.analysisComparisonRowBase {
+    grid-template-columns: minmax(240px, 1fr) 140px;
+}
+
+.analysisComparisonRow .compactField {
+    min-width: 0;
+}
+
+.analysisComparisonActions {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.analysisComparisonRemoveButton {
+    min-height: 40px;
 }
 
 .analysisStats {
@@ -1231,6 +1260,10 @@ code {
 
     .analysisFields.randomFields,
     .analysisFields.compareFields {
+        grid-template-columns: 1fr;
+    }
+
+    .analysisComparisonRow {
         grid-template-columns: 1fr;
     }
 

@@ -37,6 +37,8 @@ const DOM_IDS = {
     randomSeedInput: "randomSeedInput",
     randomRunButton: "randomRunButton",
     analysisTargetPath: "analysisTargetPath",
+    analysisComparisonList: "analysisComparisonList",
+    addAnalysisComparisonButton: "addAnalysisComparisonButton",
     analysisConfigPath: "analysisConfigPath",
     analysisLabelA: "analysisLabelA",
     analysisLabelB: "analysisLabelB",

@@ -17,21 +17,20 @@ def _display_dimension_label(label, dim_index):
     return f"{label} ({dim_index})"
 
 
-def _value_bounds(values_a, values_b):
-    min_value = min(float(np.min(values_a)), float(np.min(values_b)))
-    max_value = max(float(np.max(values_a)), float(np.max(values_b)))
+def _value_bounds(series_values):
+    min_value = min(float(np.min(values)) for values in series_values)
+    max_value = max(float(np.max(values)) for values in series_values)
     if min_value == max_value:
         return min_value - 1.0, max_value + 1.0
     return min_value, max_value
 
 
-def _plot_bounds(values_a, values_b):
+def _plot_bounds(series_values):
     integer_values = bool(
-        np.allclose(values_a, np.round(values_a))
-        and np.allclose(values_b, np.round(values_b))
+        all(np.allclose(values, np.round(values)) for values in series_values)
     )
-    min_value = min(float(np.min(values_a)), float(np.min(values_b)))
-    max_value = max(float(np.max(values_a)), float(np.max(values_b)))
+    min_value = min(float(np.min(values)) for values in series_values)
+    max_value = max(float(np.max(values)) for values in series_values)
     if integer_values:
         return True, (min_value - 0.5, max_value + 0.5)
     if min_value == max_value:
@@ -39,42 +38,33 @@ def _plot_bounds(values_a, values_b):
     return False, (min_value, max_value)
 
 
-def run_comparison_1d(config, dataset_a, dataset_b, label_a, label_b, run_dir):
-    values_a, values_b, raw_labels = apply_projection(
-        config.projection,
-        dataset_a,
-        dataset_b,
-    )
-    dim_count = values_a.shape[1]
+def run_comparison_1d(config, datasets, labels, run_dir):
+    projected_values, raw_labels = apply_projection(config.projection, datasets)
+    dim_count = projected_values[0].shape[1]
     raw_labels = raw_labels or [f"dim_{idx}" for idx in range(dim_count)]
     dimensions = _resolve_dimensions(config.dimensions, dim_count)
 
     images = []
-    labels = []
+    dimension_labels = []
     bounds = []
     for dim_index in dimensions:
         dim_label = _display_dimension_label(raw_labels[dim_index], dim_index)
-        dim_values_a = values_a[:, dim_index]
-        dim_values_b = values_b[:, dim_index]
-        integer_values, dim_bounds = _plot_bounds(dim_values_a, dim_values_b)
+        dimension_series = [values[:, dim_index] for values in projected_values]
+        integer_values, dim_bounds = _plot_bounds(dimension_series)
         image_name = f"comparison_1d_dim_{dim_index}.{config.plot.output_format}"
         plot_density_curves(
             run_dir / image_name,
-            density_curve(
-                dim_values_a,
-                dim_bounds,
-                config.plot.points,
-                integer_values=integer_values,
-            ),
-            density_curve(
-                dim_values_b,
-                dim_bounds,
-                config.plot.points,
-                integer_values=integer_values,
-            ),
+            [
+                density_curve(
+                    values,
+                    dim_bounds,
+                    config.plot.points,
+                    integer_values=integer_values,
+                )
+                for values in dimension_series
+            ],
             dim_label,
-            label_a,
-            label_b,
+            labels,
             config.plot,
             integer_x=integer_values,
         )
@@ -87,13 +77,14 @@ def run_comparison_1d(config, dataset_a, dataset_b, label_a, label_b, run_dir):
                 bounds=[dim_bounds],
             ).to_payload()
         )
-        labels.append(dim_label)
-        bounds.append(list(_value_bounds(dim_values_a, dim_values_b)))
+        dimension_labels.append(dim_label)
+        bounds.append(list(_value_bounds(dimension_series)))
 
     return {
         "title": "1D comparison",
         "images": images,
         "dimensions": list(dimensions),
-        "labels": labels,
+        "labels": dimension_labels,
         "bounds": bounds,
+        "series": list(labels),
     }

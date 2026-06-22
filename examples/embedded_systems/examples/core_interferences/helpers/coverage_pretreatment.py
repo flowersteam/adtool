@@ -42,12 +42,11 @@ COMPACT_LABELS = MATRIX_SUM_LABELS + SCALAR_LABELS
 
 
 def compact_interference_metrics(
-    dataset_a: Any,
-    dataset_b: Any,
+    datasets: list[Any],
     config: dict,
-) -> tuple[np.ndarray, np.ndarray, list[str]]:
+) -> tuple[np.ndarray, ...]:
     _ = config
-    return _compact(dataset_a.payloads), _compact(dataset_b.payloads), COMPACT_LABELS
+    return tuple(_compact(dataset.payloads) for dataset in datasets) + (COMPACT_LABELS,)
 
 
 def _compact(payloads: list[dict[str, Any]]) -> np.ndarray:

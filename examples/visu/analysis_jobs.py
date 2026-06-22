@@ -78,13 +78,20 @@ def run_analysis_payload(
     state: RuntimeState,
     payload: dict[str, Any],
 ) -> dict[str, Any]:
-    discovery_b_path = resolve_input_path(
-        payload.get("path"),
-        "path",
-    )
-    if discovery_b_path is None:
-        raise HTTPException(status_code=422, detail="path is required.")
-    require_directory(discovery_b_path, "path")
+    raw_paths = payload.get("comparison_paths")
+    if raw_paths is None:
+        legacy_path = payload.get("path")
+        raw_paths = [] if legacy_path is None else [legacy_path]
+    if not raw_paths:
+        raise HTTPException(status_code=422, detail="comparison_paths is required.")
+
+    comparison_paths = []
+    for index, raw_path in enumerate(raw_paths):
+        resolved = resolve_input_path(raw_path, f"comparison_paths[{index}]")
+        if resolved is None:
+            raise HTTPException(status_code=422, detail="comparison_paths is required.")
+        require_directory(resolved, f"comparison_paths[{index}]")
+        comparison_paths.append(resolved)
 
     raw_config_file = payload.get("config_file")
     if isinstance(raw_config_file, str) and raw_config_file.strip().lower() == "none":
@@ -93,17 +100,20 @@ def run_analysis_payload(
     if config_file is not None:
         require_file(config_file, "config_file")
 
-    label_a = payload.get("label_a") or "IMGEP"
-    label_b = payload.get("label_b") or "baseline"
+    primary_label = payload.get("primary_label") or payload.get("label_a") or "IMGEP"
+    comparison_labels = payload.get("comparison_labels")
+    if comparison_labels is None:
+        legacy_label = payload.get("label_b")
+        comparison_labels = [] if legacy_label is None else [legacy_label]
 
     with state.analysis_lock:
         try:
             summary = run_analysis(
                 config.discoveries,
-                discovery_b_path,
+                comparison_paths,
                 output_dir=analysis_runs_dir(config),
-                label_a=str(label_a),
-                label_b=str(label_b),
+                primary_label=str(primary_label),
+                comparison_labels=[str(label) for label in comparison_labels],
                 config_file=config_file,
             )
         except Exception as exc:
@@ -115,10 +125,7 @@ def run_analysis_payload(
     return {
         "status": "ok",
         "run_dir": str(summary.run_dir),
-        "dataset_a_path": str(summary.dataset_a.path),
-        "dataset_b_path": str(summary.dataset_b.path),
-        "dataset_a_count": summary.dataset_a.count,
-        "dataset_b_count": summary.dataset_b.count,
+        "datasets": [dataset.to_payload() for dataset in summary.datasets],
         "module_order": list(summary.module_order),
         "modules": dict(summary.modules),
     }

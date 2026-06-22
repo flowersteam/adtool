@@ -5,6 +5,20 @@ export function createAnalysisController({ elements, lightbox }) {
     let analysisRequestId = 0;
     let analysisEnabled = true;
 
+    function summaryDatasets(summary) {
+        if (Array.isArray(summary.datasets) && summary.datasets.length > 0) {
+            return summary.datasets;
+        }
+        const fallback = [];
+        if (summary.dataset_a) {
+            fallback.push(summary.dataset_a);
+        }
+        if (summary.dataset_b) {
+            fallback.push(summary.dataset_b);
+        }
+        return fallback;
+    }
+
     function setEmpty(visible, title = "No analysis run found", message = "") {
         elements.analysisEmpty.hidden = !visible;
         const heading = elements.analysisEmpty.querySelector("h3");
@@ -127,8 +141,8 @@ export function createAnalysisController({ elements, lightbox }) {
         }
         if (moduleName === "space_coverage") {
             const progression = moduleSummary.progression || {};
-            const datasetA = progression.dataset_a || {};
-            return `${formatNumber((datasetA.steps || []).length)} steps`;
+            const datasets = Array.isArray(progression.datasets) ? progression.datasets : [];
+            return `${formatNumber((datasets[0]?.steps || []).length)} steps`;
         }
         return `${formatNumber((moduleSummary.images || []).length)} graphs`;
     }
@@ -192,12 +206,10 @@ export function createAnalysisController({ elements, lightbox }) {
 
         const metaNode = document.createElement("div");
         metaNode.className = "analysisRunMeta";
-        const datasetALabel = summary.dataset_a?.label || "first set";
-        const datasetBLabel = summary.dataset_b?.label || "second set";
+        const datasets = summaryDatasets(summary);
         const moduleCount = moduleEntries(summary).length;
         metaNode.textContent = [
-            `${datasetALabel}: ${formatNumber(summary.dataset_a?.count || 0)}`,
-            `${datasetBLabel}: ${formatNumber(summary.dataset_b?.count || 0)}`,
+            ...datasets.map((dataset) => `${dataset.label}: ${formatNumber(dataset.count || 0)}`),
             `${formatNumber(moduleCount)} modules`,
         ].join(" | ");
 
@@ -242,8 +254,13 @@ export function createAnalysisController({ elements, lightbox }) {
         elements.analysisStats.appendChild(statBox(formatNumber(graphCount), "graphs"));
         if (runs.length > 0) {
             const latest = runs[0];
-            elements.analysisStats.appendChild(statBox(formatNumber(latest.dataset_a?.count || 0), latest.dataset_a?.label || "first set"));
-            elements.analysisStats.appendChild(statBox(formatNumber(latest.dataset_b?.count || 0), latest.dataset_b?.label || "second set"));
+            const datasets = summaryDatasets(latest);
+            const totalDiscoveries = datasets.reduce(
+                (count, dataset) => count + Number(dataset.count || 0),
+                0,
+            );
+            elements.analysisStats.appendChild(statBox(formatNumber(datasets.length), "datasets"));
+            elements.analysisStats.appendChild(statBox(formatNumber(totalDiscoveries), "discoveries"));
         }
 
         for (const summary of runs) {
