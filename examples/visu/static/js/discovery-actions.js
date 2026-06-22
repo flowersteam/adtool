@@ -1,4 +1,8 @@
-import { exportDiscoveries, requestLayoutRecompute } from "./api.js";
+import {
+    exportDiscoveries,
+    materializeDiscoveryFilters,
+    requestLayoutRecompute,
+} from "./api.js";
 
 export function createDiscoveryActions({
     discoveryMap,
@@ -40,7 +44,26 @@ export function createDiscoveryActions({
         }
     }
 
+    async function computeHighlightFilters() {
+        elements.computeHighlightFiltersButton.disabled = true;
+        elements.recomputeLayoutButton.disabled = true;
+        elements.refreshButton.disabled = true;
+        try {
+            updateStatus("Computing discovery filters...");
+            const payload = await materializeDiscoveryFilters();
+            await discoveryMap.refreshDiscoveries(false);
+            updateStatus(`Discovery filters computed for ${payload.updated_count} discoveries.`);
+        } catch (error) {
+            updateStatus(error.message || "Failed to compute discovery filters.");
+        } finally {
+            elements.computeHighlightFiltersButton.disabled = false;
+            elements.recomputeLayoutButton.disabled = false;
+            elements.refreshButton.disabled = false;
+        }
+    }
+
     return {
+        computeHighlightFilters,
         exportEntries,
         recomputeLayout,
     };

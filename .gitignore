@@ -9,6 +9,7 @@ __pycache__/
 discoveries/
 
 # Web UI runtime
+discovery_highlights.json
 discoveries.json
 layout_status.json
 discovery_atlas_*.png

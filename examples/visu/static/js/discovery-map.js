@@ -11,6 +11,8 @@ import {
     SCALE_FACTOR,
 } from "./config.js";
 import { readDiscoveries } from "./api.js";
+import { createHighlightController } from "./highlights/controller.js";
+import { createHighlightMaterialCache } from "./highlights/materials.js";
 import { createMapScene } from "./map-scene.js";
 import { createSelectionController } from "./selection.js";
 import {
@@ -34,11 +36,16 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     const { renderer, scene, textureLoader } = mapScene;
 
     const pointGeometry = new THREE.CircleGeometry(0.12, 14);
+    const pointRingGeometry = new THREE.RingGeometry(0.145, 0.19, 24);
     const pointMaterials = {
         normal: pointMaterial(POINT_COLOR),
-        hover: pointMaterial(HOVER_COLOR),
-        selected: pointMaterial(SELECTED_COLOR),
+        ringHover: pointMaterial(HOVER_COLOR),
+        ringSelected: pointMaterial(SELECTED_COLOR),
     };
+    const highlightMaterials = createHighlightMaterialCache({
+        THREE,
+        opacity: POINT_OPACITY,
+    });
     let entries = [];
     let renderMode = "points";
     let hoveredEntry = null;
@@ -52,6 +59,23 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     let hybridRebuildTimeoutId = null;
     let hybridPreviewToken = 0;
     let stickerPreviewWorldHeight = IMAGE_PREVIEW_WORLD_HEIGHT;
+
+    function refreshHighlightStyles() {
+        for (const entry of entries) {
+            applyEntryStyle(entry);
+        }
+    }
+
+    const highlights = createHighlightController({
+        elements,
+        onRulesChange: (patch = {}) => {
+            refreshHighlightStyles();
+            if (Object.keys(patch).length === 1 && patch.color !== undefined) {
+                return;
+            }
+            applyFilter();
+        },
+    });
 
     function pointMaterial(color) {
         return new THREE.MeshBasicMaterial({
@@ -70,7 +94,9 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         const sourcePath = entrySource(point);
         return {
             imageMesh: null,
+            filters: point.filters || {},
             pointMesh: null,
+            pointRingMesh: null,
             visible: true,
             position: new THREE.Vector3(
                 SCALE_FACTOR * Number(point.x || 0),
@@ -111,6 +137,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     function currentAnimatedMeshes() {
         return entries.flatMap((entry) => [
             entry.pointMesh,
+            entry.pointRingMesh,
             entry.imageMesh,
         ].filter(Boolean));
     }
@@ -147,7 +174,11 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             if (entry.pointMesh) {
                 scene.remove(entry.pointMesh);
             }
+            if (entry.pointRingMesh) {
+                scene.remove(entry.pointRingMesh);
+            }
             entry.pointMesh = null;
+            entry.pointRingMesh = null;
         }
     }
 
@@ -166,17 +197,32 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     function applyEntryStyle(entry) {
         const selected = entry.userData.selected;
         const hovered = entry === hoveredEntry;
-        const pointMaterialKey = selected ? "selected" : hovered ? "hover" : "normal";
+        const normalMaterial = pointBaseMaterial(entry);
 
         if (entry.pointMesh) {
-            entry.pointMesh.material = pointMaterials[pointMaterialKey];
+            entry.pointMesh.material = normalMaterial;
             entry.pointMesh.userData.scaleBoost = selected ? 1.24 : hovered ? 1.16 : 1.0;
+        }
+        if (entry.pointRingMesh) {
+            entry.pointRingMesh.visible = entry.visible && (selected || hovered);
+            entry.pointRingMesh.material = selected
+                ? pointMaterials.ringSelected
+                : pointMaterials.ringHover;
+            entry.pointRingMesh.userData.scaleBoost = selected ? 1.32 : 1.22;
         }
         if (entry.imageMesh) {
             entry.imageMesh.material.color.set(selected ? SELECTED_COLOR : hovered ? HOVER_COLOR : "#ffffff");
             entry.imageMesh.material.opacity = hovered ? HOVER_OPACITY : POINT_OPACITY;
             entry.imageMesh.userData.scaleBoost = selected ? 1.24 : hovered ? 1.16 : 1.0;
         }
+    }
+
+    function pointBaseMaterial(entry) {
+        const colors = highlights.matchedColors(entry.filters);
+        if (colors.length === 0) {
+            return pointMaterials.normal;
+        }
+        return highlightMaterials.materialForColors(colors);
     }
 
     function updateEntryStyle(entry, rebuildHybrid = true) {
@@ -200,8 +246,16 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         mesh.visible = entry.visible;
         mesh.userData = { ...entry.userData, baseScale: 0.56, entry };
         entry.pointMesh = mesh;
+
+        const ringMesh = new THREE.Mesh(pointRingGeometry, pointMaterials.ringHover);
+        ringMesh.position.copy(entry.position);
+        ringMesh.visible = false;
+        ringMesh.userData = { ...entry.userData, baseScale: 0.56, entry };
+        entry.pointRingMesh = ringMesh;
+
         applyEntryStyle(entry);
         scene.add(mesh);
+        scene.add(ringMesh);
     }
 
     function rectsOverlap(a, b) {
@@ -417,9 +471,17 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         }
 
         for (const entry of entries) {
-            entry.visible = search.matcher(entry.userData.label);
+            entry.visible = (
+                search.matcher(entry.userData.label)
+                && highlights.isVisible(entry.filters)
+            );
             if (entry.pointMesh) {
                 entry.pointMesh.visible = entry.visible;
+            }
+            if (entry.pointRingMesh) {
+                entry.pointRingMesh.visible = entry.visible && (
+                    entry.userData.selected || entry === hoveredEntry
+                );
             }
             if (entry.imageMesh) {
                 entry.imageMesh.visible = entry.visible;
@@ -466,9 +528,12 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     }
 
     async function loadPoints(maxWaitMs = 0, shouldFitInitialView = false) {
-        const pointsData = await readDiscoveries(maxWaitMs, () => {
-            updateStatus("Waiting for discovery data...");
-        });
+        const [pointsData] = await Promise.all([
+            readDiscoveries(maxWaitMs, () => {
+                updateStatus("Waiting for discovery data...");
+            }),
+            highlights.refreshSchema(),
+        ]);
 
         if (pointsData.length === 0) {
             clearRenderedMeshes();

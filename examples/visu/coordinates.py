@@ -14,12 +14,18 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
+from adtool.examples.visu.highlights import (
+    empty_highlight_schema,
+    load_highlight_export_context,
+)
+
 
 DEFAULT_MAX_RENDERED_DISCOVERIES = 500
 VALID_VISUAL_SUFFIXES = (".mp4", ".png")
 VALID_PROJECTION_METHODS = ("umap", "pca", "tsne", "axis")
 DEFAULT_PROJECTION_METHOD = "umap"
 DEFAULT_PROJECTION_AXES = (0, 1)
+DISCOVERY_HIGHLIGHTS_FILENAME = "discovery_highlights.json"
 
 Discovery = dict[str, Any]
 DatasetSignature = tuple[tuple[str, float], ...]
@@ -35,7 +41,10 @@ _cache_lock = threading.Lock()
 
 def _cache_mtime(discovery_dir: Path, discovery_path: Path) -> float | None:
     try:
-        return max(discovery_path.stat().st_mtime, discovery_dir.stat().st_mtime)
+        return max(
+            discovery_path.stat().st_mtime,
+            discovery_dir.stat().st_mtime,
+        )
     except OSError:
         return None
 
@@ -158,6 +167,7 @@ def process_discovery(
     discovery = {
         "visual": os.fspath(visual_path),
         "embedding": embedding,
+        "filters": payload.get("filters", {}),
     }
     _store_cached_discovery(discovery_path, cache_mtime, discovery)
     return discovery
@@ -167,7 +177,9 @@ def _iter_discovery_paths(path: str | os.PathLike[str]) -> list[Path]:
     return sorted(Path(path).rglob("discovery.json"))
 
 
-def _scan_discoveries(path: str | os.PathLike[str]) -> tuple[list[Discovery], DatasetSignature]:
+def _scan_discoveries(
+    path: str | os.PathLike[str],
+) -> tuple[list[Discovery], DatasetSignature]:
     discoveries: list[Discovery] = []
     root_path = Path(path)
     dataset_signature: list[tuple[str, float]] = []
@@ -246,6 +258,16 @@ def _write_layout_status(static_dir: str | os.PathLike[str], payload: dict[str, 
         "updated_at": datetime.now().isoformat(timespec="seconds"),
     }
     _write_json_atomic(Path(static_dir) / "layout_status.json", status)
+
+
+def _write_highlight_schema(
+    static_dir: str | os.PathLike[str],
+    schema: dict[str, Any] | None,
+) -> None:
+    _write_json_atomic(
+        Path(static_dir) / DISCOVERY_HIGHLIGHTS_FILENAME,
+        schema or empty_highlight_schema(),
+    )
 
 
 def _write_empty_layout(static_dir: str | os.PathLike[str], discoveries_path: Path) -> None:
@@ -528,6 +550,7 @@ def _saved_coordinates(
             "x": float(point[0]),
             "y": float(point[1]),
             "visual": visual_path.replace(os.sep, "/"),
+            "filters": discovery.get("filters", {}),
         }
 
         saved_coordinates.append(saved_point)
@@ -564,6 +587,7 @@ def _write_layout_result(
 
 def compute_coordinates(
     path: str | os.PathLike[str],
+    config_path: str | os.PathLike[str] | None = None,
     static_dir: str | os.PathLike[str] = "static",
     max_displayed: int = DEFAULT_MAX_RENDERED_DISCOVERIES,
     projection_method: str = DEFAULT_PROJECTION_METHOD,
@@ -575,8 +599,15 @@ def compute_coordinates(
     static_dir.mkdir(parents=True, exist_ok=True)
     discoveries_path = static_dir / "discoveries.json"
     concatenated_path = static_dir / "concatenated.webm"
+    highlight_context = load_highlight_export_context(config_path)
 
     discoveries, dataset_signature = _scan_discoveries(root_path)
+    highlight_schema = {
+        **highlight_context.schema,
+        "filters_detected": any(discovery.get("filters") for discovery in discoveries),
+        "storage_key": f"{root_path}|{Path(config_path).resolve() if config_path else ''}",
+    }
+    _write_highlight_schema(static_dir, highlight_schema)
     print("Number of discoveries: ", len(discoveries))
     if len(discoveries) == 0:
         _write_empty_layout(static_dir, discoveries_path)

@@ -16,11 +16,13 @@ from adtool.examples.visu.runtime import (
 
 def cleanup_static_discoveries(config: ServerConfig) -> None:
     (config.static_dir / "discoveries.json").unlink(missing_ok=True)
+    (config.static_dir / "discovery_highlights.json").unlink(missing_ok=True)
 
 
 def write_discovery_coordinates(config: ServerConfig, state: RuntimeState) -> None:
     compute_coordinates(
         config.discoveries,
+        config_path=config.config_file,
         static_dir=config.static_dir,
         max_displayed=state.display_limit,
         projection_method=state.projection_method,
@@ -49,7 +51,7 @@ def recompute_discoveries(
 
 
 def is_relevant_discovery_change(changes: set[tuple[Change, str]]) -> bool:
-    watched_names = {"discovery.json", "config.json"}
+    watched_names = {"discovery.json"}
     watched_suffixes = {".png", ".mp4"}
 
     return any(

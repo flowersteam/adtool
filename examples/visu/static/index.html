@@ -131,6 +131,23 @@
 
                 <div class="mapStage">
                     <div id="app" aria-label="Interactive discovery map"></div>
+                    <aside id="highlightRulesSection" class="highlightDock" hidden>
+                        <div class="highlightDockHeader">
+                            <div>
+                                <p class="eyebrow">Highlights</p>
+                                <h3>Highlight Rules</h3>
+                            </div>
+                            <div class="highlightDockHeaderActions">
+                                <button id="computeHighlightFiltersButton" class="highlightDockButton" type="button">
+                                    Compute Filters
+                                </button>
+                                <button id="highlightRulesToggleButton" class="highlightDockButton highlightDockButtonCompact" type="button">
+                                    Hide
+                                </button>
+                            </div>
+                        </div>
+                        <div id="highlightRulesList" class="highlightRulesList"></div>
+                    </aside>
                     <div id="emptyState" class="emptyState" hidden>
                         <h2>No discoveries available</h2>
                         <p>Start or refresh an experiment to populate this map.</p>

@@ -51,6 +51,7 @@ function bindEvents() {
     elements.fitViewButton.addEventListener("click", discoveryMap.fitView);
     elements.refreshButton.addEventListener("click", () => discoveryMap.refreshDiscoveries(false));
     elements.recomputeLayoutButton.addEventListener("click", discoveryActions.recomputeLayout);
+    elements.computeHighlightFiltersButton.addEventListener("click", discoveryActions.computeHighlightFilters);
     elements.clearSelectionButton.addEventListener("click", discoveryMap.clearSelection);
     elements.exportButton.addEventListener("click", discoveryActions.exportEntries);
     elements.searchInput.addEventListener("input", discoveryMap.applyFilter);

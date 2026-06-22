@@ -1,4 +1,8 @@
 {
+  "discovery_highlights": {
+    "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.discovery_highlights.CoreInterferenceDiscoveryHighlights",
+    "config": {}
+  },
   "comparison_1d": {
     "projection": {
       "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",

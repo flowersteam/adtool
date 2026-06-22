@@ -1,4 +1,5 @@
 import { LOAD_RETRY_MS } from "./config.js";
+import { readDiscoveryHighlights as readHighlightsPayload } from "./highlights/api.js";
 import { sleep } from "./utils.js";
 
 export async function readDiscoveries(maxWaitMs = 0, onWaiting = () => {}) {
@@ -30,6 +31,10 @@ export async function readDiscoveries(maxWaitMs = 0, onWaiting = () => {}) {
         onWaiting();
         await sleep(LOAD_RETRY_MS);
     }
+}
+
+export async function readDiscoveryHighlights() {
+    return readHighlightsPayload();
 }
 
 export async function getAnalysisStatus() {
@@ -104,6 +109,14 @@ export async function setRenderSettings(payload) {
 
 export async function requestLayoutRecompute() {
     return postJson("/recompute_layout", undefined, "layout recompute failed");
+}
+
+export async function materializeDiscoveryFilters() {
+    return postJson(
+        "/discovery_highlights/materialize",
+        undefined,
+        "highlight filter computation failed",
+    );
 }
 
 export async function exportDiscoveries(files) {

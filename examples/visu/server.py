@@ -20,6 +20,7 @@ from adtool.examples.visu.analysis_runs import (
     latest_analysis_summary_payload,
 )
 from adtool.examples.visu.exporter import export_selected_discoveries
+from adtool.examples.visu.highlights import materialize_discovery_filters
 from adtool.examples.visu.layout import (
     cleanup_static_discoveries,
     recompute_discoveries,
@@ -46,11 +47,13 @@ from adtool.examples.visu.server_support import is_relative_to, mime_type
 def parse_args() -> ServerConfig:
     parser = argparse.ArgumentParser()
     parser.add_argument("--discoveries", type=str, required=True)
+    parser.add_argument("--config_file", type=str)
     parser.add_argument("--refresh", action="store_true")
     args = parser.parse_args()
 
     return ServerConfig(
         discoveries=Path(args.discoveries).resolve(),
+        config_file=Path(args.config_file).resolve() if args.config_file else None,
         refresh=args.refresh,
     )
 
@@ -285,6 +288,18 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error))
         return {"status": "ok"}
+
+    @app.post("/discovery_highlights/materialize")
+    async def materialize_highlight_filters():
+        try:
+            result = materialize_discovery_filters(
+                config.discoveries,
+                config_path=config.config_file,
+            )
+            recompute_discoveries(config, state, ignore_interval=True)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error))
+        return {"status": "ok", **result}
 
     @app.post("/analysis/random_run")
     def random_run(payload: dict[str, Any]):

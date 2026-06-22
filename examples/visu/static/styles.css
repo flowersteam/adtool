@@ -228,6 +228,198 @@ code {
     flex-direction: column;
 }
 
+.highlightRulesList {
+    display: grid;
+    gap: 10px;
+}
+
+.highlightRuleCard {
+    display: grid;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px;
+    background: var(--surface-muted);
+}
+
+.highlightRuleHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.highlightRuleHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+.highlightRuleTitle {
+    min-width: 0;
+    font-size: 0.84rem;
+    font-weight: 680;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.highlightDockButton {
+    min-height: 32px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 6px 10px;
+    background: var(--surface);
+}
+
+.highlightDockButton.active {
+    border-color: var(--accent);
+    color: #ffffff;
+    background: var(--accent);
+}
+
+.highlightDockButtonCompact {
+    min-width: 62px;
+}
+
+.highlightColorSwatch {
+    flex: 0 0 auto;
+    width: 18px;
+    min-width: 18px;
+    height: 18px;
+    min-height: 18px;
+    border: 1px solid rgba(0, 0, 0, 0.14);
+    border-radius: 50%;
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.highlightColorInput {
+    position: fixed;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    left: 12px;
+    top: 12px;
+}
+
+.highlightRuleMeta {
+    color: var(--muted);
+    font-size: 0.76rem;
+}
+
+.highlightRuleControls {
+    display: grid;
+    gap: 6px;
+}
+
+.highlightRuleBuilder {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.highlightRuleBuilder select,
+.highlightRuleBuilder button {
+    min-height: 32px;
+}
+
+.highlightRuleBuilder select {
+    min-width: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 5px 8px;
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+}
+
+.highlightRuleBuilder select:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.highlightRuleBuilderRestore {
+    grid-column: 1 / -1;
+}
+
+.highlightRuleModeToggle {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.highlightRuleModeToggle button {
+    min-width: 0;
+    padding-inline: 6px;
+}
+
+.highlightRuleControls input,
+.highlightRuleControls select {
+    min-height: 32px;
+    width: 100%;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 5px 8px;
+    color: var(--text);
+    background: var(--surface);
+}
+
+.highlightClauseRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+    align-items: center;
+}
+
+.highlightBoundInput {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 0 8px;
+    background: var(--surface);
+}
+
+.highlightBoundInput input {
+    min-height: 30px;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+}
+
+.highlightBoundInput input:focus-visible {
+    outline: none;
+}
+
+.highlightBoundSign {
+    color: var(--muted);
+    font-weight: 760;
+}
+
+.highlightRuleDeleteButton {
+    min-height: 32px;
+    padding-inline: 8px;
+}
+
+.highlightLegacyEditor {
+    display: grid;
+}
+
+.highlightRuleBounds {
+    color: var(--muted);
+    font-size: 0.74rem;
+}
+
 .eyebrow {
     margin: 0;
     color: var(--accent);
@@ -575,6 +767,66 @@ code {
     min-height: 0;
     overflow: hidden;
     background: #eef0ec;
+}
+
+.highlightDock {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 15;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    width: min(360px, calc(100% - 28px));
+    max-height: calc(100% - 28px);
+    min-height: 0;
+    overflow: hidden;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(8px);
+}
+
+.highlightDock.collapsed {
+    grid-template-rows: auto;
+    max-height: none;
+}
+
+.highlightDockHeader {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.highlightDockHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+.highlightDockHeader > div {
+    min-width: 0;
+}
+
+.highlightDockHeader h3,
+.highlightDockHeader p {
+    margin: 0;
+}
+
+.highlightDockHeader h3 {
+    font-size: 0.9rem;
+}
+
+.highlightDock .highlightRulesList {
+    display: grid;
+    align-content: start;
+    min-height: 0;
+    overflow: auto;
+    padding-right: 2px;
+    padding-top: 10px;
 }
 
 #app {
@@ -946,6 +1198,18 @@ code {
 
     .mapStage {
         min-height: 58vh;
+    }
+
+    .highlightDock {
+        top: 12px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+        max-height: min(50vh, calc(100% - 24px));
+    }
+
+    .highlightClauseRow {
+        grid-template-columns: 1fr;
     }
 
     .analysisStats {

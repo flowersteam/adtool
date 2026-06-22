@@ -44,6 +44,7 @@ DEFAULT_RANDOM_SEED = 42
 @dataclass(frozen=True)
 class ServerConfig:
     discoveries: Path
+    config_file: Path | None = None
     static_dir: Path = STATIC_DIR
     refresh: bool = False
 

@@ -106,6 +106,11 @@ python3 server.py --discoveries PATH_TO_DISCOVERIES
 ```
 The web interface can be accessed at `http://127.0.0.1:8765/`.
 
+If the viewer should expose analysis-side discovery highlights or other analysis-driven visualization helpers, pass the analysis config explicitly. The highlight provider is configured directly with a top-level `discovery_highlights` section in that file:
+```bash
+python3 server.py --discoveries PATH_TO_DISCOVERIES --config_file PATH_TO_ANALYSIS_CONFIG
+```
+
 ### Scientific Background: Curiosity Search
 
 The high-dimensional phase space of a complex system poses many challenges to
@@ -168,6 +173,4 @@ For this, it's possible to start from the default system definition [here](https
 You can have a look at the [simplified execution flow](docs/execution_flow) to understand a bit more about the different steps of the exploration.
 
 ### Join the [Discord community](https://discord.gg/yc5jhYM6u5)
-
-
 
