@@ -1,9 +1,9 @@
 {
     "experiment": {
         "config": {
-            "save_location": "./discoveries/interferences/",
+            "save_location": "./discoveries/interferences2/",
             "save_frequency": 1000,
-            "bootstrap_size": 200
+            "bootstrap_size": 500
         }
     },
     "system": {
@@ -11,9 +11,9 @@
         "config": {
             "simulator_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.systems.simulator.Sim3Backend",
-                "cycles": 512,
+                "cycles": 256,
                 "num_banks": 4,
-                "num_addr": 96
+                "num_addr": 48
             },
             "simulator_runner_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner"
@@ -23,7 +23,7 @@
     "explorer": {
         "path": "examples.embedded_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
         "config": {
-            "periode": 1,
+            "periode": 5,
             "knn": 1,
             "behavior_map_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap.InterferenceBehaviorMap",
@@ -41,14 +41,14 @@
                 },
                 "mutator_config": {
                     "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionMutator",
-                    "num_mutations": 10
+                    "num_mutations": 5
                 },
-                "num_instructions": 50,
+                "num_instructions": 25,
                 "min_address_core0": 0,
-                "max_address_core0": 47,
-                "min_address_core1": 48,
-                "max_address_core1": 95,
-                "max_cycle": 256
+                "max_address_core0": 23,
+                "min_address_core1": 23,
+                "max_address_core1": 47,
+                "max_cycle": 127
             }
         }
     },
