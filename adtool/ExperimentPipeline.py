@@ -12,6 +12,8 @@ import json
 
 import numpy as np
 
+from adtool.utils.interaction.experiment_control import wait_if_experiment_paused
+
 
 
 def replace_lists_with_numpy(d):
@@ -205,6 +207,7 @@ class ExperimentPipeline(Leaf):
 
 
             while self.run_idx < n_exploration_runs:
+                wait_if_experiment_paused(mypath)
                 # check  if target.json exists
                 if os.path.exists(f"{mypath}/target.json"):
                     with open(f"{mypath}/target.json") as f:
