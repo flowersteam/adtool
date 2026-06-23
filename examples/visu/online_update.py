@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import threading
 import time
@@ -28,6 +29,8 @@ from adtool.examples.visu.coordinates import (
     process_discovery,
 )
 from adtool.examples.visu.highlights import load_highlight_export_context
+from adtool.examples.visu.highlights.materialize import materialize_discovery_file
+from adtool.examples.visu.highlights.provider import DiscoveryHighlightProvider
 from adtool.examples.visu.runtime import (
     ONLINE_FULL_RECOMPUTE_INTERVAL_SECONDS,
     ONLINE_POINT_UPDATE_INTERVAL_SECONDS,
@@ -56,6 +59,7 @@ class OnlineUpdateState:
     static_dir: Path
     dataset_signature: tuple[tuple[str, float], ...]
     known_discovery_files: set[str]
+    known_filter_files: set[str]
     all_discoveries: list[dict]
     all_embedding_matrix: np.ndarray
     all_layout_embedding: np.ndarray
@@ -69,13 +73,18 @@ class OnlineUpdateState:
     projection_axes: tuple[int, int]
     filters_detected: bool
     highlight_schema: dict
+    highlight_provider: DiscoveryHighlightProvider | None
     last_full_recompute_time: float
 
 
-def _highlight_schema(config_path: Path | None, root_path: Path, discoveries: list[dict]) -> dict:
+def _highlight_context(config_path: Path | None) -> tuple[DiscoveryHighlightProvider | None, dict]:
     highlight_context = load_highlight_export_context(config_path)
+    return highlight_context.provider, highlight_context.schema
+
+
+def _highlight_schema(highlight_schema_base: dict, root_path: Path, config_path: Path | None, discoveries: list[dict]) -> dict:
     return {
-        **highlight_context.schema,
+        **highlight_schema_base,
         "filters_detected": any(discovery.get("filters") for discovery in discoveries),
         "storage_key": f"{root_path}|{config_path.resolve() if config_path else ''}",
     }
@@ -112,6 +121,34 @@ def _projection_model(matrix: np.ndarray, method: str, axes: tuple[int, int]) ->
 
 def _relative_discovery_file(root_path: Path, discovery: dict) -> str:
     return os.fspath(Path(discovery["discovery_file"]).resolve().relative_to(root_path)).replace(os.sep, "/")
+
+
+def _relative_path(root_path: Path, path: Path) -> str:
+    return os.fspath(path.resolve().relative_to(root_path)).replace(os.sep, "/")
+
+
+def _materialize_missing_filters(
+    root_path: Path,
+    discovery_paths: list[Path],
+    known_filter_files: set[str],
+    provider: DiscoveryHighlightProvider | None,
+) -> set[str]:
+    if provider is None:
+        return known_filter_files
+
+    for discovery_path in discovery_paths:
+        relative_file = _relative_path(root_path, discovery_path)
+        if relative_file in known_filter_files:
+            continue
+
+        try:
+            materialize_discovery_file(discovery_path, provider)
+        except json.JSONDecodeError:
+            continue
+
+        known_filter_files.add(relative_file)
+
+    return known_filter_files
 
 
 def _project_incremental(discovery: dict, state: OnlineUpdateState) -> np.ndarray:
@@ -160,8 +197,18 @@ def recompute_online_discoveries(config: ServerConfig, runtime_state: RuntimeSta
     static_dir.mkdir(parents=True, exist_ok=True)
     discoveries_path = static_dir / "discoveries.json"
 
+    highlight_provider, highlight_schema_base = _highlight_context(config.config_file)
+    discovery_paths = _iter_discovery_paths(root_path)
+    previous_state = runtime_state.online_update_state
+    known_filter_files = set(previous_state.known_filter_files) if previous_state is not None else set()
+    known_filter_files = _materialize_missing_filters(
+        root_path,
+        discovery_paths,
+        known_filter_files,
+        highlight_provider,
+    )
     discoveries, dataset_signature = _scan_discoveries(root_path)
-    highlight_schema = _highlight_schema(config.config_file, root_path, discoveries)
+    highlight_schema = _highlight_schema(highlight_schema_base, root_path, config.config_file, discoveries)
     _write_highlight_schema(static_dir, highlight_schema)
 
     if len(discoveries) == 0:
@@ -172,6 +219,7 @@ def recompute_online_discoveries(config: ServerConfig, runtime_state: RuntimeSta
             static_dir=static_dir,
             dataset_signature=dataset_signature,
             known_discovery_files=set(),
+            known_filter_files=known_filter_files,
             all_discoveries=[],
             all_embedding_matrix=np.empty((0, 0)),
             all_layout_embedding=np.empty((0, 2)),
@@ -188,6 +236,7 @@ def recompute_online_discoveries(config: ServerConfig, runtime_state: RuntimeSta
             projection_axes=runtime_state.projection_axes,
             filters_detected=highlight_schema["filters_detected"],
             highlight_schema=highlight_schema,
+            highlight_provider=highlight_provider,
             last_full_recompute_time=time.monotonic(),
         )
         runtime_state.online_update_state = state
@@ -230,6 +279,7 @@ def recompute_online_discoveries(config: ServerConfig, runtime_state: RuntimeSta
         static_dir=static_dir,
         dataset_signature=dataset_signature,
         known_discovery_files={_relative_discovery_file(root_path, discovery) for discovery in valid_discoveries},
+        known_filter_files=known_filter_files,
         all_discoveries=list(valid_discoveries),
         all_embedding_matrix=np.array(matrix, copy=True),
         all_layout_embedding=np.array(layout_embedding, copy=True),
@@ -243,6 +293,7 @@ def recompute_online_discoveries(config: ServerConfig, runtime_state: RuntimeSta
         projection_axes=runtime_state.projection_axes,
         filters_detected=highlight_schema["filters_detected"],
         highlight_schema=highlight_schema,
+        highlight_provider=highlight_provider,
         last_full_recompute_time=time.monotonic(),
     )
     runtime_state.online_update_state = state
@@ -259,12 +310,20 @@ def append_online_discoveries(config: ServerConfig, runtime_state: RuntimeState)
     appended = 0
     discovered_filters = state.filters_detected
 
-    for discovery_path in _iter_discovery_paths(state.root_path):
+    discovery_paths = _iter_discovery_paths(state.root_path)
+    state.known_filter_files = _materialize_missing_filters(
+        state.root_path,
+        discovery_paths,
+        state.known_filter_files,
+        state.highlight_provider,
+    )
+
+    for discovery_path in discovery_paths:
         cache_mtime = _cache_mtime(discovery_path.parent, discovery_path)
         if cache_mtime is None:
             continue
 
-        relative_file = os.fspath(discovery_path.resolve().relative_to(state.root_path)).replace(os.sep, "/")
+        relative_file = _relative_path(state.root_path, discovery_path)
         if relative_file in state.known_discovery_files:
             continue
 
