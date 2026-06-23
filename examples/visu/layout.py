@@ -19,7 +19,11 @@ def cleanup_static_discoveries(config: ServerConfig) -> None:
     (config.static_dir / "discovery_highlights.json").unlink(missing_ok=True)
 
 
-def write_discovery_coordinates(config: ServerConfig, state: RuntimeState) -> None:
+def write_discovery_coordinates(
+    config: ServerConfig,
+    state: RuntimeState,
+    selected_sources: set[str] | None = None,
+) -> None:
     compute_coordinates(
         config.discoveries,
         config_path=config.config_file,
@@ -27,6 +31,7 @@ def write_discovery_coordinates(config: ServerConfig, state: RuntimeState) -> No
         max_displayed=state.display_limit,
         projection_method=state.projection_method,
         projection_axes=state.projection_axes,
+        selected_sources=selected_sources,
     )
 
 
@@ -35,6 +40,7 @@ def recompute_discoveries(
     state: RuntimeState,
     ignore_interval: bool = False,
     respect_interval: bool = False,
+    selected_sources: set[str] | None = None,
 ) -> bool:
     with state.recompute_lock:
         now = time.monotonic()
@@ -45,7 +51,7 @@ def recompute_discoveries(
         ):
             return False
 
-        write_discovery_coordinates(config, state)
+        write_discovery_coordinates(config, state, selected_sources=selected_sources)
         state.last_recompute_time = time.monotonic()
         return True
 

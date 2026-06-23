@@ -77,20 +77,26 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
 
         if goal is None:
             if self._should_refresh_goal(goal_targeting):
-                self._current_goal = self.behavior_map.sample(
-                    feature_matrix,
-                    goal_targeting=goal_targeting,
-                )
+                if goal_targeting is None:
+                    self._current_goal = self.behavior_map.sample(feature_matrix)
+                else:
+                    self._current_goal = self.behavior_map.sample(
+                        feature_matrix,
+                        goal_targeting=goal_targeting,
+                    )
                 self._current_goal_targeting_key = (
                     json.dumps(goal_targeting, sort_keys=True) if goal_targeting else ""
                 )
             goal = self._current_goal
 
         if goal is None:
-            goal = self.behavior_map.sample(
-                feature_matrix,
-                goal_targeting=goal_targeting,
-            )
+            if goal_targeting is None:
+                goal = self.behavior_map.sample(feature_matrix)
+            else:
+                goal = self.behavior_map.sample(
+                    feature_matrix,
+                    goal_targeting=goal_targeting,
+                )
 
         min_, max_ = self._compute_min_max(feature_matrix)
         indices = self._feature_to_closest_indices(

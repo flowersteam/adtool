@@ -29,11 +29,13 @@ const goalTargeting = createGoalTargetingController({
     updateStatus,
 });
 const displayLimit = createDisplayLimitController({
+    discoveryMap,
     elements,
     refreshDiscoveries: discoveryMap.refreshDiscoveries,
     updateStatus,
 });
 const projection = createProjectionController({
+    discoveryMap,
     elements,
     onProjectionApplied: goalTargeting.refresh,
     refreshDiscoveries: discoveryMap.refreshDiscoveries,

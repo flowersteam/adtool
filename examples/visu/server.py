@@ -141,18 +141,43 @@ def _validate_render_settings(payload: dict[str, Any]) -> float:
     return sticker_preview_world_height
 
 
+def _normalize_selected_sources(payload: Any) -> set[str]:
+    if not isinstance(payload, list):
+        raise HTTPException(status_code=422, detail="Selected discoveries must be a list.")
+
+    selected_sources = set()
+    for item in payload:
+        selected_source = str(item).strip()
+        if not selected_source:
+            continue
+        selected_sources.add(selected_source)
+    return selected_sources
+
+
 def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastAPI:
     state = state or RuntimeState()
     goal_targeting_is_enabled = config.refresh and goal_targeting_enabled(
         str(config.config_file) if config.config_file else None,
     )
 
-    def refresh_layout(ignore_interval: bool = True) -> None:
+    def refresh_layout(
+        ignore_interval: bool = True,
+        selected_sources: set[str] | None = None,
+    ) -> None:
         if config.refresh:
             with state.recompute_lock:
-                recompute_online_discoveries(config, state)
+                recompute_online_discoveries(
+                    config,
+                    state,
+                    selected_sources=selected_sources,
+                )
             return
-        recompute_discoveries(config, state, ignore_interval=ignore_interval)
+        recompute_discoveries(
+            config,
+            state,
+            ignore_interval=ignore_interval,
+            selected_sources=selected_sources,
+        )
 
     def runtime_status_payload() -> dict[str, Any]:
         control = read_experiment_control(config.discoveries)
@@ -310,9 +335,10 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
     @app.post("/display_limit")
     async def set_display_limit(payload: dict[str, Any]):
         old_limit = state.display_limit
+        selected_sources = _normalize_selected_sources(payload.get("selected_sources", []))
         state.display_limit = _validate_display_limit(payload)
         try:
-            refresh_layout(ignore_interval=True)
+            refresh_layout(ignore_interval=True, selected_sources=selected_sources)
         except ValueError as error:
             state.display_limit = old_limit
             raise HTTPException(status_code=422, detail=str(error))
@@ -331,12 +357,13 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
     @app.post("/projection")
     async def set_projection(payload: dict[str, Any]):
         method, axes = _validate_projection(payload, state.projection_axes)
+        selected_sources = _normalize_selected_sources(payload.get("selected_sources", []))
         old_method = state.projection_method
         old_axes = state.projection_axes
         state.projection_method = method
         state.projection_axes = axes
         try:
-            refresh_layout(ignore_interval=True)
+            refresh_layout(ignore_interval=True, selected_sources=selected_sources)
         except ValueError as error:
             state.projection_method = old_method
             state.projection_axes = old_axes
@@ -366,21 +393,23 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
         }
 
     @app.post("/recompute_layout")
-    async def recompute_layout():
+    async def recompute_layout(payload: dict[str, Any]):
+        selected_sources = _normalize_selected_sources(payload.get("selected_sources", []))
         try:
-            refresh_layout(ignore_interval=True)
+            refresh_layout(ignore_interval=True, selected_sources=selected_sources)
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error))
         return {"status": "ok"}
 
     @app.post("/discovery_highlights/materialize")
-    async def materialize_highlight_filters():
+    async def materialize_highlight_filters(payload: dict[str, Any]):
+        selected_sources = _normalize_selected_sources(payload.get("selected_sources", []))
         try:
             result = materialize_discovery_filters(
                 config.discoveries,
                 config_path=config.config_file,
             )
-            refresh_layout(ignore_interval=True)
+            refresh_layout(ignore_interval=True, selected_sources=selected_sources)
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error))
         return {"status": "ok", **result}

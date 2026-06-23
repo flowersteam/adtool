@@ -6,6 +6,7 @@ const DEFAULT_PROJECTION = {
 };
 
 export function createProjectionController({
+    discoveryMap,
     elements,
     onProjectionApplied = async () => {},
     refreshDiscoveries,
@@ -79,7 +80,10 @@ export function createProjectionController({
         elements.recomputeLayoutButton.disabled = true;
         try {
             updateStatus(`Applying ${selection.payload.method.toUpperCase()} projection...`);
-            const payload = await setProjection(selection.payload);
+            const payload = await setProjection(
+                selection.payload,
+                discoveryMap.selectedEntries(),
+            );
             updateInputs(payload);
             await refreshDiscoveries(true);
             await onProjectionApplied(payload);

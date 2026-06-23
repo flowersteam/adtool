@@ -107,16 +107,20 @@ export async function setGoalTargeting(payload) {
     return postJson("/goal_targeting", payload, "goal targeting update failed");
 }
 
-export async function setDisplayLimit(limit) {
-    return postJson("/display_limit", { limit }, "display limit update failed");
+export async function setDisplayLimit(limit, selectedSources = []) {
+    return postJson("/display_limit", { limit, selected_sources: selectedSources }, "display limit update failed");
 }
 
 export async function getProjection() {
     return getJson("/projection", "projection settings unavailable");
 }
 
-export async function setProjection(payload) {
-    return postJson("/projection", payload, "projection update failed");
+export async function setProjection(payload, selectedSources = []) {
+    return postJson(
+        "/projection",
+        { ...payload, selected_sources: selectedSources },
+        "projection update failed",
+    );
 }
 
 export async function getRenderSettings() {
@@ -127,14 +131,18 @@ export async function setRenderSettings(payload) {
     return postJson("/render_settings", payload, "render settings update failed");
 }
 
-export async function requestLayoutRecompute() {
-    return postJson("/recompute_layout", undefined, "layout recompute failed");
+export async function requestLayoutRecompute(selectedSources = []) {
+    return postJson(
+        "/recompute_layout",
+        { selected_sources: selectedSources },
+        "layout recompute failed",
+    );
 }
 
-export async function materializeDiscoveryFilters() {
+export async function materializeDiscoveryFilters(selectedSources = []) {
     return postJson(
         "/discovery_highlights/materialize",
-        undefined,
+        { selected_sources: selectedSources },
         "highlight filter computation failed",
     );
 }

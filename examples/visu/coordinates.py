@@ -512,24 +512,47 @@ def _downsample_for_display(
     discoveries: list[Discovery],
     embedding: np.ndarray,
     max_displayed: int,
+    root_path: str | os.PathLike[str] | None = None,
+    selected_sources: set[str] | None = None,
 ) -> tuple[list[Discovery], np.ndarray]:
     if len(discoveries) <= max_displayed:
         return discoveries, embedding
 
-    kmeans = KMeans(n_clusters=max_displayed, random_state=0)
-    labels = kmeans.fit_predict(embedding)
+    selected_sources = selected_sources or set()
+    selected_indices = []
+    if root_path is not None and selected_sources:
+        for index, discovery in enumerate(discoveries):
+            if _discovery_source_path(discovery, root_path) in selected_sources:
+                selected_indices.append(index)
+
+    if len(selected_indices) >= max_displayed:
+        selected_indices.sort()
+        return [discoveries[i] for i in selected_indices], embedding[selected_indices]
+
+    selected_index_set = set(selected_indices)
+    candidate_indices = [index for index in range(len(discoveries)) if index not in selected_index_set]
+    if not candidate_indices:
+        selected_indices.sort()
+        return [discoveries[i] for i in selected_indices], embedding[selected_indices]
+
+    remaining_slots = max_displayed - len(selected_indices)
+    candidate_embedding = embedding[candidate_indices]
+
+    kmeans = KMeans(n_clusters=remaining_slots, random_state=0)
+    labels = kmeans.fit_predict(candidate_embedding)
     centers = kmeans.cluster_centers_
 
-    selected_indices = []
+    sampled_indices = []
     for cluster_idx, center in enumerate(centers):
         members = np.where(labels == cluster_idx)[0]
         if len(members) == 0:
             continue
 
-        cluster_points = embedding[members]
+        cluster_points = candidate_embedding[members]
         nearest_member = members[np.argmin(np.linalg.norm(cluster_points - center, axis=1))]
-        selected_indices.append(nearest_member)
+        sampled_indices.append(candidate_indices[nearest_member])
 
+    selected_indices.extend(sampled_indices)
     selected_indices.sort()
     return [discoveries[i] for i in selected_indices], embedding[selected_indices]
 
@@ -557,6 +580,14 @@ def _saved_coordinates(
         saved_coordinates.append(saved_point)
 
     return saved_coordinates
+
+
+def _discovery_source_path(
+    discovery: Discovery,
+    root_path: str | os.PathLike[str],
+) -> str:
+    relative_visual_path = os.path.relpath(os.fspath(discovery["visual"]), os.fspath(root_path))
+    return f"/discoveries/{relative_visual_path.replace(os.sep, '/')}"
 
 
 def _write_layout_result(
@@ -593,6 +624,7 @@ def compute_coordinates(
     max_displayed: int = DEFAULT_MAX_RENDERED_DISCOVERIES,
     projection_method: str = DEFAULT_PROJECTION_METHOD,
     projection_axes: tuple[int, int] = DEFAULT_PROJECTION_AXES,
+    selected_sources: set[str] | None = None,
 ) -> None:
     print("computing coordinates", path)
     root_path = Path(path).resolve()
@@ -635,6 +667,8 @@ def compute_coordinates(
         layout_discoveries,
         layout_embedding,
         max_displayed,
+        root_path=root_path,
+        selected_sources=selected_sources,
     )
     saved_coordinates = _saved_coordinates(
         display_discoveries,

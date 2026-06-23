@@ -192,7 +192,11 @@ def _write_state(state: OnlineUpdateState) -> None:
     )
 
 
-def recompute_online_discoveries(config: ServerConfig, runtime_state: RuntimeState) -> OnlineUpdateState:
+def recompute_online_discoveries(
+    config: ServerConfig,
+    runtime_state: RuntimeState,
+    selected_sources: set[str] | None = None,
+) -> OnlineUpdateState:
     root_path = config.discoveries.resolve()
     static_dir = config.static_dir
     static_dir.mkdir(parents=True, exist_ok=True)
@@ -264,6 +268,8 @@ def recompute_online_discoveries(config: ServerConfig, runtime_state: RuntimeSta
         layout_discoveries,
         layout_embedding,
         runtime_state.display_limit,
+        root_path=root_path,
+        selected_sources=selected_sources,
     )
     saved_coordinates = _saved_coordinates(display_discoveries, display_embedding, root_path)
     _write_layout_result(

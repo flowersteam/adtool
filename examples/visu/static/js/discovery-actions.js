@@ -14,7 +14,7 @@ export function createDiscoveryActions({
         elements.refreshButton.disabled = true;
         try {
             updateStatus("Recomputing layout...");
-            await requestLayoutRecompute();
+            await requestLayoutRecompute(discoveryMap.selectedEntries());
             await discoveryMap.refreshDiscoveries(true);
             updateStatus("Layout recomputed.");
         } catch (error) {
@@ -50,7 +50,7 @@ export function createDiscoveryActions({
         elements.refreshButton.disabled = true;
         try {
             updateStatus("Computing discovery filters...");
-            const payload = await materializeDiscoveryFilters();
+            const payload = await materializeDiscoveryFilters(discoveryMap.selectedEntries());
             await discoveryMap.refreshDiscoveries(false);
             updateStatus(`Discovery filters computed for ${payload.updated_count} discoveries.`);
         } catch (error) {

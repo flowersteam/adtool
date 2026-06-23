@@ -1,6 +1,7 @@
 import { getDisplayLimit, setDisplayLimit } from "./api.js";
 
 export function createDisplayLimitController({
+    discoveryMap,
     elements,
     refreshDiscoveries,
     updateStatus,
@@ -41,7 +42,7 @@ export function createDisplayLimitController({
         elements.displayLimitApplyButton.disabled = true;
         try {
             updateStatus(`Updating display limit to ${limit} discoveries...`);
-            await setDisplayLimit(limit);
+            await setDisplayLimit(limit, discoveryMap.selectedEntries());
             updateInputs(limit);
             await refreshDiscoveries(true);
             updateStatus(`Displaying up to ${limit} discoveries.`);
