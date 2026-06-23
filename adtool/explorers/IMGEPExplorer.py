@@ -129,6 +129,8 @@ class IMGEPExplorerInstance(Leaf):
         # either do nothing, or update dict by changing "output" -> "raw_output"
         # and adding new "output" key which is the result of the behavior map
 
+        target, goal_targeting = self._extract_external_controls(system_output)
+
         if isinstance(system_output, list):
             new_trial_data = self.mean_var_goal(system_output)
         else:
@@ -152,7 +154,8 @@ class IMGEPExplorerInstance(Leaf):
         else:
             # suggest_trial reads history
             params_trial = self.suggest_trial(
-                goal=system_output['target'] if 'target' in system_output else None
+                goal=target,
+                goal_targeting=goal_targeting,
             )
 
             # assemble dict and update parameter_map state
@@ -171,10 +174,12 @@ class IMGEPExplorerInstance(Leaf):
 
         return trial_data_reset
 
-    def suggest_trial(self, lookback_length: int = -1,
-                      goal: np.ndarray = None
-                      
-                      ):
+    def suggest_trial(
+        self,
+        lookback_length: int = -1,
+        goal: np.ndarray = None,
+        goal_targeting: Dict[str, Any] | None = None,
+    ):
         """Sample according to the policy a new trial of parameters for the
         system.
 
@@ -190,7 +195,7 @@ class IMGEPExplorerInstance(Leaf):
             A `torch.Tensor` containing the parameters to try.
         """
         if goal is None:
-            goal = self.behavior_map.sample()
+            goal = self.behavior_map.sample(goal_targeting=goal_targeting)
        #     print("sampled goal", goal)
 
         source_policy = self._vector_search_for_goal(goal, lookback_length)
@@ -202,6 +207,20 @@ class IMGEPExplorerInstance(Leaf):
 
 
         return params_trial
+
+    def _extract_external_controls(
+        self,
+        system_output: Union[Dict, List[Dict]],
+    ) -> tuple[np.ndarray | None, Dict[str, Any] | None]:
+        if isinstance(system_output, list):
+            source = system_output[0] if system_output else {}
+        else:
+            source = system_output
+
+        if not isinstance(source, dict):
+            return None, None
+
+        return source.get("target"), source.get("goal_targeting")
 
     def observe_results(self, system_output: Dict) -> Dict:
         """Read the raw output observed and process it into a discovered
@@ -342,6 +361,5 @@ class IMGEPExplorer():
 
         return mutator
     
-
 
 

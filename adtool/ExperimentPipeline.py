@@ -12,7 +12,10 @@ import json
 
 import numpy as np
 
-from adtool.utils.interaction.experiment_control import wait_if_experiment_paused
+from adtool.utils.interaction.experiment_control import (
+    read_experiment_control,
+    wait_if_experiment_paused,
+)
 
 
 
@@ -208,6 +211,7 @@ class ExperimentPipeline(Leaf):
 
             while self.run_idx < n_exploration_runs:
                 wait_if_experiment_paused(mypath)
+                goal_targeting = read_experiment_control(mypath).get("goal_targeting", {}).get("resolved")
                 # check  if target.json exists
                 if os.path.exists(f"{mypath}/target.json"):
                     with open(f"{mypath}/target.json") as f:
@@ -222,6 +226,10 @@ class ExperimentPipeline(Leaf):
 
                 # pass trial parameters through system
                 data_dict = self._system.map(data_dict)
+                if goal_targeting is not None:
+                    data_dict["goal_targeting"] = goal_targeting
+                else:
+                    data_dict.pop("goal_targeting", None)
 
                 # render system output
                 rendered_outputs = self._system.render(data_dict)
