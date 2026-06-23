@@ -169,6 +169,8 @@ class ExperimentPipeline(Leaf):
             )
 
             
+            next_run_idx = 0
+
             for json_discovery in json_discoveries:
                 # check if config.json is the same
                 
@@ -179,6 +181,11 @@ class ExperimentPipeline(Leaf):
                 #         raise Exception("The discovery config is not the same as the current config")
                 with open(join(mypath, json_discovery,"discovery.json")) as f:
                     new_trial_data = json.load(f)
+                    metadata = new_trial_data.get("metadata")
+                    if metadata is not None:
+                        next_run_idx = max(next_run_idx, metadata["run_idx"] + 1)
+                    else:
+                        next_run_idx += 1
                     #replace each list of list of floats with a tensor, recursively but bottom-up
 
                     new_trial_data = replace_lists_with_numpy(new_trial_data)
@@ -189,6 +196,8 @@ class ExperimentPipeline(Leaf):
         
                     
                     self._explorer._history_saver.map( new_trial_data )
+
+            self.run_idx = next_run_idx
                     
             if json_discoveries:
                 self.logger.info(
@@ -223,11 +232,9 @@ class ExperimentPipeline(Leaf):
             # Replace the original sample method with wrap_sample
             self._explorer.behavior_map.sample = wrap_sample
 
+            final_run_idx = self.run_idx + n_exploration_runs
 
-
-
-
-            while self.run_idx < n_exploration_runs:
+            while self.run_idx < final_run_idx:
                 wait_if_experiment_paused(mypath)
                 goal_targeting = read_experiment_control(mypath).get("goal_targeting", {}).get("resolved")
                 # check  if target.json exists
@@ -301,7 +308,7 @@ class ExperimentPipeline(Leaf):
 
                 if (
                     run_idx_start_from_one % self.save_frequency == 0
-                    or run_idx_start_from_one == n_exploration_runs
+                    or run_idx_start_from_one == final_run_idx
                 ):
                     self.save(resource_uri=self.resource_uri)
 
