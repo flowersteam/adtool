@@ -195,7 +195,10 @@ class IMGEPExplorerInstance(Leaf):
             A `torch.Tensor` containing the parameters to try.
         """
         if goal is None:
-            goal = self.behavior_map.sample(goal_targeting=goal_targeting)
+            if goal_targeting is None:
+                goal = self.behavior_map.sample()
+            else:
+                goal = self.behavior_map.sample(goal_targeting=goal_targeting)
        #     print("sampled goal", goal)
 
         source_policy = self._vector_search_for_goal(goal, lookback_length)
@@ -361,5 +364,4 @@ class IMGEPExplorer():
 
         return mutator
     
-
 
