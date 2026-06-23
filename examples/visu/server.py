@@ -19,6 +19,10 @@ from adtool.examples.visu.analysis_runs import (
     latest_analysis_summary_payload,
 )
 from adtool.examples.visu.exporter import export_selected_discoveries
+from adtool.examples.visu.goal_targeting import (
+    goal_targeting_enabled,
+    sync_goal_targeting,
+)
 from adtool.examples.visu.highlights import materialize_discovery_filters
 from adtool.examples.visu.layout import (
     cleanup_static_discoveries,
@@ -47,6 +51,7 @@ from adtool.examples.visu.runtime import (
 )
 from adtool.examples.visu.server_support import is_relative_to, mime_type
 from adtool.utils.interaction.experiment_control import (
+    default_goal_targeting,
     read_experiment_control,
     write_experiment_control,
 )
@@ -138,6 +143,9 @@ def _validate_render_settings(payload: dict[str, Any]) -> float:
 
 def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastAPI:
     state = state or RuntimeState()
+    goal_targeting_is_enabled = config.refresh and goal_targeting_enabled(
+        str(config.config_file) if config.config_file else None,
+    )
 
     def refresh_layout(ignore_interval: bool = True) -> None:
         if config.refresh:
@@ -235,6 +243,41 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
             raise HTTPException(status_code=400, detail="Experiment control is only available when live refresh is enabled.")
         paused = bool(payload.get("paused", False))
         return write_experiment_control(config.discoveries, paused)
+
+    @app.get("/goal_targeting")
+    async def get_goal_targeting():
+        control = sync_goal_targeting(
+            str(config.discoveries),
+            state,
+            enabled=goal_targeting_is_enabled,
+        )
+        return {
+            "feature_enabled": goal_targeting_is_enabled,
+            "goal_targeting": control["goal_targeting"],
+        }
+
+    @app.post("/goal_targeting")
+    async def set_goal_targeting(payload: dict[str, Any]):
+        if not goal_targeting_is_enabled:
+            raise HTTPException(status_code=400, detail="Goal targeting is not enabled for this refresh session.")
+
+        current = read_experiment_control(config.discoveries)["goal_targeting"]
+        goal_targeting = {
+            **default_goal_targeting(),
+            **current,
+            "radius": float(payload.get("radius", current.get("radius"))),
+            "zones": payload.get("zones", current.get("zones", [])),
+        }
+        control = write_experiment_control(config.discoveries, goal_targeting=goal_targeting)
+        control = sync_goal_targeting(
+            str(config.discoveries),
+            state,
+            enabled=goal_targeting_is_enabled,
+        )
+        return {
+            "feature_enabled": True,
+            "goal_targeting": control["goal_targeting"],
+        }
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):

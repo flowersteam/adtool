@@ -99,6 +99,14 @@ export async function setExperimentControl(payload) {
     return postJson("/experiment_control", payload, "experiment control update failed");
 }
 
+export async function getGoalTargeting() {
+    return getJson("/goal_targeting", "goal targeting unavailable");
+}
+
+export async function setGoalTargeting(payload) {
+    return postJson("/goal_targeting", payload, "goal targeting update failed");
+}
+
 export async function setDisplayLimit(limit) {
     return postJson("/display_limit", { limit }, "display limit update failed");
 }

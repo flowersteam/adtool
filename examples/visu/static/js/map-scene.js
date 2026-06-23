@@ -27,6 +27,7 @@ export function createMapScene(container) {
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
+    const zPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     const textureLoader = new THREE.TextureLoader();
     const viewChangeCallbacks = new Set();
     let animationStarted = false;
@@ -87,6 +88,13 @@ export function createMapScene(container) {
         raycaster.setFromCamera(pointer, camera);
         const intersects = raycaster.intersectObjects(planes);
         return intersects.length > 0 ? intersects[0].object : null;
+    }
+
+    function worldPointAtPointer(event) {
+        setPointerFromEvent(event);
+        raycaster.setFromCamera(pointer, camera);
+        const point = new THREE.Vector3();
+        return raycaster.ray.intersectPlane(zPlane, point);
     }
 
     function screenPoint(position) {
@@ -168,5 +176,6 @@ export function createMapScene(container) {
         screenPoint,
         startAnimation,
         textureLoader,
+        worldPointAtPointer,
     };
 }

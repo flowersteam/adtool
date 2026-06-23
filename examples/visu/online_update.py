@@ -28,6 +28,7 @@ from adtool.examples.visu.coordinates import (
     export_last_frame,
     process_discovery,
 )
+from adtool.examples.visu.goal_targeting import goal_targeting_enabled, sync_goal_targeting
 from adtool.examples.visu.highlights import load_highlight_export_context
 from adtool.examples.visu.highlights.materialize import materialize_discovery_file
 from adtool.examples.visu.highlights.provider import DiscoveryHighlightProvider
@@ -241,6 +242,11 @@ def recompute_online_discoveries(config: ServerConfig, runtime_state: RuntimeSta
         )
         runtime_state.online_update_state = state
         runtime_state.last_recompute_time = state.last_full_recompute_time
+        sync_goal_targeting(
+            os.fspath(root_path),
+            runtime_state,
+            enabled=goal_targeting_enabled(os.fspath(config.config_file) if config.config_file else None),
+        )
         return state
 
     root_key = os.fspath(root_path)
@@ -298,6 +304,11 @@ def recompute_online_discoveries(config: ServerConfig, runtime_state: RuntimeSta
     )
     runtime_state.online_update_state = state
     runtime_state.last_recompute_time = state.last_full_recompute_time
+    sync_goal_targeting(
+        os.fspath(root_path),
+        runtime_state,
+        enabled=goal_targeting_enabled(os.fspath(config.config_file) if config.config_file else None),
+    )
     return state
 
 

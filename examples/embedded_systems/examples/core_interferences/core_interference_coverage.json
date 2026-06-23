@@ -1,4 +1,5 @@
 {
+  "goal_oriented_sampler": true,
   "discovery_highlights": {
     "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.discovery_highlights.CoreInterferenceDiscoveryHighlights",
     "config": {}

@@ -104,6 +104,31 @@
                         </div>
                     </div>
 
+                    <div id="goalTargetingSection" class="controlSection" hidden>
+                        <div class="goalZonePanel">
+                            <div class="goalZoneHeader">
+                                <div>
+                                    <p class="eyebrow">Goal targeting</p>
+                                    <h3>Goal Zones</h3>
+                                </div>
+                                <div id="goalZoneControls" class="goalZoneHeaderActions">
+                                    <button id="goalZonePlacementButton" type="button">Place zone</button>
+                                    <button id="goalZoneClearButton" type="button">Clear</button>
+                                </div>
+                                <div id="goalZoneUnsupportedMessage" class="goalZoneUnsupportedMessage" hidden>
+                                    Goal zones work only with Axis or PCA projections.
+                                </div>
+                            </div>
+                            <p id="goalZoneSupportText" class="fieldHint">Goal zones are unavailable.</p>
+                            <div id="goalZoneRadiusControl" class="rangeControl">
+                                <label for="goalZoneRadiusInput">Shared radius</label>
+                                <input id="goalZoneRadiusInput" type="range" min="0.01" max="1.00" step="0.01" value="0.18">
+                                <span id="goalZoneRadiusValue">0.18</span>
+                            </div>
+                            <div id="goalZoneList" class="goalZoneList"></div>
+                        </div>
+                    </div>
+
                     <div class="controlSection">
                         <div class="buttonRow">
                             <button id="fitViewButton" type="button">Fit View</button>

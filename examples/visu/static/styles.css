@@ -58,6 +58,17 @@ button:hover {
     background: var(--accent-soft);
 }
 
+button.active {
+    border-color: var(--accent);
+    color: #ffffff;
+    background: var(--accent);
+}
+
+button.active:hover {
+    border-color: var(--accent-strong);
+    background: var(--accent-strong);
+}
+
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
@@ -254,6 +265,61 @@ code {
     min-height: 0;
     display: flex;
     flex-direction: column;
+}
+
+.goalZonePanel {
+    display: grid;
+    gap: 10px;
+}
+
+.goalZoneHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.goalZoneHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.goalZoneUnsupportedMessage {
+    color: var(--muted);
+    font-size: 0.82rem;
+    text-align: right;
+}
+
+.goalZoneList {
+    display: grid;
+    gap: 8px;
+}
+
+.goalZoneEmpty {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.goalZoneItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface-muted);
+}
+
+.goalZoneItem strong {
+    display: block;
+    font-size: 0.86rem;
+}
+
+.goalZoneItem span {
+    color: var(--muted);
+    font-size: 0.78rem;
 }
 
 .highlightRulesList {

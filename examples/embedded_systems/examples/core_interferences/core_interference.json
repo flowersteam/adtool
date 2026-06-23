@@ -1,7 +1,7 @@
 {
     "experiment": {
         "config": {
-            "save_location": "./discoveries/interferences2/",
+            "save_location": "./discoveries/interferences/",
             "save_frequency": 1000,
             "bootstrap_size": 500
         }
@@ -28,7 +28,10 @@
             "behavior_map_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap.InterferenceBehaviorMap",
                 "goal_sampler_config": {
-                    "path": "examples.embedded_systems.behavior_map.goal_sampler.QMCMinMaxGoalSampler"
+                    "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.goal_sampler.InterferenceZoneGoalSampler",
+                    "base_sampler_config": {
+                        "path": "adtool.examples.embedded_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler"
+                    }
                 },
                 "behavior_encoder_config": {
                     "path": "examples.embedded_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder"

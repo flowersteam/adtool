@@ -7,6 +7,7 @@ const DEFAULT_PROJECTION = {
 
 export function createProjectionController({
     elements,
+    onProjectionApplied = async () => {},
     refreshDiscoveries,
     updateStatus,
 }) {
@@ -81,6 +82,7 @@ export function createProjectionController({
             const payload = await setProjection(selection.payload);
             updateInputs(payload);
             await refreshDiscoveries(true);
+            await onProjectionApplied(payload);
             updateStatus(`Projection set to ${payload.method.toUpperCase()}.`);
         } catch (error) {
             updateStatus(error.message || "Failed to update projection.");

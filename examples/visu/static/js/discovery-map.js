@@ -28,6 +28,9 @@ const RENDER_MODES = new Set(["points", "images", "hybrid"]);
 const POINT_COLOR = "#2f3a35";
 const HOVER_COLOR = "#255f56";
 const SELECTED_COLOR = "#bc6c25";
+const GOAL_ZONE_FILL_COLOR = "#f4a261";
+const GOAL_ZONE_LINE_COLOR = "#e76f51";
+const GOAL_ZONE_SEGMENTS = 72;
 const MAX_PREVIEW_SCALE_BOOST = 1.24;
 const HYBRID_VIEW_REBUILD_DEBOUNCE_MS = 120;
 
@@ -60,6 +63,9 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     let hybridRebuildTimeoutId = null;
     let hybridPreviewToken = 0;
     let stickerPreviewWorldHeight = IMAGE_PREVIEW_WORLD_HEIGHT;
+    let goalZoneGroups = [];
+    let goalZonePlacementActive = false;
+    let goalZonePlacementHandler = null;
 
     function refreshHighlightStyles() {
         for (const entry of entries) {
@@ -193,6 +199,83 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     function clearRenderedMeshes() {
         clearPointMeshes();
         clearImageMeshes();
+    }
+
+    function clearGoalZoneMeshes() {
+        for (const group of goalZoneGroups) {
+            for (const child of group.children) {
+                child.geometry?.dispose();
+                child.material?.dispose();
+            }
+            scene.remove(group);
+        }
+        goalZoneGroups = [];
+    }
+
+    function createGoalZoneGroup(zone, radius) {
+        const worldRadius = Math.max(0.01, Number(radius || 0)) * SCALE_FACTOR;
+        const center = new THREE.Vector3(
+            SCALE_FACTOR * Number(zone.center?.[0] || 0),
+            SCALE_FACTOR * Number(zone.center?.[1] || 0),
+            0.02,
+        );
+        const group = new THREE.Group();
+
+        const fill = new THREE.Mesh(
+            new THREE.CircleGeometry(worldRadius, GOAL_ZONE_SEGMENTS),
+            new THREE.MeshBasicMaterial({
+                color: GOAL_ZONE_FILL_COLOR,
+                opacity: 0.12,
+                transparent: true,
+                depthWrite: false,
+            }),
+        );
+        fill.position.copy(center);
+
+        const points = [];
+        for (let idx = 0; idx < GOAL_ZONE_SEGMENTS; idx += 1) {
+            const angle = (idx / GOAL_ZONE_SEGMENTS) * Math.PI * 2;
+            points.push(
+                new THREE.Vector3(
+                    center.x + worldRadius * Math.cos(angle),
+                    center.y + worldRadius * Math.sin(angle),
+                    center.z + 0.01,
+                ),
+            );
+        }
+        const outline = new THREE.LineLoop(
+            new THREE.BufferGeometry().setFromPoints(points),
+            new THREE.LineBasicMaterial({
+                color: GOAL_ZONE_LINE_COLOR,
+                transparent: true,
+                opacity: 0.95,
+            }),
+        );
+
+        const marker = new THREE.Mesh(
+            new THREE.CircleGeometry(0.06 * SCALE_FACTOR, 24),
+            new THREE.MeshBasicMaterial({
+                color: GOAL_ZONE_LINE_COLOR,
+                opacity: 0.95,
+                transparent: true,
+                depthWrite: false,
+            }),
+        );
+        marker.position.copy(center);
+        marker.scale.set(0.12, 0.12, 1);
+
+        group.add(fill);
+        group.add(outline);
+        group.add(marker);
+        scene.add(group);
+        return group;
+    }
+
+    function renderGoalZones(zones, radius) {
+        clearGoalZoneMeshes();
+        for (const zone of zones || []) {
+            goalZoneGroups.push(createGoalZoneGroup(zone, radius));
+        }
     }
 
     function applyEntryStyle(entry) {
@@ -588,6 +671,17 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     }
 
     function updateHoverState(event) {
+        if (goalZonePlacementActive) {
+            if (hoveredEntry) {
+                const previous = hoveredEntry;
+                hoveredEntry = null;
+                updateEntryStyle(previous, false);
+            }
+            renderer.domElement.style.cursor = "crosshair";
+            preview.hide();
+            return;
+        }
+
         const nextHovered = pickEntryAtPointer(event);
         if (nextHovered !== hoveredEntry) {
             const previous = hoveredEntry;
@@ -625,6 +719,17 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     function clearSelection() {
         selection.clear();
         updateStatus("Selection cleared.");
+    }
+
+    function setGoalZonePlacement(active, onPlace) {
+        goalZonePlacementActive = Boolean(active);
+        goalZonePlacementHandler = onPlace || null;
+        if (!goalZonePlacementActive) {
+            renderer.domElement.style.cursor = hoveredEntry ? "pointer" : "grab";
+        } else {
+            preview.hide();
+            renderer.domElement.style.cursor = "crosshair";
+        }
     }
 
     function selectedEntries() {
@@ -706,6 +811,17 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             return;
         }
 
+        if (goalZonePlacementActive && goalZonePlacementHandler) {
+            const point = mapScene.worldPointAtPointer(event);
+            if (point) {
+                goalZonePlacementHandler({
+                    x: point.x / SCALE_FACTOR,
+                    y: point.y / SCALE_FACTOR,
+                });
+            }
+            return;
+        }
+
         const entry = pickEntryAtPointer(event);
         if (entry) {
             selection.togglePlane(entry);
@@ -722,8 +838,10 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         fitView,
         markLiveRefreshNow,
         refreshDiscoveries,
+        renderGoalZones,
         resizeRenderer,
         selectedEntries,
+        setGoalZonePlacement,
         setLiveRefreshCooldown,
         setRenderSettings,
         setRenderMode,

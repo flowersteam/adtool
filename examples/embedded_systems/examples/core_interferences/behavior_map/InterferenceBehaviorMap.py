@@ -18,7 +18,10 @@ class InterferenceBehaviorMap(BaseBehaviorMap):
             premap_key: str = "output",
             postmap_key: str = "output",
             goal_sampler_config: Optional[Dict[str, Any]] = {
-                "path": "adtool.examples.embedded_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler"
+                "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.goal_sampler.InterferenceZoneGoalSampler",
+                "base_sampler_config": {
+                    "path": "adtool.examples.embedded_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler"
+                },
             },
             behavior_encoder_config: Optional[Dict[str, Any]] = {
                 "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder"

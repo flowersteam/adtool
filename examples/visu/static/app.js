@@ -4,6 +4,7 @@ import { createDiscoveryActions } from "./js/discovery-actions.js";
 import { createDiscoveryMap } from "./js/discovery-map.js";
 import { createDisplayLimitController } from "./js/display-limit.js";
 import { getDom } from "./js/dom.js";
+import { createGoalTargetingController } from "./js/goal-targeting/controller.js";
 import { createGraphLightbox } from "./js/lightbox.js";
 import { createPageRouter } from "./js/page-router.js";
 import { createPreviewController } from "./js/preview.js";
@@ -22,6 +23,11 @@ const lightbox = createGraphLightbox(elements);
 const analysis = createAnalysisController({ elements, lightbox });
 const discoveryMap = createDiscoveryMap({ elements, preview, updateStatus });
 const router = createPageRouter({ analysis, discoveryMap, elements, preview });
+const goalTargeting = createGoalTargetingController({
+    discoveryMap,
+    elements,
+    updateStatus,
+});
 const displayLimit = createDisplayLimitController({
     elements,
     refreshDiscoveries: discoveryMap.refreshDiscoveries,
@@ -29,6 +35,7 @@ const displayLimit = createDisplayLimitController({
 });
 const projection = createProjectionController({
     elements,
+    onProjectionApplied: goalTargeting.refresh,
     refreshDiscoveries: discoveryMap.refreshDiscoveries,
     updateStatus,
 });
@@ -105,6 +112,7 @@ async function initialize() {
     preview.applyScale(elements.previewSizeSlider.value);
     analysis.initializeNavigation();
     await displayLimit.initialize();
+    await goalTargeting.initialize();
     await projection.initialize();
     await renderSettings.initialize();
     await runtimeControls.initialize();
