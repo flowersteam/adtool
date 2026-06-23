@@ -105,6 +105,7 @@ code {
     align-items: center;
     gap: 10px;
     min-width: 0;
+    justify-self: end;
 }
 
 .topbarStat {
@@ -158,8 +159,35 @@ code {
     flex: 0 0 auto;
 }
 
+.runtimeControls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.runtimeBadge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-muted);
+    color: var(--muted);
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 260px;
+}
+
 .navButton {
     min-width: 116px;
+}
+
+.pageNav {
+    justify-self: end;
 }
 
 .navButton.active,

@@ -168,6 +168,7 @@ def process_discovery(
         "visual": os.fspath(visual_path),
         "embedding": embedding,
         "filters": payload.get("filters", {}),
+        "discovery_file": os.fspath(discovery_path),
     }
     _store_cached_discovery(discovery_path, cache_mtime, discovery)
     return discovery

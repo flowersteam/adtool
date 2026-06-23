@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -24,11 +23,16 @@ from adtool.examples.visu.highlights import materialize_discovery_filters
 from adtool.examples.visu.layout import (
     cleanup_static_discoveries,
     recompute_discoveries,
-    watch_discoveries,
     write_discovery_coordinates,
+)
+from adtool.examples.visu.online_update import (
+    recompute_online_discoveries,
+    start_online_updates,
 )
 from adtool.examples.visu.runtime import (
     DEFAULT_DISPLAY_LIMIT,
+    ONLINE_FULL_RECOMPUTE_INTERVAL_SECONDS,
+    ONLINE_POINT_UPDATE_INTERVAL_SECONDS,
     DEFAULT_PROJECTION_AXES,
     DEFAULT_PROJECTION_METHOD,
     DEFAULT_STICKER_PREVIEW_WORLD_HEIGHT,
@@ -42,13 +46,17 @@ from adtool.examples.visu.runtime import (
     ServerConfig,
 )
 from adtool.examples.visu.server_support import is_relative_to, mime_type
+from adtool.utils.interaction.experiment_control import (
+    read_experiment_control,
+    write_experiment_control,
+)
 
 
 def parse_args() -> ServerConfig:
     parser = argparse.ArgumentParser()
     parser.add_argument("--discoveries", type=str, required=True)
     parser.add_argument("--config_file", type=str)
-    parser.add_argument("--refresh", action="store_true")
+    parser.add_argument("--refresh", action="store_true", help="Enable live online updates with incremental refresh and pause control.")
     args = parser.parse_args()
 
     return ServerConfig(
@@ -131,20 +139,38 @@ def _validate_render_settings(payload: dict[str, Any]) -> float:
 def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastAPI:
     state = state or RuntimeState()
 
+    def refresh_layout(ignore_interval: bool = True) -> None:
+        if config.refresh:
+            with state.recompute_lock:
+                recompute_online_discoveries(config, state)
+            return
+        recompute_discoveries(config, state, ignore_interval=ignore_interval)
+
+    def runtime_status_payload() -> dict[str, Any]:
+        control = read_experiment_control(config.discoveries)
+        if config.refresh:
+            mode = "refresh"
+        else:
+            mode = "manual"
+
+        return {
+            "mode": mode,
+            "refresh": config.refresh,
+            "pause_supported": config.refresh,
+            "paused": control["paused"],
+            "point_update_interval_seconds": ONLINE_POINT_UPDATE_INTERVAL_SECONDS,
+            "full_recompute_interval_seconds": ONLINE_FULL_RECOMPUTE_INTERVAL_SECONDS,
+        }
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         config.static_dir.mkdir(parents=True, exist_ok=True)
         config.discoveries.mkdir(parents=True, exist_ok=True)
         analysis_runs_dir(config).mkdir(parents=True, exist_ok=True)
-        write_discovery_coordinates(config, state)
-
         if config.refresh:
-            thread = threading.Thread(
-                target=watch_discoveries,
-                args=(config, state),
-                daemon=True,
-            )
-            thread.start()
+            start_online_updates(config, state)
+        else:
+            write_discovery_coordinates(config, state)
 
         yield
         cleanup_static_discoveries(config)
@@ -195,6 +221,21 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
     async def analysis_runs():
         return analysis_runs_payload(config)
 
+    @app.get("/runtime_status")
+    async def runtime_status():
+        return runtime_status_payload()
+
+    @app.get("/experiment_control")
+    async def experiment_control():
+        return read_experiment_control(config.discoveries)
+
+    @app.post("/experiment_control")
+    async def set_experiment_control(payload: dict[str, Any]):
+        if not config.refresh:
+            raise HTTPException(status_code=400, detail="Experiment control is only available when live refresh is enabled.")
+        paused = bool(payload.get("paused", False))
+        return write_experiment_control(config.discoveries, paused)
+
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):
         print("Websocket connection")
@@ -228,7 +269,7 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
         old_limit = state.display_limit
         state.display_limit = _validate_display_limit(payload)
         try:
-            recompute_discoveries(config, state, ignore_interval=True)
+            refresh_layout(ignore_interval=True)
         except ValueError as error:
             state.display_limit = old_limit
             raise HTTPException(status_code=422, detail=str(error))
@@ -252,7 +293,7 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
         state.projection_method = method
         state.projection_axes = axes
         try:
-            recompute_discoveries(config, state, ignore_interval=True)
+            refresh_layout(ignore_interval=True)
         except ValueError as error:
             state.projection_method = old_method
             state.projection_axes = old_axes
@@ -284,7 +325,7 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
     @app.post("/recompute_layout")
     async def recompute_layout():
         try:
-            recompute_discoveries(config, state, ignore_interval=True)
+            refresh_layout(ignore_interval=True)
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error))
         return {"status": "ok"}
@@ -296,7 +337,7 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
                 config.discoveries,
                 config_path=config.config_file,
             )
-            recompute_discoveries(config, state, ignore_interval=True)
+            refresh_layout(ignore_interval=True)
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error))
         return {"status": "ok", **result}

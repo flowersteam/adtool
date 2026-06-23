@@ -53,6 +53,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     let pendingRefresh = false;
     let pointerDown = null;
     let liveRefreshTimerId = null;
+    let liveRefreshCooldownMs = LIVE_REFRESH_COOLDOWN_MS;
     let lastLiveRefreshTimestamp = 0;
     let renderVersion = 0;
     let hybridRebuildId = null;
@@ -661,7 +662,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         }
 
         const elapsed = performance.now() - lastLiveRefreshTimestamp;
-        const delay = Math.max(0, LIVE_REFRESH_COOLDOWN_MS - elapsed);
+        const delay = Math.max(0, liveRefreshCooldownMs - elapsed);
 
         liveRefreshTimerId = window.setTimeout(async () => {
             liveRefreshTimerId = null;
@@ -682,6 +683,10 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         ws.onclose = () => {
             setTimeout(connectWebsocket, 1000);
         };
+    }
+
+    function setLiveRefreshCooldown(ms) {
+        liveRefreshCooldownMs = Math.max(0, Number(ms) || LIVE_REFRESH_COOLDOWN_MS);
     }
 
     renderer.domElement.addEventListener("pointerdown", (event) => {
@@ -719,6 +724,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         refreshDiscoveries,
         resizeRenderer,
         selectedEntries,
+        setLiveRefreshCooldown,
         setRenderSettings,
         setRenderMode,
         startAnimation,

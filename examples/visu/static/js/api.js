@@ -87,6 +87,18 @@ export async function getDisplayLimit() {
     return getJson("/display_limit", "display limit unavailable");
 }
 
+export async function getRuntimeStatus() {
+    return getJson("/runtime_status", "runtime status unavailable");
+}
+
+export async function getExperimentControl() {
+    return getJson("/experiment_control", "experiment control unavailable");
+}
+
+export async function setExperimentControl(payload) {
+    return postJson("/experiment_control", payload, "experiment control update failed");
+}
+
 export async function setDisplayLimit(limit) {
     return postJson("/display_limit", { limit }, "display limit update failed");
 }

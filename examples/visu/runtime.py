@@ -23,6 +23,8 @@ MIME_TYPES = {
 
 RECOMPUTE_DEBOUNCE_SECONDS = 10.0
 RECOMPUTE_MIN_INTERVAL_SECONDS = 15.0
+ONLINE_POINT_UPDATE_INTERVAL_SECONDS = 5.0
+ONLINE_FULL_RECOMPUTE_INTERVAL_SECONDS = 30.0
 
 DEFAULT_DISPLAY_LIMIT = 500
 MIN_DISPLAY_LIMIT = 1
@@ -56,5 +58,6 @@ class RuntimeState:
     projection_axes: tuple[int, int] = DEFAULT_PROJECTION_AXES
     sticker_preview_world_height: float = DEFAULT_STICKER_PREVIEW_WORLD_HEIGHT
     last_recompute_time: float = 0.0
+    online_update_state: object | None = None
     analysis_lock: threading.Lock = field(default_factory=threading.Lock)
     recompute_lock: threading.Lock = field(default_factory=threading.Lock)

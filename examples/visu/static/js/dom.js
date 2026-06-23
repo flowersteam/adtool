@@ -9,6 +9,8 @@ function byId(id) {
 const DOM_IDS = {
     app: "app",
     statusLine: "statusLine",
+    runtimeStatusText: "runtimeStatusText",
+    pauseExperimentButton: "pauseExperimentButton",
     emptyState: "emptyState",
     discoveryTotal: "discoveryTotal",
     selectionTotal: "selectionTotal",

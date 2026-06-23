@@ -9,6 +9,7 @@ import { createPageRouter } from "./js/page-router.js";
 import { createPreviewController } from "./js/preview.js";
 import { createProjectionController } from "./js/projection.js";
 import { createRenderSettingsController } from "./js/render-settings.js";
+import { createRuntimeControls } from "./js/runtime-controls.js";
 
 const elements = getDom();
 
@@ -37,6 +38,11 @@ const renderSettings = createRenderSettingsController({
     updateStatus,
 });
 const discoveryActions = createDiscoveryActions({ discoveryMap, elements, updateStatus });
+const runtimeControls = createRuntimeControls({
+    discoveryMap,
+    elements,
+    updateStatus,
+});
 const analysisActions = createAnalysisActions({
     analysis,
     elements,
@@ -75,6 +81,7 @@ function bindEvents() {
         preview.applyScale(event.target.value);
     });
     elements.graphLightboxClose.addEventListener("click", lightbox.close);
+    elements.pauseExperimentButton.addEventListener("click", runtimeControls.togglePause);
     elements.graphLightbox.addEventListener("click", (event) => {
         if (event.target === elements.graphLightbox) {
             lightbox.close();
@@ -100,6 +107,7 @@ async function initialize() {
     await displayLimit.initialize();
     await projection.initialize();
     await renderSettings.initialize();
+    await runtimeControls.initialize();
     renderSettings.setHybridActive(false);
     discoveryMap.resizeRenderer();
     discoveryMap.refreshDiscoveries(true).then(() => {
