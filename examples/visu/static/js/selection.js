@@ -7,6 +7,7 @@ import {
 export function createSelectionController({
     entriesList,
     getPlanes,
+    setFocusedSource = () => {},
     preview,
     updatePlaneStyle,
     updateTotals,
@@ -21,6 +22,14 @@ export function createSelectionController({
 
         const li = document.createElement("li");
         li.dataset.src = src;
+        li.addEventListener("mouseenter", () => setFocusedSource(src));
+        li.addEventListener("mouseleave", () => setFocusedSource(null));
+        li.addEventListener("focusin", () => setFocusedSource(src));
+        li.addEventListener("focusout", (event) => {
+            if (!li.contains(event.relatedTarget)) {
+                setFocusedSource(null);
+            }
+        });
 
         const entryMain = document.createElement("div");
         entryMain.className = "entryMain";
@@ -80,6 +89,9 @@ export function createSelectionController({
         entries.delete(src);
         const node = nodes.get(src);
         if (node) {
+            if (node.dataset.src === src) {
+                setFocusedSource(null);
+            }
             node.remove();
             nodes.delete(src);
         }
@@ -107,6 +119,7 @@ export function createSelectionController({
     function clear() {
         entries.clear();
         nodes.clear();
+        setFocusedSource(null);
         entriesList.innerHTML = "";
         for (const plane of getPlanes()) {
             plane.userData.selected = false;

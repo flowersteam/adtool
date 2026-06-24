@@ -28,6 +28,7 @@ const RENDER_MODES = new Set(["points", "images", "hybrid"]);
 const POINT_COLOR = "#2f3a35";
 const HOVER_COLOR = "#255f56";
 const SELECTED_COLOR = "#bc6c25";
+const SELECTION_LIST_HOVER_COLOR = "#e63946";
 const GOAL_ZONE_FILL_COLOR = "#f4a261";
 const GOAL_ZONE_LINE_COLOR = "#e76f51";
 const GOAL_ZONE_SEGMENTS = 72;
@@ -44,6 +45,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         normal: pointMaterial(POINT_COLOR),
         ringHover: pointMaterial(HOVER_COLOR),
         ringSelected: pointMaterial(SELECTED_COLOR),
+        ringSelectionListHover: pointMaterial(SELECTION_LIST_HOVER_COLOR),
     };
     const highlightMaterials = createHighlightMaterialCache({
         THREE,
@@ -66,6 +68,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     let goalZoneGroups = [];
     let goalZonePlacementActive = false;
     let goalZonePlacementHandler = null;
+    let focusedSelectionSource = null;
 
     function refreshHighlightStyles() {
         for (const entry of entries) {
@@ -281,6 +284,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     function applyEntryStyle(entry) {
         const selected = entry.userData.selected;
         const hovered = entry === hoveredEntry;
+        const selectionListHovered = entry.userData.sourcePath === focusedSelectionSource;
         const normalMaterial = pointBaseMaterial(entry);
 
         if (entry.pointMesh) {
@@ -288,8 +292,14 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             entry.pointMesh.userData.scaleBoost = selected ? 1.24 : hovered ? 1.16 : 1.0;
         }
         if (entry.pointRingMesh) {
-            entry.pointRingMesh.visible = entry.visible && (selected || hovered);
-            entry.pointRingMesh.material = selected
+            entry.pointRingMesh.visible = entry.visible && (
+                selected
+                || hovered
+                || selectionListHovered
+            );
+            entry.pointRingMesh.material = selectionListHovered
+                ? pointMaterials.ringSelectionListHover
+                : selected
                 ? pointMaterials.ringSelected
                 : pointMaterials.ringHover;
             entry.pointRingMesh.userData.scaleBoost = selected ? 1.32 : 1.22;
@@ -319,6 +329,26 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     const selection = createSelectionController({
         entriesList: elements.entriesList,
         getPlanes: () => entries,
+        setFocusedSource: (sourcePath) => {
+            if (focusedSelectionSource === sourcePath) {
+                return;
+            }
+            const previousEntry = focusedSelectionSource === null
+                ? null
+                : entries.find((entry) => entry.userData.sourcePath === focusedSelectionSource) || null;
+            focusedSelectionSource = sourcePath;
+            if (previousEntry) {
+                updateEntryStyle(previousEntry, false);
+            }
+            if (focusedSelectionSource !== null) {
+                const nextEntry = entries.find(
+                    (entry) => entry.userData.sourcePath === focusedSelectionSource,
+                );
+                if (nextEntry) {
+                    updateEntryStyle(nextEntry, false);
+                }
+            }
+        },
         preview,
         updatePlaneStyle: updateEntryStyle,
         updateTotals: setTotals,
