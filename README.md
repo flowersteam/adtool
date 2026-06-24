@@ -43,6 +43,8 @@ conda activate adtool
 pip install .
 ```
 
+For a short beginner guide to using `adtool` as a library, see [docs/TUTORIAL.md](docs/TUTORIAL.md).
+
 
 ### Examples
 Various examples are provided in the `examples/` directory.
@@ -173,4 +175,5 @@ For this, it's possible to start from the default system definition [here](https
 You can have a look at the [simplified execution flow](docs/execution_flow) to understand a bit more about the different steps of the exploration.
 
 ### Join the [Discord community](https://discord.gg/yc5jhYM6u5)
+
 
