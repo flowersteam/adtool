@@ -64,4 +64,8 @@ def run_comparison_2d(config, datasets, labels, run_dir):
         "pairs": pairs,
         "bounds": bounds,
         "series": list(labels),
+        "summary": [
+            f"{len(pairs)} pairs",
+            f"{len(images)} graphs",
+        ],
     }

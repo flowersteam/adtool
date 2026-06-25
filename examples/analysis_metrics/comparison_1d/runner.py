@@ -87,4 +87,8 @@ def run_comparison_1d(config, datasets, labels, run_dir):
         "labels": dimension_labels,
         "bounds": bounds,
         "series": list(labels),
+        "summary": [
+            f"{len(dimensions)} dimensions",
+            f"{len(images)} graphs",
+        ],
     }

@@ -6,17 +6,7 @@ export function createAnalysisController({ elements, lightbox }) {
     let analysisEnabled = true;
 
     function summaryDatasets(summary) {
-        if (Array.isArray(summary.datasets) && summary.datasets.length > 0) {
-            return summary.datasets;
-        }
-        const fallback = [];
-        if (summary.dataset_a) {
-            fallback.push(summary.dataset_a);
-        }
-        if (summary.dataset_b) {
-            fallback.push(summary.dataset_b);
-        }
-        return fallback;
+        return Array.isArray(summary.datasets) ? summary.datasets : [];
     }
 
     function setEmpty(visible, title = "No analysis run found", message = "") {
@@ -132,17 +122,12 @@ export function createAnalysisController({ elements, lightbox }) {
         return card;
     }
 
-    function moduleMeta(moduleName, moduleSummary) {
-        if (moduleName === "comparison_1d") {
-            return `${formatNumber((moduleSummary.dimensions || []).length)} dims`;
-        }
-        if (moduleName === "comparison_2d") {
-            return `${formatNumber((moduleSummary.pairs || []).length)} pairs`;
-        }
-        if (moduleName === "space_coverage") {
-            const progression = moduleSummary.progression || {};
-            const datasets = Array.isArray(progression.datasets) ? progression.datasets : [];
-            return `${formatNumber((datasets[0]?.steps || []).length)} steps`;
+    function moduleMeta(moduleSummary) {
+        const summary = Array.isArray(moduleSummary.summary)
+            ? moduleSummary.summary.filter((item) => typeof item === "string" && item)
+            : [];
+        if (summary.length > 0) {
+            return summary.join(" | ");
         }
         return `${formatNumber((moduleSummary.images || []).length)} graphs`;
     }
@@ -160,7 +145,7 @@ export function createAnalysisController({ elements, lightbox }) {
 
         const metaNode = document.createElement("div");
         metaNode.className = "analysisRunMeta";
-        metaNode.textContent = moduleMeta(moduleName, moduleSummary);
+        metaNode.textContent = moduleMeta(moduleSummary);
 
         const grid = document.createElement("div");
         grid.className = "analysisRunGrid";

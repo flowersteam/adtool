@@ -79,9 +79,6 @@ def run_analysis_payload(
     payload: dict[str, Any],
 ) -> dict[str, Any]:
     raw_paths = payload.get("comparison_paths")
-    if raw_paths is None:
-        legacy_path = payload.get("path")
-        raw_paths = [] if legacy_path is None else [legacy_path]
     if not raw_paths:
         raise HTTPException(status_code=422, detail="comparison_paths is required.")
 
@@ -100,11 +97,8 @@ def run_analysis_payload(
     if config_file is not None:
         require_file(config_file, "config_file")
 
-    primary_label = payload.get("primary_label") or payload.get("label_a") or "IMGEP"
-    comparison_labels = payload.get("comparison_labels")
-    if comparison_labels is None:
-        legacy_label = payload.get("label_b")
-        comparison_labels = [] if legacy_label is None else [legacy_label]
+    primary_label = payload.get("primary_label") or "IMGEP"
+    comparison_labels = payload.get("comparison_labels") or []
 
     with state.analysis_lock:
         try:

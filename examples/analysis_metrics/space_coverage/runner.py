@@ -108,4 +108,9 @@ def run_space_coverage(config, datasets, labels, run_dir):
             ],
         },
         "series": list(labels),
+        "summary": [
+            f"{len(progressions)} datasets",
+            f"{len(series[0][0]) if series else 0} steps",
+            f"{len(images)} graph",
+        ],
     }

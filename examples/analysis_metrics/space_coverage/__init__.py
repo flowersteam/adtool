@@ -4,6 +4,7 @@ from adtool.examples.analysis_metrics.space_coverage.config import (
     SpaceCoveragePlotConfig,
     load_space_coverage_config,
 )
+from adtool.examples.analysis_metrics.space_coverage.module import SpaceCoverageModule
 from adtool.examples.analysis_metrics.space_coverage.metric import (
     SpaceCoverageMetric,
     load_space_coverage_metric,
@@ -12,6 +13,7 @@ from adtool.examples.analysis_metrics.space_coverage.runner import run_space_cov
 
 __all__ = [
     "SpaceCoverageConfig",
+    "SpaceCoverageModule",
     "SpaceCoverageMetric",
     "SpaceCoverageMetricConfig",
     "SpaceCoveragePlotConfig",

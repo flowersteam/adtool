@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from adtool.examples.analysis_metrics.comparison_1d import run_comparison_1d
-from adtool.examples.analysis_metrics.comparison_2d import run_comparison_2d
 from adtool.examples.analysis_metrics.analysis_run.config import (
     load_analysis_run_config,
 )
@@ -9,10 +7,10 @@ from adtool.examples.analysis_metrics.shared import (
     AnalysisRunSummary,
     DatasetInfo,
     create_run_dir,
+    load_analysis_module,
     load_discovery_set,
     write_summary,
 )
-from adtool.examples.analysis_metrics.space_coverage import run_space_coverage
 
 
 DEFAULT_OUTPUT_DIR = Path("analysis_runs")
@@ -31,11 +29,7 @@ def run_analysis(
     config_file=None,
 ):
     config = load_analysis_run_config(config_file)
-    if (
-        config.comparison_1d is None
-        and config.comparison_2d is None
-        and config.space_coverage is None
-    ):
+    if not config.analysis_modules:
         raise ValueError("No analysis module configured")
 
     primary_path = Path(primary_path).resolve()
@@ -58,30 +52,11 @@ def run_analysis(
 
     module_order = []
     modules = {}
-    if config.comparison_1d is not None:
-        module_order.append("comparison_1d")
-        modules["comparison_1d"] = run_comparison_1d(
-            config.comparison_1d,
-            datasets,
-            labels,
-            run_dir,
-        )
-    if config.comparison_2d is not None:
-        module_order.append("comparison_2d")
-        modules["comparison_2d"] = run_comparison_2d(
-            config.comparison_2d,
-            datasets,
-            labels,
-            run_dir,
-        )
-    if config.space_coverage is not None:
-        module_order.append("space_coverage")
-        modules["space_coverage"] = run_space_coverage(
-            config.space_coverage,
-            datasets,
-            labels,
-            run_dir,
-        )
+    for spec in config.analysis_modules:
+        module = load_analysis_module(spec)
+        module_key = module.identifier
+        module_order.append(module_key)
+        modules[module_key] = module.run(datasets, labels, run_dir)
 
     summary = AnalysisRunSummary(
         run_dir=run_dir,

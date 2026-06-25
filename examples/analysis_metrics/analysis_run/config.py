@@ -1,17 +1,13 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
-from adtool.examples.analysis_metrics.comparison_1d import load_comparison_1d_config
-from adtool.examples.analysis_metrics.comparison_2d import load_comparison_2d_config
-from adtool.examples.analysis_metrics.space_coverage import load_space_coverage_config
+from adtool.examples.analysis_metrics.shared import AnalysisModuleSpec
 
 
 @dataclass(frozen=True)
 class AnalysisRunConfig:
-    comparison_1d: object = None
-    comparison_2d: object = None
-    space_coverage: object = None
+    analysis_modules: list[AnalysisModuleSpec] = field(default_factory=list)
 
 
 def load_analysis_run_config(config_path):
@@ -21,14 +17,13 @@ def load_analysis_run_config(config_path):
     with Path(config_path).open("r") as handle:
         payload = json.load(handle)
 
+    raw_modules = payload.get("analysis_modules") or []
     return AnalysisRunConfig(
-        comparison_1d=None
-        if payload.get("comparison_1d") is None
-        else load_comparison_1d_config(payload["comparison_1d"]),
-        comparison_2d=None
-        if payload.get("comparison_2d") is None
-        else load_comparison_2d_config(payload["comparison_2d"]),
-        space_coverage=None
-        if payload.get("space_coverage") is None
-        else load_space_coverage_config(payload["space_coverage"]),
+        analysis_modules=[
+            AnalysisModuleSpec(
+                path=module["path"],
+                config=dict(module.get("config") or {}),
+            )
+            for module in raw_modules
+        ],
     )
