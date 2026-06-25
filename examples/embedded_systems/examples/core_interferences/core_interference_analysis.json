@@ -146,6 +146,9 @@
           "figsize": [7.0, 4.0]
         }
       }
+    },
+    {
+      "path": "adtool.examples.embedded_systems.examples.core_interferences.analysis_modules.MutualMissHeatmapModule"
     }
   ]
 }
