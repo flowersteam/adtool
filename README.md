@@ -113,6 +113,12 @@ If the viewer should expose analysis-side discovery highlights or other analysis
 python3 server.py --discoveries PATH_TO_DISCOVERIES --config_file PATH_TO_ANALYSIS_CONFIG
 ```
 
+Documentation:
+
+- [Analysis Modules](docs/ANALYSIS_MODULES.md)
+- [Visualization Guide](docs/VISUALIZATION.md)
+- [Visualization UI Guide](docs/VISUAL_UI_GUIDE.md)
+
 ### Scientific Background: Curiosity Search
 
 The high-dimensional phase space of a complex system poses many challenges to
@@ -175,5 +181,4 @@ For this, it's possible to start from the default system definition [here](https
 You can have a look at the [simplified execution flow](docs/execution_flow) to understand a bit more about the different steps of the exploration.
 
 ### Join the [Discord community](https://discord.gg/yc5jhYM6u5)
-
 
