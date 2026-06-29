@@ -1,383 +1,689 @@
+from __future__ import annotations
 
-
-import os
 import json
-import numpy as np
-from sklearn.decomposition import PCA
+import os
+import threading
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
 import cv2
-from sklearn.cluster import KMeans
-
-import umap
-
-
-#from pydub import AudioSegment
-
-
-loaded_json={
-
-}
-
-
-import os
-import json
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import umap
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
-def process_discovery(root, name):
-    global loaded_json
-    discovery = {}
+from adtool.examples.visu.highlights import (
+    empty_highlight_schema,
+    load_highlight_export_context,
+)
 
 
-    discovery_path = os.path.join(root, name, 'discovery.json')
+DEFAULT_MAX_RENDERED_DISCOVERIES = 500
+VALID_VISUAL_SUFFIXES = (".mp4", ".png")
+VALID_PROJECTION_METHODS = ("umap", "pca", "tsne", "axis")
+DEFAULT_PROJECTION_METHOD = "umap"
+DEFAULT_PROJECTION_AXES = (0, 1)
+DISCOVERY_HIGHLIGHTS_FILENAME = "discovery_highlights.json"
 
-    if not os.path.exists(discovery_path):
+Discovery = dict[str, Any]
+DatasetSignature = tuple[tuple[str, float], ...]
+_CACHE_MISS = object()
+_discovery_cache: dict[str, tuple[float, Discovery | None]] = {}
+_dataset_cache: dict[tuple[str, DatasetSignature], tuple[list[Discovery], np.ndarray]] = {}
+_layout_cache: dict[
+    tuple[str, DatasetSignature, str, tuple[int, int]],
+    tuple[list[Discovery], np.ndarray, str, int],
+] = {}
+_cache_lock = threading.Lock()
+
+
+def _cache_mtime(discovery_dir: Path, discovery_path: Path) -> float | None:
+    try:
+        return max(
+            discovery_path.stat().st_mtime,
+            discovery_dir.stat().st_mtime,
+        )
+    except OSError:
         return None
 
-    if discovery_path in loaded_json:
-        return loaded_json[discovery_path]
 
-    with open(discovery_path) as f:
-        discovery_details = json.load(f)
+def _cached_discovery(discovery_path: Path, cache_mtime: float) -> object:
+    cache_key = os.fspath(discovery_path)
+    with _cache_lock:
+        cached = _discovery_cache.get(cache_key)
+    if cached is not None and cached[0] == cache_mtime:
+        return cached[1]
+    return _CACHE_MISS
 
-    discovery_embedding = discovery_details['output']
 
-    if np.isnan(discovery_embedding).any():
+def _store_cached_discovery(
+    discovery_path: Path,
+    cache_mtime: float,
+    discovery: Discovery | None,
+) -> None:
+    cache_key = os.fspath(discovery_path)
+    with _cache_lock:
+        _discovery_cache[cache_key] = (cache_mtime, discovery)
+
+
+def _valid_embedding(payload: dict[str, Any]) -> list[float] | None:
+    if "output" not in payload:
+        return None
+
+    try:
+        embedding = np.asarray(payload["output"], dtype=float)
+    except (TypeError, ValueError):
+        return None
+
+    if embedding.ndim != 1 or embedding.size == 0:
+        return None
+    if np.isnan(embedding).any():
         print("nan found")
         return None
-    # same for None in embedding
-    if None in discovery_embedding:
-        print("None found")
-        return None
-    
-    # same for infinities
-    if np.isinf(discovery_embedding).any():
+    if np.isinf(embedding).any():
         print("infinities found")
         return None
 
-    files=os.listdir(os.path.join(root, name))
-    # get first file ending with mp4 , only the first one
-    mp4_files= [file for file in files if file.endswith('.mp4')]
-    if len(mp4_files):
-        file=mp4_files[0]
-        
-        path = os.path.join(root, name, file)
-        discovery['visual'] = path
-        discovery['embedding'] = discovery_embedding
-        loaded_json[discovery_path] = discovery
-        return discovery
-        
-    png_files= [file for file in files if file.endswith('.png')]
-    if len(png_files):
-        file=png_files[0]
+    return embedding.tolist()
 
-        path = os.path.join(root, name, file)
-        discovery['visual'] = path
-        discovery['embedding'] = discovery_embedding
-        loaded_json[discovery_path] = discovery
-        return discovery
+
+def _visual_from_rendered_outputs(payload: dict[str, Any], discovery_dir: Path) -> Path | None:
+    rendered_outputs = payload.get("rendered_outputs")
+    if not isinstance(rendered_outputs, list):
+        return None
+
+    for rendered_output in rendered_outputs:
+        if not isinstance(rendered_output, str):
+            continue
+
+        visual_path = discovery_dir / rendered_output
+        if (
+            visual_path.suffix.lower() in VALID_VISUAL_SUFFIXES
+            and visual_path.is_file()
+        ):
+            return visual_path
 
     return None
 
-def list_discoveries(path):
-    discoveries = []
-    tasks = []
-    global loaded_json
 
-    with ThreadPoolExecutor() as executor:
-        for root, dirs, _ in os.walk(path):
-            for name in dirs:
-                tasks.append(executor.submit(process_discovery, root, name))
+def _first_visual_file(discovery_dir: Path) -> Path | None:
+    try:
+        files = list(discovery_dir.iterdir())
+    except OSError:
+        return None
 
-        for future in as_completed(tasks):
-            result = future.result()
-            if result:
-                discoveries.append(result)
+    for suffix in VALID_VISUAL_SUFFIXES:
+        for path in files:
+            if path.is_file() and path.suffix.lower() == suffix:
+                return path
+    return None
+
+
+def _resolve_visual_path(payload: dict[str, Any], discovery_dir: Path) -> Path | None:
+    visual_path = _visual_from_rendered_outputs(payload, discovery_dir)
+    if visual_path is not None:
+        return visual_path
+    return _first_visual_file(discovery_dir)
+
+
+def process_discovery(
+    discovery_path: str | os.PathLike[str],
+    cache_mtime: float | None = None,
+) -> Discovery | None:
+    discovery_path = Path(discovery_path)
+    discovery_dir = discovery_path.parent
+
+    if cache_mtime is None:
+        cache_mtime = _cache_mtime(discovery_dir, discovery_path)
+    if cache_mtime is None:
+        return None
+
+    cached = _cached_discovery(discovery_path, cache_mtime)
+    if cached is not _CACHE_MISS:
+        return cached
+
+    try:
+        with discovery_path.open() as handle:
+            payload = json.load(handle)
+    except (json.JSONDecodeError, OSError):
+        _store_cached_discovery(discovery_path, cache_mtime, None)
+        return None
+    if not isinstance(payload, dict):
+        _store_cached_discovery(discovery_path, cache_mtime, None)
+        return None
+
+    embedding = _valid_embedding(payload)
+    if embedding is None:
+        _store_cached_discovery(discovery_path, cache_mtime, None)
+        return None
+
+    visual_path = _resolve_visual_path(payload, discovery_dir)
+    if visual_path is None:
+        _store_cached_discovery(discovery_path, cache_mtime, None)
+        return None
+
+    discovery = {
+        "visual": os.fspath(visual_path),
+        "embedding": embedding,
+        "filters": payload.get("filters", {}),
+        "discovery_file": os.fspath(discovery_path),
+    }
+    _store_cached_discovery(discovery_path, cache_mtime, discovery)
+    return discovery
+
+
+def _iter_discovery_paths(path: str | os.PathLike[str]) -> list[Path]:
+    return sorted(Path(path).rglob("discovery.json"))
+
+
+def _scan_discoveries(
+    path: str | os.PathLike[str],
+) -> tuple[list[Discovery], DatasetSignature]:
+    discoveries: list[Discovery] = []
+    root_path = Path(path)
+    dataset_signature: list[tuple[str, float]] = []
+
+    for discovery_path in _iter_discovery_paths(root_path):
+        cache_mtime = _cache_mtime(discovery_path.parent, discovery_path)
+        if cache_mtime is None:
+            continue
+
+        relative_path = os.fspath(discovery_path.relative_to(root_path)).replace(os.sep, "/")
+        dataset_signature.append((relative_path, cache_mtime))
+
+        result = process_discovery(discovery_path, cache_mtime=cache_mtime)
+        if result:
+            discoveries.append(result)
+
+    discoveries.sort(key=lambda discovery: discovery["visual"])
+    return discoveries, tuple(dataset_signature)
+
+
+def list_discoveries(path: str | os.PathLike[str]) -> list[Discovery]:
+    discoveries, _ = _scan_discoveries(path)
 
     print("Number of discoveries: ", len(discoveries))
     return discoveries
 
-import cv2
-import numpy as np
-from multiprocessing import Pool
 
-def concatenate_photos(discoveries, output_file='static/concatenated.webm'):
-    #make a single photo from all photos
-    photos = [cv2.imread(discovery['visual']) for discovery in discoveries]
-    concatenated_photo = cv2.hconcat(photos)
-    cv2.imwrite(output_file, concatenated_photo)
+def _last_frame_needs_export(visual_path: Path, image_path: Path) -> bool:
+    try:
+        return not image_path.exists() or image_path.stat().st_mtime < visual_path.stat().st_mtime
+    except OSError:
+        return False
 
 
-import cv2
-import numpy as np
-from multiprocessing import Pool
-import math
+def _export_video_last_frame(visual_path: Path) -> None:
+    image_path = visual_path.with_suffix(".jpg")
+    if not _last_frame_needs_export(visual_path, image_path):
+        return
 
-def process_frame(args):
-    i, video_path, frame_positions, frame_counts, black_frame = args
-    video = cv2.VideoCapture(video_path)
-    video.set(cv2.CAP_PROP_POS_FRAMES, frame_positions[i])
-    ret, frame = video.read()
-    video.release()
-    if frame_positions[i] >= frame_counts[i]:
-        frame = black_frame
-    return i, frame
-
-def concatenate_videos(discoveries, output_file='static/concatenated.webm'):
-    video_paths = [discovery['visual'] for discovery in discoveries]
-
-    # Get the width and height of the first video
-    video = cv2.VideoCapture(video_paths[0])
-    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    video.release()
-
-    # Calculate the number of frames in each video
-    frame_counts = [int(cv2.VideoCapture(video_path).get(cv2.CAP_PROP_FRAME_COUNT)) for video_path in video_paths]
-    max_frame_count = max(frame_counts)
-
-    # Calculate the number of rows and columns needed to form a grid
-    num_videos = len(video_paths)
-    rows = math.ceil(math.sqrt(num_videos))
-    cols = math.ceil(num_videos / rows)
-
-    # Create a black frame with the same size as the video frame
-    black_frame = np.zeros((height, width, 3), dtype=np.uint8)
-
-    # Create a VideoWriter object with the output file name, fourcc code, frames per second, and frame size
-    total_width = width * cols
-    total_height = height * rows
-    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'VP90'), 5, (total_width, total_height))
-
-    # Initialize frame positions
-    frame_positions = [0] * num_videos
-
-    with Pool() as p:
-        while True:
-            # Prepare arguments for process_frame function
-            args = [(i, video_path, frame_positions, frame_counts, black_frame) for i, video_path in enumerate(video_paths)]
-
-            # Process frames in parallel
-            results = p.map(process_frame, args)
-
-            # Break the loop if all videos are finished
-            if all(frame_positions[i] >= frame_counts[i] for i in range(num_videos)):
-                print("Info: All videos have been processed")
-                break
-
-            # Sort the results by video index
-            results.sort(key=lambda x: x[0])
-
-            # Extract the frames
-            frames = [result[1] for result in results]
-
-            # Create an empty frame for the grid
-            grid_frame = np.zeros((total_height, total_width, 3), dtype=np.uint8)
-
-            # Place each frame in the correct position in the grid
-            for idx, frame in enumerate(frames):
-                row = idx // cols
-                col = idx % cols
-                y_offset = row * height
-                x_offset = col * width
-                grid_frame[y_offset:y_offset + height, x_offset:x_offset + width] = frame
-
-            # Write the grid frame to the output video
-            out.write(grid_frame)
-
-            # Increment frame positions
-            for i in range(num_videos):
-                frame_positions[i] += max_frame_count // 20
-
-    out.release()
-    cv2.destroyAllWindows()
-
-    return width, height
-
-
-def export_last_frame(discoveries):
-    # extract last frame of each video and save them in respective folder
-    for discovery in discoveries:
-        if not os.path.exists(discovery['visual']):
-            continue
-
-        img_path = f"{discovery['visual'][:-4]}.png"
-        if os.path.exists(img_path):
-            continue
-        video = cv2.VideoCapture(discovery['visual'])
+    video = cv2.VideoCapture(os.fspath(visual_path))
+    ret = False
+    frame = None
+    try:
         frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+        if frame_count <= 0:
+            return
+
         video.set(cv2.CAP_PROP_POS_FRAMES, frame_count - 1)
         ret, frame = video.read()
+    finally:
         video.release()
 
-        # replace .mp4 with .jpg
-        cv2.imwrite(img_path, frame)
-
-def compute_coordinates(path):
-    global pca
-    print("computing coordinates", path)
-    discoveries = list_discoveries(path)
-    if len(discoveries) == 0:
-        #touch discoveries.json
-        with open('static/discoveries.json', 'w') as f:
-            f.write('[]')
-            # rm static/concatenated.webm if exists
-        if os.path.exists('static/concatenated.webm'):
-            os.remove('static/concatenated.webm')
-
-        return
-
-    # if less than 2 discoveries, return
-    if len(discoveries) == 0:
-        return
-    if len(discoveries) <3:
-        with open('static/discoveries.json', 'w') as f:
-            json.dump([{
-                'x': 0,
-                'y': 0,
-                'visual': discoveries[0]['visual'][len(path):]
-            }], f)
-        return
-    
-    if len(discoveries) == 2:
-        with open('static/discoveries.json', 'w') as f:
-            json.dump([{
-                'x': -1,
-                'y': 0,
-                'visual': discoveries[0]['visual'][len(path):]
-            }, {
-                'x': 1,
-                'y': 0,
-                'visual': discoveries[1]['visual'][len(path):]
-            }], f)
-        return
-            
-
-        
-    X = np.array([discovery['embedding'] for discovery in discoveries  if 'embedding' in discovery])
-
-    X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-6)
-
-  #  X = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0) + 1e-6)
+    if ret:
+        cv2.imwrite(os.fspath(image_path), frame)
 
 
+def export_last_frame(discoveries: list[Discovery]) -> None:
+    for discovery in discoveries:
+        visual_path = Path(os.fspath(discovery["visual"]))
+        if visual_path.exists() and visual_path.suffix.lower() == ".mp4":
+            _export_video_last_frame(visual_path)
 
 
-    NB_CLUSTERS=400
-    if len(discoveries) > NB_CLUSTERS:
-    #    keep only the top 100 most disctinct  discoveries 
-        kmeans = KMeans(n_clusters=NB_CLUSTERS, random_state=0)
-        kmeans.fit(X)
-        centers = kmeans.cluster_centers_
-        top_discoveries=[]
-        for center in centers:
-            min_distance=float('inf')
-            top_discovery=None
-            for discovery in discoveries:
-                distance=np.linalg.norm(discovery['embedding']-center)
-                if distance<min_distance and discovery not in top_discoveries:
-                    min_distance=distance
-                    top_discovery=discovery
-            top_discoveries.append(top_discovery)
+def _write_json_atomic(path: str | os.PathLike[str], payload: Any) -> None:
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = target.with_name(f"{target.name}.tmp")
+    with tmp_path.open("w") as handle:
+        json.dump(payload, handle)
+    tmp_path.replace(target)
 
 
-        # same but also consider cluster of size 1
+def _write_layout_status(static_dir: str | os.PathLike[str], payload: dict[str, Any]) -> None:
+    status = {
+        **payload,
+        "updated_at": datetime.now().isoformat(timespec="seconds"),
+    }
+    _write_json_atomic(Path(static_dir) / "layout_status.json", status)
 
 
-
-        discoveries=top_discoveries
-
-
-
-    # check if there is nan values
-    if np.isnan(X).any():
-        print("nan found in X")
-        return
-    
-    # remove enries with nan
-
-    
+def _write_highlight_schema(
+    static_dir: str | os.PathLike[str],
+    schema: dict[str, Any] | None,
+) -> None:
+    _write_json_atomic(
+        Path(static_dir) / DISCOVERY_HIGHLIGHTS_FILENAME,
+        schema or empty_highlight_schema(),
+    )
 
 
-
-    
-    
-
-
-    # normalize X
-   # 
-
-   # min_max normalize
-    
-    
-
-
-
+def _write_empty_layout(static_dir: str | os.PathLike[str], discoveries_path: Path) -> None:
+    _write_json_atomic(discoveries_path, [])
+    _write_layout_status(
+        static_dir,
+        {
+            "mode": "empty",
+            "stable": False,
+            "count": 0,
+            "displayed_count": 0,
+            "fit_count": 0,
+        },
+    )
 
 
-   # pca = PCA(n_components=2, random_state=0, whiten=True)
-    pca = umap.UMAP(n_components=2, random_state=0, n_neighbors=min(10, len(X)))  
-    pca.fit(X)
+def _valid_discoveries(discoveries: list[Discovery]) -> tuple[list[Discovery], np.ndarray]:
+    filtered: list[Discovery] = []
+    embeddings = []
+    expected_dim = None
+
+    for discovery in discoveries:
+        if "embedding" not in discovery:
+            continue
+
+        embedding = np.asarray(discovery["embedding"], dtype=float)
+        if embedding.ndim != 1 or embedding.size == 0:
+            continue
+        if expected_dim is None:
+            expected_dim = embedding.size
+        if embedding.size != expected_dim:
+            continue
+        if np.isnan(embedding).any() or np.isinf(embedding).any():
+            continue
+
+        filtered.append(discovery)
+        embeddings.append(embedding)
+
+    if not embeddings:
+        return [], np.empty((0, 0))
+
+    return filtered, np.vstack(embeddings)
 
 
+def _purge_stale_caches(root_key: str, dataset_signature: DatasetSignature) -> None:
+    with _cache_lock:
+        stale_dataset_keys = [
+            cache_key
+            for cache_key in _dataset_cache
+            if cache_key[0] == root_key and cache_key[1] != dataset_signature
+        ]
+        stale_layout_keys = [
+            cache_key
+            for cache_key in _layout_cache
+            if cache_key[0] == root_key and cache_key[1] != dataset_signature
+        ]
 
-    embedding = pca.transform(X)
-    # check if there is nan values
-    if np.isnan(embedding).any():
-        print("nan found in embedding")
+        for cache_key in stale_dataset_keys:
+            del _dataset_cache[cache_key]
+        for cache_key in stale_layout_keys:
+            del _layout_cache[cache_key]
 
+
+def _dataset_layout_input(
+    root_path: str | os.PathLike[str],
+    dataset_signature: DatasetSignature,
+    discoveries: list[Discovery],
+) -> tuple[list[Discovery], np.ndarray]:
+    cache_key = (os.fspath(root_path), dataset_signature)
+    with _cache_lock:
+        cached = _dataset_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    cached = _valid_discoveries(discoveries)
+    with _cache_lock:
+        _dataset_cache[cache_key] = cached
+    return cached
+
+
+def _cached_layout(
+    root_path: str | os.PathLike[str],
+    dataset_signature: DatasetSignature,
+    discoveries: list[Discovery],
+    projection_method: str,
+    projection_axes: tuple[int, int],
+) -> tuple[list[Discovery], np.ndarray, str, int]:
+    root_key = os.fspath(root_path)
+    cache_key = (
+        root_key,
+        dataset_signature,
+        projection_method.lower(),
+        projection_axes,
+    )
+    with _cache_lock:
+        cached = _layout_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    dataset_discoveries, matrix = _dataset_layout_input(root_key, dataset_signature, discoveries)
+    if len(dataset_discoveries) == 0:
+        cached = (dataset_discoveries, np.empty((0, 2)), "empty", 0)
+    else:
+        embedding, layout_mode, fit_count = _project_layout(
+            matrix,
+            projection_method=projection_method,
+            projection_axes=projection_axes,
+        )
+        cached = (dataset_discoveries, embedding, layout_mode, fit_count)
+
+    with _cache_lock:
+        _layout_cache[cache_key] = cached
+    return cached
+
+
+def _normalize_embedding_matrix(x: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    mean = x.mean(axis=0)
+    std = x.std(axis=0) + 1e-6
+    return (x - mean) / std, mean, std
+
+
+def _normalize_projection_bounds(embedding: np.ndarray) -> tuple[np.ndarray, float]:
+    min_xy = embedding.min(axis=0)
+    max_xy = embedding.max(axis=0)
+    center = (min_xy + max_xy) / 2.0
+    scale = float(np.max(max_xy - min_xy))
+    if scale <= 1e-9:
+        scale = 1.0
+    return center, scale
+
+
+def _normalized_projection(embedding: np.ndarray) -> np.ndarray:
+    embedding = _ensure_2d_projection(embedding)
+    center, scale = _normalize_projection_bounds(embedding)
+    return (embedding - center) / scale
+
+
+def _ensure_2d_projection(embedding: np.ndarray) -> np.ndarray:
+    embedding = np.asarray(embedding, dtype=float)
+    if embedding.ndim == 0:
+        embedding = embedding.reshape(1, 1)
+    if embedding.ndim == 1:
+        embedding = embedding.reshape(-1, 1)
+
+    if embedding.shape[1] == 0:
+        return np.zeros((embedding.shape[0], 2))
+    if embedding.shape[1] == 1:
+        return np.hstack([embedding, np.zeros((embedding.shape[0], 1))])
+    return embedding[:, :2]
+
+
+def _bootstrap_layout(x: np.ndarray) -> np.ndarray:
+    if len(x) == 1:
+        return np.array([[0.0, 0.0]])
+    if len(x) == 2:
+        return np.array([[-0.5, 0.0], [0.5, 0.0]])
+
+    return _project_with_pca(x)
+
+
+def _project_with_pca(x: np.ndarray) -> np.ndarray:
+    if len(x) < 3:
+        return _bootstrap_layout(x)
+
+    x_norm, _, _ = _normalize_embedding_matrix(x)
+    n_components = min(2, x_norm.shape[0], x_norm.shape[1])
+    reducer = PCA(n_components=n_components, random_state=0)
+    embedding = reducer.fit_transform(x_norm)
+    return _normalized_projection(embedding)
+
+
+def _project_with_umap(x: np.ndarray) -> np.ndarray:
+    if len(x) < 3:
+        return _bootstrap_layout(x)
+
+    x_norm, _, _ = _normalize_embedding_matrix(x)
+    reducer = umap.UMAP(
+        n_components=2,
+        random_state=0,
+        n_neighbors=min(10, len(x_norm) - 1),
+    )
+    embedding = reducer.fit_transform(x_norm)
+    return _normalized_projection(embedding)
+
+
+def _project_with_tsne(x: np.ndarray) -> np.ndarray:
+    if len(x) < 3:
+        return _bootstrap_layout(x)
+
+    x_norm, _, _ = _normalize_embedding_matrix(x)
+    perplexity = min(30.0, max(1.0, (len(x_norm) - 1) / 3.0))
+    reducer = TSNE(
+        n_components=2,
+        random_state=0,
+        perplexity=perplexity,
+        init="random",
+        learning_rate="auto",
+    )
+    embedding = reducer.fit_transform(x_norm)
+    return _normalized_projection(embedding)
+
+
+def _project_with_axes(x: np.ndarray, axes: tuple[int, int]) -> np.ndarray:
+    x_axis, y_axis = axes
+    if x_axis == y_axis:
+        raise ValueError("Axis ids must be different.")
+
+    output_dim = x.shape[1] if x.ndim == 2 else 0
+    if x_axis < 0 or y_axis < 0 or x_axis >= output_dim or y_axis >= output_dim:
+        raise ValueError(
+            f"Axis ids must be between 0 and {max(0, output_dim - 1)} for this output.",
+        )
+
+    embedding = x[:, [x_axis, y_axis]]
+    return _normalized_projection(embedding)
+
+
+def _project_layout(
+    x: np.ndarray,
+    projection_method: str = DEFAULT_PROJECTION_METHOD,
+    projection_axes: tuple[int, int] = DEFAULT_PROJECTION_AXES,
+) -> tuple[np.ndarray, str, int]:
+    method = projection_method.lower()
+    if method not in VALID_PROJECTION_METHODS:
+        raise ValueError(f"Unknown projection method: {projection_method}")
+
+    if method == "axis":
+        return _project_with_axes(x, projection_axes), (
+            f"axis_{projection_axes[0]}_{projection_axes[1]}"
+        ), len(x)
+    if method == "pca":
+        return _project_with_pca(x), "pca", len(x)
+    if method == "tsne":
+        return _project_with_tsne(x), "tsne", len(x)
+    if len(x) < 3:
+        return _bootstrap_layout(x), "umap_bootstrap_pca", 0
+    return _project_with_umap(x), "umap", len(x)
+
+
+def _downsample_for_display(
+    discoveries: list[Discovery],
+    embedding: np.ndarray,
+    max_displayed: int,
+    root_path: str | os.PathLike[str] | None = None,
+    selected_sources: set[str] | None = None,
+) -> tuple[list[Discovery], np.ndarray]:
+    if len(discoveries) <= max_displayed:
+        return discoveries, embedding
+
+    selected_sources = selected_sources or set()
+    selected_indices = []
+    if root_path is not None and selected_sources:
+        for index, discovery in enumerate(discoveries):
+            if _discovery_source_path(discovery, root_path) in selected_sources:
+                selected_indices.append(index)
+
+    if len(selected_indices) >= max_displayed:
+        selected_indices.sort()
+        return [discoveries[i] for i in selected_indices], embedding[selected_indices]
+
+    selected_index_set = set(selected_indices)
+    candidate_indices = [index for index in range(len(discoveries)) if index not in selected_index_set]
+    if not candidate_indices:
+        selected_indices.sort()
+        return [discoveries[i] for i in selected_indices], embedding[selected_indices]
+
+    remaining_slots = max_displayed - len(selected_indices)
+    candidate_embedding = embedding[candidate_indices]
+
+    kmeans = KMeans(n_clusters=remaining_slots, random_state=0)
+    labels = kmeans.fit_predict(candidate_embedding)
+    centers = kmeans.cluster_centers_
+
+    sampled_indices = []
+    for cluster_idx, center in enumerate(centers):
+        members = np.where(labels == cluster_idx)[0]
+        if len(members) == 0:
+            continue
+
+        cluster_points = candidate_embedding[members]
+        nearest_member = members[np.argmin(np.linalg.norm(cluster_points - center, axis=1))]
+        sampled_indices.append(candidate_indices[nearest_member])
+
+    selected_indices.extend(sampled_indices)
+    selected_indices.sort()
+    return [discoveries[i] for i in selected_indices], embedding[selected_indices]
+
+
+def _saved_coordinates(
+    discoveries: list[Discovery],
+    embedding: np.ndarray,
+    root_path: str | os.PathLike[str],
+) -> list[dict[str, Any]]:
+    root_path = os.fspath(root_path)
     saved_coordinates = []
 
-
-
-    for i, discovery in enumerate(discoveries):
-        # if nan in embedding, skip
-        if np.isnan(embedding[i]).any():
+    for discovery, point in zip(discoveries, embedding):
+        if np.isnan(point).any() or np.isinf(point).any():
             continue
-        saved_coordinates.append({
-            'x': embedding[i][0].item(),
-            'y': embedding[i][1].item(),
-            'visual': discovery['visual']
-        })
+
+        visual_path = os.path.relpath(os.fspath(discovery["visual"]), root_path)
+        saved_point = {
+            "x": float(point[0]),
+            "y": float(point[1]),
+            "visual": visual_path.replace(os.sep, "/"),
+            "filters": discovery.get("filters", {}),
+        }
+
+        saved_coordinates.append(saved_point)
+
+    return saved_coordinates
 
 
+def _discovery_source_path(
+    discovery: Discovery,
+    root_path: str | os.PathLike[str],
+) -> str:
+    relative_visual_path = os.path.relpath(os.fspath(discovery["visual"]), os.fspath(root_path))
+    return f"/discoveries/{relative_visual_path.replace(os.sep, '/')}"
 
 
+def _write_layout_result(
+    static_dir: str | os.PathLike[str],
+    discoveries_path: Path,
+    saved_coordinates: list[dict[str, Any]],
+    layout_mode: str,
+    count: int,
+    fit_count: int,
+    max_displayed: int,
+    projection_method: str,
+    projection_axes: tuple[int, int],
+) -> None:
+    _write_json_atomic(discoveries_path, saved_coordinates)
+    _write_layout_status(
+        static_dir,
+        {
+            "mode": layout_mode,
+            "stable": False,
+            "count": count,
+            "displayed_count": len(saved_coordinates),
+            "fit_count": fit_count,
+            "max_displayed": max_displayed,
+            "projection_method": projection_method,
+            "projection_axes": list(projection_axes),
+        },
+    )
 
-    min_x = min(discovery['x'] for discovery in saved_coordinates)
-    max_x = max(discovery['x'] for discovery in saved_coordinates)
-    min_y = min(discovery['y'] for discovery in saved_coordinates)
-    max_y = max(discovery['y'] for discovery in saved_coordinates)
 
-    for discovery in saved_coordinates:
-        discovery['x'] = (discovery['x'] - min_x) / (max_x - min_x) - 0.5
-        discovery['y'] = (discovery['y'] - min_y) / (max_y - min_y) - 0.5
+def compute_coordinates(
+    path: str | os.PathLike[str],
+    config_path: str | os.PathLike[str] | None = None,
+    static_dir: str | os.PathLike[str] = "static",
+    max_displayed: int = DEFAULT_MAX_RENDERED_DISCOVERIES,
+    projection_method: str = DEFAULT_PROJECTION_METHOD,
+    projection_axes: tuple[int, int] = DEFAULT_PROJECTION_AXES,
+    selected_sources: set[str] | None = None,
+) -> None:
+    print("computing coordinates", path)
+    root_path = Path(path).resolve()
+    static_dir = Path(static_dir)
+    static_dir.mkdir(parents=True, exist_ok=True)
+    discoveries_path = static_dir / "discoveries.json"
+    concatenated_path = static_dir / "concatenated.webm"
+    highlight_context = load_highlight_export_context(config_path)
 
-    # same for target
-    if os.path.exists(f'{path}/target.json'):
-        with open(f'{path}/target.json') as f:
-            target = json.load(f)
+    discoveries, dataset_signature = _scan_discoveries(root_path)
+    highlight_schema = {
+        **highlight_context.schema,
+        "filters_detected": any(discovery.get("filters") for discovery in discoveries),
+        "storage_key": f"{root_path}|{Path(config_path).resolve() if config_path else ''}",
+    }
+    _write_highlight_schema(static_dir, highlight_schema)
+    print("Number of discoveries: ", len(discoveries))
+    if len(discoveries) == 0:
+        _write_empty_layout(static_dir, discoveries_path)
+        if concatenated_path.exists():
+            concatenated_path.unlink()
+        return
 
-        target_embedding = pca.transform([target['target']])
-        target['x'] = target_embedding[0][0].item()
-        target['y'] = target_embedding[0][1].item()
+    root_key = os.fspath(root_path)
+    _purge_stale_caches(root_key, dataset_signature)
+    layout_discoveries, layout_embedding, layout_mode, fit_count = _cached_layout(
+        root_key,
+        dataset_signature,
+        discoveries,
+        projection_method=projection_method,
+        projection_axes=projection_axes,
+    )
+    if len(layout_discoveries) == 0:
+        _write_empty_layout(static_dir, discoveries_path)
+        return
 
-        target['x'] = (target['x'] - min_x) / (max_x - min_x) - 0.5
-        target['y'] = (target['y'] - min_y) / (max_y - min_y) - 0.5
+    export_last_frame(layout_discoveries)
 
-        # rewrite target.json
-        with open(f"{path}/target.json", "w") as f:
-            json.dump(target, f)
+    display_discoveries, display_embedding = _downsample_for_display(
+        layout_discoveries,
+        layout_embedding,
+        max_displayed,
+        root_path=root_path,
+        selected_sources=selected_sources,
+    )
+    saved_coordinates = _saved_coordinates(
+        display_discoveries,
+        display_embedding,
+        root_path,
+    )
 
-   # width, height=concatenate_videos(discoveries)
-    export_last_frame(discoveries)
-
-    #remove path from visual
-    for discovery in saved_coordinates:
-        discovery['visual'] = discovery['visual'][1+ len(path):]
-        # discovery['width'] = width
-        # discovery['height'] = height
-
-    with open('static/discoveries.json', 'w') as f:
-        json.dump(saved_coordinates, f)
-
-    return pca
+    _write_layout_result(
+        static_dir,
+        discoveries_path,
+        saved_coordinates,
+        layout_mode,
+        len(layout_discoveries),
+        fit_count,
+        max_displayed,
+        projection_method,
+        projection_axes,
+    )

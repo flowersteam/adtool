@@ -28,16 +28,18 @@ class InterferenceMetricEncoder(BehaviorEncoder):
         self.selection = selection
 
     def encode(self, raw_output: Dict[str, Any]) -> np.ndarray:
-        mutual = raw_output.get("mutual", {})
         observation_vec = []
 
-        for key in self.selection:
-            value = np.array(mutual.get(key, 0.0), dtype=float).reshape((-1,))
-            observation_vec.append(value)
+        for key1 in ["mutual", "core0", "core1"]:
+            if key1 not in raw_output:
+                continue
 
-        if not observation_vec:
-            return np.array([], dtype=float)
+            for key2 in raw_output[key1].keys():
+                value = np.array(raw_output[key1][key2]).reshape((-1,))
+
+                if key2 in self.selection:
+                    observation_vec.append(value)
 
         metrics = np.concatenate(observation_vec)
-        metrics = np.nan_to_num(metrics, nan=0.0, posinf=0.0, neginf=0.0)
-        return metrics.astype(float)
+
+        return metrics

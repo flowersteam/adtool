@@ -49,7 +49,7 @@ For a short beginner guide to using `adtool` as a library, see [docs/TUTORIAL.md
 ### Examples
 Various examples are provided in the `examples/` directory.
 ```bash
-python3 examples/run.py --config_file examples/grayscott/gray_scott.json
+python3 examples/run_experimentations.py --config_file examples/grayscott/gray_scott.json
 ``` 
 Available examples are:
 - `examples/grayscott/gray_scott.json` - Discovering Gray-Scott diffusion patterns  
@@ -107,6 +107,17 @@ cd examples/visu
 python3 server.py --discoveries PATH_TO_DISCOVERIES
 ```
 The web interface can be accessed at `http://127.0.0.1:8765/`.
+
+If the viewer should expose analysis-side discovery highlights or other analysis-driven visualization helpers, pass the analysis config explicitly. The highlight provider is configured directly with a top-level `discovery_highlights` section in that file:
+```bash
+python3 server.py --discoveries PATH_TO_DISCOVERIES --config_file PATH_TO_ANALYSIS_CONFIG
+```
+
+Documentation:
+
+- [Analysis Modules](docs/ANALYSIS_MODULES.md)
+- [Visualization Guide](docs/VISUALIZATION.md)
+- [Visualization UI Guide](docs/VISUAL_UI_GUIDE.md)
 
 ### Scientific Background: Curiosity Search
 
@@ -170,5 +181,4 @@ For this, it's possible to start from the default system definition [here](https
 You can have a look at the [simplified execution flow](docs/execution_flow) to understand a bit more about the different steps of the exploration.
 
 ### Join the [Discord community](https://discord.gg/yc5jhYM6u5)
-
 

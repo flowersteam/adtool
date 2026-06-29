@@ -46,7 +46,7 @@ class BaseBehaviorMap(Map):
 
         return intermed
 
-    def sample(self, history: Optional[np.ndarray] = None) -> np.ndarray:
+    def sample(self, history: Optional[np.ndarray] = None, **kwargs: Any) -> np.ndarray:
         if history is None:
             history_items = []
             feature_size = None
@@ -77,4 +77,5 @@ class BaseBehaviorMap(Map):
             feature_size,
             min_=min_,
             max_=max_,
+            **kwargs,
         )

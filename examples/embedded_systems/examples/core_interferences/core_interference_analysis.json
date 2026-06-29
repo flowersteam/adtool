@@ -1,0 +1,154 @@
+{
+  "goal_oriented_sampler": true,
+  "discovery_highlights": {
+    "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.discovery_highlights.CoreInterferenceDiscoveryHighlights",
+    "config": {}
+  },
+  "analysis_modules": [
+    {
+      "path": "adtool.examples.analysis_metrics.comparison_1d.Comparison1DModule",
+      "config": {
+        "projection": {
+          "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+          "config": {}
+        },
+        "dimensions": "all",
+        "plot": {
+          "points": 512,
+          "format": "png",
+          "color_a": "#4c78a8",
+          "color_b": "#f58518",
+          "alpha": 0.35,
+          "line_width": 2.0,
+          "figsize": [7.0, 4.0]
+        }
+      }
+    },
+    {
+      "path": "adtool.examples.analysis_metrics.comparison_2d.Comparison2DModule",
+      "config": {
+        "projection": {
+          "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+          "config": {}
+        },
+        "pairs": [
+          [0, 12],
+          [2, 12],
+          [4, 12],
+          [6, 12],
+          [8, 12],
+          [10, 12],
+          [1, 13],
+          [3, 13],
+          [5, 13],
+          [7, 13],
+          [9, 13],
+          [11, 13],
+          [0, 14],
+          [1, 14],
+          [2, 14],
+          [3, 14],
+          [4, 14],
+          [5, 14],
+          [6, 14],
+          [7, 14],
+          [8, 14],
+          [9, 14],
+          [10, 14],
+          [11, 14]
+        ],
+        "plot": {
+          "format": "png",
+          "color_a": "#4c78a8",
+          "color_b": "#f58518",
+          "alpha": 0.35,
+          "figsize": [7.0, 4.0]
+        }
+      }
+    },
+    {
+      "path": "adtool.examples.analysis_metrics.space_coverage.SpaceCoverageModule",
+      "config": {
+        "projection": {
+          "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+          "config": {}
+        },
+        "metric": {
+          "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.space_coverage.GridSpaceCoverageMetric",
+          "config": {
+            "dimensions": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26
+            ],
+            "boundaries": [
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-256, 256],
+              [-256, 256],
+              [-256, 256],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25],
+              [-25, 25]
+            ],
+            "bins_per_dimension": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+            "title": "Timing-space coverage progression"
+          }
+        },
+        "plot": {
+          "format": "png",
+          "color_a": "#4c78a8",
+          "color_b": "#f58518",
+          "line_width": 2.0,
+          "figsize": [7.0, 4.0]
+        }
+      }
+    },
+    {
+      "path": "adtool.examples.embedded_systems.examples.core_interferences.analysis_modules.MutualMissHeatmapModule"
+    }
+  ]
+}

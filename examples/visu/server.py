@@ -1,195 +1,445 @@
-import os
-import asyncio
-import uvicorn
-from fastapi import FastAPI, WebSocket, HTTPException
-from fastapi.responses import FileResponse, RedirectResponse
-from fastapi.middleware.cors import CORSMiddleware
-from coordinates import compute_coordinates
-from watchfiles import awatch, Change, watch
-from contextlib import asynccontextmanager
-from fastapi.staticfiles import StaticFiles
-import websockets
-from pathlib import Path
-import json
-import threading
-
-from datetime import datetime
-
-current_pca=None
-
-MIME_TYPES = {
-    "html": "text/html",
-    "js": "text/javascript",
-    "css": "text/css",
-    "mjs": "text/javascript",
-    "json": "application/json",
-}
-
-
-static_files="static"
+from __future__ import annotations
 
 import argparse
+from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--discoveries", type=str, required=True)
-parser.add_argument("--refresh", action='store_true')
-args = parser.parse_args()
+from fastapi import FastAPI, HTTPException, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from watchfiles import Change, awatch
 
-discovery_files=args.discoveries
-
-# get full path
-discovery_files = os.path.abspath(discovery_files)
-
-
-def watch_discoveries():
-    global current_pca
-    print("Watching discoveries")
-    for changes in watch(discovery_files, recursive=True):
-        # if it's target.json, skip
-        print("change in discoveries")
-        if any("target.json" in change[1] for change in changes):
-            continue
-        for _ in changes:
-            print("Change in discoveries")
-            current_pca = compute_coordinates(discovery_files)
-            continue
-
-
-
-
-#asyncio.create_task(watch_discoveries())
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global current_pca
-    # Ensure directories exist
-    os.makedirs(static_files, exist_ok=True)
-    os.makedirs(discovery_files, exist_ok=True)
-    
-    current_pca=compute_coordinates(discovery_files)
-
-    if args.refresh:
-    # execute watch_discoveries in a separate thread
-        t=threading.Thread(target=watch_discoveries)
-        t.start()
-
-
-
-    yield
-        # delete static/discoveires.json
-    if os.path.exists(f"{static_files}/discoveries.json"):
-        os.remove(f"{static_files}/discoveries.json")
-
-    os._exit(0) 
-
-
-app = FastAPI(lifespan=lifespan)
-
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+from adtool.examples.visu.analysis_jobs import random_run_payload, run_analysis_payload
+from adtool.examples.visu.analysis_runs import (
+    analysis_runs_dir,
+    analysis_runs_payload,
+    analysis_status_payload,
+    latest_analysis_summary_payload,
+)
+from adtool.examples.visu.exporter import export_selected_discoveries
+from adtool.examples.visu.goal_targeting import (
+    goal_targeting_enabled,
+    sync_goal_targeting,
+)
+from adtool.examples.visu.highlights import materialize_discovery_filters
+from adtool.examples.visu.layout import (
+    cleanup_static_discoveries,
+    recompute_discoveries,
+    write_discovery_coordinates,
+)
+from adtool.examples.visu.online_update import (
+    recompute_online_discoveries,
+    start_online_updates,
+)
+from adtool.examples.visu.runtime import (
+    DEFAULT_DISPLAY_LIMIT,
+    ONLINE_FULL_RECOMPUTE_INTERVAL_SECONDS,
+    ONLINE_POINT_UPDATE_INTERVAL_SECONDS,
+    DEFAULT_PROJECTION_AXES,
+    DEFAULT_PROJECTION_METHOD,
+    DEFAULT_STICKER_PREVIEW_WORLD_HEIGHT,
+    DISPLAY_LIMIT_PRESETS,
+    MAX_DISPLAY_LIMIT,
+    MIN_DISPLAY_LIMIT,
+    MAX_STICKER_PREVIEW_WORLD_HEIGHT,
+    MIN_STICKER_PREVIEW_WORLD_HEIGHT,
+    PROJECTION_METHODS,
+    RuntimeState,
+    ServerConfig,
+)
+from adtool.examples.visu.server_support import is_relative_to, mime_type
+from adtool.utils.interaction.experiment_control import (
+    default_goal_targeting,
+    read_experiment_control,
+    write_experiment_control,
 )
 
 
+def parse_args() -> ServerConfig:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--discoveries", type=str, required=True)
+    parser.add_argument("--config_file", type=str)
+    parser.add_argument("--refresh", action="store_true", help="Enable live online updates with incremental refresh and pause control.")
+    args = parser.parse_args()
 
-# Mount the static directory to serve static files
-app.mount("/static", StaticFiles(directory=static_files,html = True), name="static")
-
-
-
-
-@app.get("/discoveries/{file_path:path}")
-async def serve_discoveries(file_path: str):
-    full_path = os.path.join(discovery_files, file_path)
-    print(full_path)
-
-    if not os.path.exists(full_path):
-        raise HTTPException(status_code=404, detail="File not found")
-
-    extension = file_path.split(".")[-1]
-    mime_type = MIME_TYPES.get(extension, "application/octet-stream")
-
-    return FileResponse(full_path, media_type=mime_type)
+    return ServerConfig(
+        discoveries=Path(args.discoveries).resolve(),
+        config_file=Path(args.config_file).resolve() if args.config_file else None,
+        refresh=args.refresh,
+    )
 
 
-@app.get("/disable_target")
-async def disable_target():
-    #delete static/target.json
-    if os.path.exists(f"{discovery_files}/target.json"):
-        os.remove(f"{discovery_files}/target.json")
-    return {"status": "ok"}
+def _validate_display_limit(payload: dict[str, Any]) -> int:
+    try:
+        limit = int(payload.get("limit"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Display limit must be an integer.")
 
-@app.post("/update_target")
-async def update_target(target: dict):
-    # transform x and y to float and get the reverse pca
-    x, y = target['x'], target['y']
-    x, y = float(x), float(y)
-    target_embedding = current_pca.inverse_transform([[x, y]])
-    target['target'] = target_embedding[0].tolist()
-    with open(f"{discovery_files}/target.json", "w") as f:
-        json.dump(target, f)
-
-    
-    return {"status": "ok"}
+    if limit < MIN_DISPLAY_LIMIT or limit > MAX_DISPLAY_LIMIT:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Display limit must be between {MIN_DISPLAY_LIMIT} and {MAX_DISPLAY_LIMIT}.",
+        )
+    return limit
 
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    print("Websocket connection")
-    await websocket.accept()
-    while True:
-        async for changes in awatch(f"{static_files}/"):
-            for change in changes:
-                if change[0] in (Change.added, Change.modified):
+def _validate_projection_axes(raw_axes: Any) -> tuple[int, int]:
+    if not isinstance(raw_axes, (list, tuple)) or len(raw_axes) != 2:
+        raise HTTPException(status_code=422, detail="Projection axes must contain two ids.")
+
+    try:
+        x_axis = int(raw_axes[0])
+        y_axis = int(raw_axes[1])
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Projection axes must be integers.")
+
+    if x_axis < 0 or y_axis < 0:
+        raise HTTPException(status_code=422, detail="Projection axes must be non-negative.")
+    if x_axis == y_axis:
+        raise HTTPException(status_code=422, detail="Projection axes must be different.")
+    return x_axis, y_axis
+
+
+def _validate_projection(
+    payload: dict[str, Any],
+    current_axes: tuple[int, int],
+) -> tuple[str, tuple[int, int]]:
+    method = str(payload.get("method", "")).strip().lower()
+    if method not in PROJECTION_METHODS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Projection method must be one of: {', '.join(PROJECTION_METHODS)}.",
+        )
+
+    axes = current_axes
+    if "axes" in payload or method == "axis":
+        axes = _validate_projection_axes(payload.get("axes", current_axes))
+
+    return method, axes
+
+
+def _validate_render_settings(payload: dict[str, Any]) -> float:
+    try:
+        sticker_preview_world_height = float(payload.get("sticker_preview_world_height"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Sticker preview size must be a number.")
+
+    if (
+        sticker_preview_world_height < MIN_STICKER_PREVIEW_WORLD_HEIGHT
+        or sticker_preview_world_height > MAX_STICKER_PREVIEW_WORLD_HEIGHT
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Sticker preview size must be between "
+                f"{MIN_STICKER_PREVIEW_WORLD_HEIGHT} and {MAX_STICKER_PREVIEW_WORLD_HEIGHT}."
+            ),
+        )
+
+    return sticker_preview_world_height
+
+
+def _normalize_selected_sources(payload: Any) -> set[str]:
+    if not isinstance(payload, list):
+        raise HTTPException(status_code=422, detail="Selected discoveries must be a list.")
+
+    selected_sources = set()
+    for item in payload:
+        selected_source = str(item).strip()
+        if not selected_source:
+            continue
+        selected_sources.add(selected_source)
+    return selected_sources
+
+
+def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastAPI:
+    state = state or RuntimeState()
+    goal_targeting_is_enabled = config.refresh and goal_targeting_enabled(
+        str(config.config_file) if config.config_file else None,
+    )
+
+    def refresh_layout(
+        ignore_interval: bool = True,
+        selected_sources: set[str] | None = None,
+    ) -> None:
+        if config.refresh:
+            with state.recompute_lock:
+                recompute_online_discoveries(
+                    config,
+                    state,
+                    selected_sources=selected_sources,
+                )
+            return
+        recompute_discoveries(
+            config,
+            state,
+            ignore_interval=ignore_interval,
+            selected_sources=selected_sources,
+        )
+
+    def runtime_status_payload() -> dict[str, Any]:
+        control = read_experiment_control(config.discoveries)
+        if config.refresh:
+            mode = "refresh"
+        else:
+            mode = "manual"
+
+        return {
+            "mode": mode,
+            "refresh": config.refresh,
+            "pause_supported": config.refresh,
+            "paused": control["paused"],
+            "point_update_interval_seconds": ONLINE_POINT_UPDATE_INTERVAL_SECONDS,
+            "full_recompute_interval_seconds": ONLINE_FULL_RECOMPUTE_INTERVAL_SECONDS,
+        }
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        config.static_dir.mkdir(parents=True, exist_ok=True)
+        config.discoveries.mkdir(parents=True, exist_ok=True)
+        analysis_runs_dir(config).mkdir(parents=True, exist_ok=True)
+        if config.refresh:
+            start_online_updates(config, state)
+        else:
+            write_discovery_coordinates(config, state)
+
+        yield
+        cleanup_static_discoveries(config)
+
+    app = FastAPI(lifespan=lifespan)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    app.mount(
+        "/static",
+        StaticFiles(directory=config.static_dir, html=True),
+        name="static",
+    )
+
+    @app.get("/discoveries/{file_path:path}")
+    async def serve_discoveries(file_path: str):
+        full_path = (config.discoveries / file_path).resolve()
+        if not is_relative_to(full_path, config.discoveries):
+            raise HTTPException(status_code=400, detail="Invalid file path")
+        if not full_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        return FileResponse(str(full_path), media_type=mime_type(file_path))
+
+    @app.get("/analysis_files/{file_path:path}")
+    async def serve_analysis_file(file_path: str):
+        runs_dir = analysis_runs_dir(config)
+        full_path = (runs_dir / file_path).resolve()
+        if not is_relative_to(full_path, runs_dir):
+            raise HTTPException(status_code=400, detail="Invalid file path")
+        if not full_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+
+        return FileResponse(str(full_path), media_type=mime_type(file_path))
+
+    @app.get("/analysis_status")
+    async def analysis_status():
+        return analysis_status_payload(config)
+
+    @app.get("/analysis_summary")
+    async def analysis_summary():
+        return latest_analysis_summary_payload(config)
+
+    @app.get("/analysis_runs")
+    async def analysis_runs():
+        return analysis_runs_payload(config)
+
+    @app.get("/runtime_status")
+    async def runtime_status():
+        return runtime_status_payload()
+
+    @app.get("/experiment_control")
+    async def experiment_control():
+        return read_experiment_control(config.discoveries)
+
+    @app.post("/experiment_control")
+    async def set_experiment_control(payload: dict[str, Any]):
+        if not config.refresh:
+            raise HTTPException(status_code=400, detail="Experiment control is only available when live refresh is enabled.")
+        paused = bool(payload.get("paused", False))
+        return write_experiment_control(config.discoveries, paused)
+
+    @app.get("/goal_targeting")
+    async def get_goal_targeting():
+        control = sync_goal_targeting(
+            str(config.discoveries),
+            state,
+            enabled=goal_targeting_is_enabled,
+        )
+        return {
+            "feature_enabled": goal_targeting_is_enabled,
+            "goal_targeting": control["goal_targeting"],
+        }
+
+    @app.post("/goal_targeting")
+    async def set_goal_targeting(payload: dict[str, Any]):
+        if not goal_targeting_is_enabled:
+            raise HTTPException(status_code=400, detail="Goal targeting is not enabled for this refresh session.")
+
+        current = read_experiment_control(config.discoveries)["goal_targeting"]
+        goal_targeting = {
+            **default_goal_targeting(),
+            **current,
+            "radius": float(payload.get("radius", current.get("radius"))),
+            "zones": payload.get("zones", current.get("zones", [])),
+        }
+        control = write_experiment_control(config.discoveries, goal_targeting=goal_targeting)
+        control = sync_goal_targeting(
+            str(config.discoveries),
+            state,
+            enabled=goal_targeting_is_enabled,
+        )
+        return {
+            "feature_enabled": True,
+            "goal_targeting": control["goal_targeting"],
+        }
+
+    @app.websocket("/ws")
+    async def websocket_endpoint(websocket: WebSocket):
+        print("Websocket connection")
+        await websocket.accept()
+        async for changes in awatch(config.static_dir):
+            for change, path in changes:
+                if change in (Change.added, Change.modified) and Path(path).name == "discoveries.json":
                     print("New coordinates file")
                     try:
                         await websocket.send_text("refresh")
-                        break
                     except Exception:
                         return
+                    break
+
+    @app.get("/")
+    async def read_root():
+        return RedirectResponse(url="/static/index.html")
+
+    @app.get("/display_limit")
+    async def get_display_limit():
+        return {
+            "limit": state.display_limit,
+            "default": DEFAULT_DISPLAY_LIMIT,
+            "presets": DISPLAY_LIMIT_PRESETS,
+            "min": MIN_DISPLAY_LIMIT,
+            "max": MAX_DISPLAY_LIMIT,
+        }
+
+    @app.post("/display_limit")
+    async def set_display_limit(payload: dict[str, Any]):
+        old_limit = state.display_limit
+        selected_sources = _normalize_selected_sources(payload.get("selected_sources", []))
+        state.display_limit = _validate_display_limit(payload)
+        try:
+            refresh_layout(ignore_interval=True, selected_sources=selected_sources)
+        except ValueError as error:
+            state.display_limit = old_limit
+            raise HTTPException(status_code=422, detail=str(error))
+        return {"status": "ok", "limit": state.display_limit}
+
+    @app.get("/projection")
+    async def get_projection():
+        return {
+            "method": state.projection_method,
+            "axes": list(state.projection_axes),
+            "default_method": DEFAULT_PROJECTION_METHOD,
+            "default_axes": list(DEFAULT_PROJECTION_AXES),
+            "methods": PROJECTION_METHODS,
+        }
+
+    @app.post("/projection")
+    async def set_projection(payload: dict[str, Any]):
+        method, axes = _validate_projection(payload, state.projection_axes)
+        selected_sources = _normalize_selected_sources(payload.get("selected_sources", []))
+        old_method = state.projection_method
+        old_axes = state.projection_axes
+        state.projection_method = method
+        state.projection_axes = axes
+        try:
+            refresh_layout(ignore_interval=True, selected_sources=selected_sources)
+        except ValueError as error:
+            state.projection_method = old_method
+            state.projection_axes = old_axes
+            raise HTTPException(status_code=422, detail=str(error))
+        return {
+            "status": "ok",
+            "method": state.projection_method,
+            "axes": list(state.projection_axes),
+        }
+
+    @app.get("/render_settings")
+    async def get_render_settings():
+        return {
+            "sticker_preview_world_height": state.sticker_preview_world_height,
+            "default_sticker_preview_world_height": DEFAULT_STICKER_PREVIEW_WORLD_HEIGHT,
+            "min_sticker_preview_world_height": MIN_STICKER_PREVIEW_WORLD_HEIGHT,
+            "max_sticker_preview_world_height": MAX_STICKER_PREVIEW_WORLD_HEIGHT,
+        }
+
+    @app.post("/render_settings")
+    async def set_render_settings(payload: dict[str, Any]):
+        sticker_preview_world_height = _validate_render_settings(payload)
+        state.sticker_preview_world_height = sticker_preview_world_height
+        return {
+            "status": "ok",
+            "sticker_preview_world_height": state.sticker_preview_world_height,
+        }
+
+    @app.post("/recompute_layout")
+    async def recompute_layout(payload: dict[str, Any]):
+        selected_sources = _normalize_selected_sources(payload.get("selected_sources", []))
+        try:
+            refresh_layout(ignore_interval=True, selected_sources=selected_sources)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error))
+        return {"status": "ok"}
+
+    @app.post("/discovery_highlights/materialize")
+    async def materialize_highlight_filters(payload: dict[str, Any]):
+        selected_sources = _normalize_selected_sources(payload.get("selected_sources", []))
+        try:
+            result = materialize_discovery_filters(
+                config.discoveries,
+                config_path=config.config_file,
+            )
+            refresh_layout(ignore_interval=True, selected_sources=selected_sources)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error))
+        return {"status": "ok", **result}
+
+    @app.post("/analysis/random_run")
+    def random_run(payload: dict[str, Any]):
+        return random_run_payload(config, state, payload)
+
+    @app.post("/analysis/run")
+    def run_analysis(payload: dict[str, Any]):
+        return run_analysis_payload(config, state, payload)
+
+    @app.post("/export")
+    async def export_files(files: list[str]):
+        return export_selected_discoveries(config, files)
+
+    return app
 
 
-@app.get("/")
-async def read_root():
-    return RedirectResponse(url="/static/index.html")
+def main() -> None:
+    config = parse_args()
+    app = create_app(config)
 
+    import uvicorn
 
-#curl 'http://127.0.0.1:8765/export' -X POST -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br, zstd' -H 'Referer: http://127.0.0.1:8765/static/index.html' -H 'Content-Type: application/json' -H 'Origin: http://127.0.0.1:8765' -H 'Connection: keep-alive' -H 'Sec-Fetch-Dest: empty' -H 'Sec-Fetch-Mode: cors' -H 'Sec-Fetch-Site: same-origin' -H 'Priority: u=1' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' --data-raw '["/2024-06-06T15:16_exp_0_idx_295_seed_42/4e50156e34f55df28f88bf68a82688e58115f5a5.mp4","/2024-06-06T15:16_exp_0_idx_296_seed_42/11ab8da6166086f334b23b15bd70a27b3d76e54a.mp4","/2024-06-06T15:17_exp_0_idx_297_seed_42/0b1d886f90161aaadd5bdd4018d0486817a02091.mp4"]'
-
-@app.post("/export")
-async def export_files(files: list[str]):
-    print(files)
-    #create a new directory with the date 
-    current_time= datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    new_dir = f"{discovery_files}/../{current_time}"
-
-    # simplify path
-    new_dir = os.path.abspath(new_dir)
-
-    os.makedirs(new_dir, exist_ok=True)
-    #copy past all files to a new directory
-    for file in files:
-        file_path=Path(file)
-        file_path =  "/".join(file_path.parts[2:-1])
-        file_path = f"{discovery_files}/{file_path}"   
-        
-        os.system(f"cp -r {file_path} {new_dir}")
-    return {"status": "ok", "new_dir": new_dir}
-    
-
-if __name__ == "__main__":
-    # start_server = websockets.serve(websocket_endpoint, '127.0.0.1', 8766,
-    #                                 process_request= app)
-    # asyncio.get_event_loop().run_until_complete(start_server)
     try:
         uvicorn.run(app, host="127.0.0.1", port=8765)
     except KeyboardInterrupt:
-        # delete static/discoveires.json
-        if os.path.exists(f"{static_files}/discoveries.json"):
-            os.remove(f"{static_files}/discoveries.json")
+        cleanup_static_discoveries(config)
 
-        os._exit(0)
+
+if __name__ == "__main__":
+    main()
