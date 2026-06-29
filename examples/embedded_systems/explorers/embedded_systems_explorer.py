@@ -68,6 +68,7 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
         self,
         lookback_length: int = -1,
         goal: Optional[np.ndarray] = None,
+        goal_targeting: Optional[Dict[str, Any]] = None,
     ) -> Any:
         feature_matrix, param_history = self._get_history_features(lookback_length)
 
@@ -75,12 +76,27 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
             return self.parameter_map.sample()
 
         if goal is None:
-            if self._should_refresh_goal():
-                self._current_goal = self.behavior_map.sample(feature_matrix)
+            if self._should_refresh_goal(goal_targeting):
+                if goal_targeting is None:
+                    self._current_goal = self.behavior_map.sample(feature_matrix)
+                else:
+                    self._current_goal = self.behavior_map.sample(
+                        feature_matrix,
+                        goal_targeting=goal_targeting,
+                    )
+                self._current_goal_targeting_key = (
+                    json.dumps(goal_targeting, sort_keys=True) if goal_targeting else ""
+                )
             goal = self._current_goal
 
         if goal is None:
-            goal = self.behavior_map.sample(feature_matrix)
+            if goal_targeting is None:
+                goal = self.behavior_map.sample(feature_matrix)
+            else:
+                goal = self.behavior_map.sample(
+                    feature_matrix,
+                    goal_targeting=goal_targeting,
+                )
 
         min_, max_ = self._compute_min_max(feature_matrix)
         indices = self._feature_to_closest_indices(
@@ -94,8 +110,12 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
         base_policy = self._compose_base_policy(selected)
         return self.parameter_map.mutate(base_policy)
 
-    def _should_refresh_goal(self) -> bool:
+    def _should_refresh_goal(self, goal_targeting: Optional[Dict[str, Any]]) -> bool:
         if self._current_goal is None:
+            return True
+        goal_targeting_key = json.dumps(goal_targeting, sort_keys=True) if goal_targeting else ""
+        if goal_targeting_key != self._current_goal_targeting_key:
+            self._current_goal_targeting_key = goal_targeting_key
             return True
         return self.timestep % self.periode == 0
 

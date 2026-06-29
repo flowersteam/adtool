@@ -8,6 +8,12 @@ __pycache__/
 
 discoveries/
 
+# Web UI runtime
+discovery_highlights.json
+discoveries.json
+layout_status.json
+discovery_atlas_*.png
+
 frames/
 
 replacements02_sa2.db

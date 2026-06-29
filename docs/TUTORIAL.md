@@ -284,7 +284,7 @@ Then you can write:
 
 The same idea applies to `parameter_map`, `behavior_map`, callbacks, and any custom explorer.
 
-For more detail, the best next step is to read a few real configs in [`examples/`](/home/arthur/Documents/INRIA/codes/adtool/examples) and the short architecture note in [docs/ARCHITECTURE.md](/home/arthur/Documents/INRIA/codes/adtool/docs/ARCHITECTURE.md).
+For more detail, the best next step is to read a few real configs in [`examples/`](../examples).
 
 
 ## 6. Run the experiment
@@ -329,6 +329,12 @@ or helper
 ```bash
 python -m adtool.examples.visu.server -h
 ```
+
+Further documentation:
+
+- [Analysis Modules](./ANALYSIS_MODULES.md)
+- [Visualization Guide](./VISUALIZATION.md)
+- [Visualization UI Guide](./VISUAL_UI_GUIDE.md)
 
 ## 7. Good first rule
 

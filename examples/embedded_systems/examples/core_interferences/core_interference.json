@@ -1,19 +1,19 @@
 {
     "experiment": {
         "config": {
-            "save_location": "./discoveries/config_qmc_zscore_2212/",
-            "save_frequency": 10,
-            "bootstrap_size": 1
+            "save_location": "./discoveries/interferences/",
+            "save_frequency": 1000,
+            "bootstrap_size": 500
         }
     },
     "system": {
-        "path": "examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem.InterferenceSystem",
+        "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem",
         "config": {
             "simulator_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.systems.simulator.Sim3Backend",
-                "cycles": 512,
+                "cycles": 256,
                 "num_banks": 4,
-                "num_addr": 96
+                "num_addr": 48
             },
             "simulator_runner_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner"
@@ -23,36 +23,35 @@
     "explorer": {
         "path": "examples.embedded_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
         "config": {
-            "periode": 25,
-            "knn": 3,
+            "periode": 5,
+            "knn": 1,
             "behavior_map_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap.InterferenceBehaviorMap",
                 "goal_sampler_config": {
-                    "path": "examples.embedded_systems.behavior_map.goal_sampler.QMCMinMaxGoalSampler"
+                    "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.goal_sampler.InterferenceZoneGoalSampler",
+                    "base_sampler_config": {
+                        "path": "adtool.examples.embedded_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler"
+                    }
                 },
                 "behavior_encoder_config": {
-                    "path": "examples.embedded_systems.examples.core_interferences.behavior_map.encoder.ZScoreMetricEncoder"
+                    "path": "examples.embedded_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder"
                 }
             },
             "parameter_map_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.parameter_map.InterferenceParameterMap.InterferenceParameterMap",
-                "mixer_config": {
-                    "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.ChunkProgramMixer",
-                    "num_parts": 3
-                },
                 "generator_config": {
                     "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionGenerator"
                 },
                 "mutator_config": {
                     "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionMutator",
-                    "num_mutations": 3
+                    "num_mutations": 5
                 },
-                "num_instructions": 10,
+                "num_instructions": 25,
                 "min_address_core0": 0,
-                "max_address_core0": 47,
-                "min_address_core1": 48,
-                "max_address_core1": 95,
-                "max_cycle": 128
+                "max_address_core0": 23,
+                "min_address_core1": 23,
+                "max_address_core1": 47,
+                "max_cycle": 127
             }
         }
     },
