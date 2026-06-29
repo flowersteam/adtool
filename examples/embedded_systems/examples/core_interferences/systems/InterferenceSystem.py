@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 from typing import Any, Dict, Optional, Tuple
 
-from adtool.examples.embedded_systems.helpers.module_factory import make_module
+from examples.embedded_systems.helpers.module_factory import make_module
 from pydantic import BaseModel, Field
 
-from adtool.examples.embedded_systems.systems.embedded_systems_system import BaseEmbeddedSystem
+from examples.embedded_systems.systems.embedded_systems_system import BaseEmbeddedSystem
 from adtool.utils.expose_config.expose_config import expose
-from adtool.examples.embedded_systems.examples.core_interferences.helpers.interference_visualizer import (
+from examples.embedded_systems.examples.core_interferences.helpers.interference_visualizer import (
     render_interference_dashboard,
 )
-from adtool.examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
+from examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
     normalize_instruction_program,
 )
-from adtool.examples.embedded_systems.examples.core_interferences.types import (
+from examples.embedded_systems.examples.core_interferences.types import (
     InterferenceDynamicParams,
     InterferenceParamsPayload,
     InterferenceSimulatorConfig,
@@ -23,7 +23,7 @@ from adtool.examples.embedded_systems.examples.core_interferences.types import (
 class InterferenceConfig(BaseModel):
     simulator_config: InterferenceSimulatorConfig = Field(
         default_factory=lambda: {
-            "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.simulator.Sim3Backend",
+            "path": "examples.embedded_systems.examples.core_interferences.systems.simulator.Sim3Backend",
             "cycles": 80,
             "num_banks": 4,
             "num_addr": 41,
@@ -31,7 +31,7 @@ class InterferenceConfig(BaseModel):
     )
     simulator_runner_config: InterferenceSimulatorRunnerConfig = Field(
         default_factory=lambda: {
-            "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner",
+            "path": "examples.embedded_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner",
         }
     )
 

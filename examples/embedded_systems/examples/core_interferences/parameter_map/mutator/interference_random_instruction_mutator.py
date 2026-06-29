@@ -2,8 +2,8 @@ import copy
 import random
 from typing import Optional
 
-from adtool.examples.embedded_systems.examples.core_interferences.types import InstructionProgram
-from adtool.examples.embedded_systems.types import ProgramMutator
+from examples.embedded_systems.examples.core_interferences.types import InstructionProgram
+from examples.embedded_systems.types import ProgramMutator
 
 
 class RandomInstructionMutator(ProgramMutator):

@@ -28,7 +28,7 @@ Then you can import the main modules like so:
 ```python
 from adtool.systems.System import System
 from adtool.maps.Map import Map
-from adtool.examples.run import main
+from adtool.runners.run_experimentations import main
 ```
 
 ## 2. What you need to build
@@ -292,17 +292,17 @@ For more detail, the best next step is to read a few real configs in [`examples/
 The easiest way is to use the runner already provided by the library:
 
 ```bash
-python -m adtool.examples.run --config_file config.json --nb_iterations 40
+python -m adtool.runners.run_experimentations --config_file config.json --nb_iterations 40
 ```
 or helper
 ```bash
-python -m adtool.examples.run -h
+python -m adtool.runners.run_experimentations -h
 ```
 
 If you want your own small entrypoint, keep it very thin and reuse the same runner:
 
 ```python
-from adtool.examples.run import main
+from adtool.runners.run_experimentations import main
 
 if __name__ == "__main__":
     main()
@@ -323,11 +323,11 @@ This is a good starting point because later you can tweak this runner to launch 
 To open the visualization after a run:
 
 ```bash
-python -m adtool.examples.visu.server --discoveries ./runs/discoveries
+python -m adtool.user_tools.visu.server --discoveries ./runs/discoveries
 ```
 or helper
 ```bash
-python -m adtool.examples.visu.server -h
+python -m adtool.user_tools.visu.server -h
 ```
 
 Further documentation:

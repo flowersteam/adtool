@@ -7,7 +7,7 @@
         }
     },
     "system": {
-        "path": "adtool.examples.flashlenia.systems.FlashLenia.FlashLenia",
+        "path": "examples.flashlenia.systems.FlashLenia.FlashLenia",
         "config": {
         }
     },
@@ -16,8 +16,8 @@
         "config": {
             "mutator": "specific",
             "equil_time": 1,
-            "behavior_map": "adtool.examples.flashlenia.maps.FlashLeniaStatistics.FlashLeniaStatistics",
-            "parameter_map": "adtool.examples.flashlenia.maps.FlashLeniaParameterMap.FlashLeniaParameterMap",
+            "behavior_map": "examples.flashlenia.maps.FlashLeniaStatistics.FlashLeniaStatistics",
+            "parameter_map": "examples.flashlenia.maps.FlashLeniaParameterMap.FlashLeniaParameterMap",
             "mutator_config": {},
             "behavior_map_config": {},
             "parameter_map_config": {  }

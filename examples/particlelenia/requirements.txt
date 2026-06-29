@@ -1,0 +1,4 @@
+# Additional Python dependencies for the `particlelenia` example.
+# Install after `pip install .`
+scipy
+torch>=1.7.1

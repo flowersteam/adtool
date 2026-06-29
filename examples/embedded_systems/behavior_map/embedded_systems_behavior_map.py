@@ -4,10 +4,10 @@ from typing import Any, Dict, Optional
 import numpy as np
 
 from adtool.maps.Map import Map
-from adtool.examples.embedded_systems.behavior_map.encoder.embedded_systems_behavior_encoder import (
+from examples.embedded_systems.behavior_map.encoder.embedded_systems_behavior_encoder import (
     BaseBehaviorEncoder,
 )
-from adtool.examples.embedded_systems.behavior_map.goal_sampler.embedded_systems_goal_sampler import (
+from examples.embedded_systems.behavior_map.goal_sampler.embedded_systems_goal_sampler import (
     BaseGoalSampler,
 )
 

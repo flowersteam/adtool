@@ -3,20 +3,20 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
-from adtool.examples.embedded_systems.parameter_map.embedded_systems_parameter_map import (
+from examples.embedded_systems.parameter_map.embedded_systems_parameter_map import (
     BaseParameterMap,
 )
-from adtool.examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
+from examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
     normalize_instruction_program,
 )
-from adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem import (
+from examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem import (
     InterferenceSystem,
 )
-from adtool.examples.embedded_systems.examples.core_interferences.types import (
+from examples.embedded_systems.examples.core_interferences.types import (
     InstructionProgram,
     InterferenceParamsPayload,
 )
-from adtool.examples.embedded_systems.helpers.module_factory import make_module
+from examples.embedded_systems.helpers.module_factory import make_module
 
 
 @dataclass
@@ -38,10 +38,10 @@ class InterferenceParameterMap(BaseParameterMap):
             premap_key: str = "params",
             param_obj: InterferenceParams = None,
             generator_config: Optional[Dict[str, Any]] = {
-                "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_generator.RandomInstructionGenerator"
+                "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_generator.RandomInstructionGenerator"
             },
             mutator_config: Optional[Dict[str, Any]] = {
-                "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_mutator.RandomInstructionMutator",
+                "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_mutator.RandomInstructionMutator",
                 "num_mutations": 2,
             },
             mixer_config: Optional[Dict[str, Any]] = None,

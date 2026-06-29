@@ -1,0 +1,6 @@
+# Additional Python dependencies for the `synth` example.
+# Install after `pip install .`
+librosa
+soundfile
+torch>=1.7.1
+transformers

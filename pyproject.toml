@@ -40,44 +40,35 @@ dependencies = [
     "pydantic==2.7.1",
 ]
 
-# [
-#     "moviepy==1.0.3",
-#     "ipython==8.24.0",
-# ]
-
-# [project.optional-dependencies]
-# examples = [
-#     "transformers",
-#     "diffusers",
-#     "accelerate",
-#     "torch>=1.7.1",
-#     "scipy"
-# ]
-# visu = [
-#     "websockets",
-#     "watchfiles",
-#     "scikit-learn",
-#     "opencv-python",
-#     "fastapi[standard]",
-#     "umap-learn"
-# ]
-# docking = [
-#     "rdkit",
-#     "selenium",
-#     "webdriver_manager",
-#     "imageio",
-#     "crem"
-# ]
-# wphysics = [
-#     "pygraphviz",
-# ]
+[project.optional-dependencies]
+visu = [
+    "websockets",
+    "watchfiles",
+    "scikit-learn",
+    "opencv-python",
+    "fastapi[standard]",
+    "umap-learn",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["adtool*"]
 exclude = ["examples*", "build*", "discoveries*", "docs*", "tests*"]
-namespaces = true
+namespaces = false
 
 
 [tool.setuptools.package-dir]
 adtool = "adtool"
+
+[tool.setuptools.package-data]
+"adtool.maps.cppn" = [
+    "config.cfg",
+]
+"adtool.user_tools.visu" = [
+    "static/*.css",
+    "static/*.html",
+    "static/*.js",
+    "static/js/*.js",
+    "static/js/goal-targeting/*.js",
+    "static/js/highlights/*.js",
+]

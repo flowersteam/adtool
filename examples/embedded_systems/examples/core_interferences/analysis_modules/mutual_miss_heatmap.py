@@ -4,7 +4,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from adtool.examples.analysis_metrics.shared import AnalysisImage, AnalysisModule
+from adtool.user_tools.analysis_metrics.shared import AnalysisImage, AnalysisModule
 
 
 class MutualMissHeatmapModule(AnalysisModule):

@@ -2,13 +2,13 @@ from typing import Any, Dict
 
 import numpy as np
 
-from adtool.examples.embedded_systems.examples.core_interferences.types import (
+from examples.embedded_systems.examples.core_interferences.types import (
     InterferenceDynamicParams,
 )
-from adtool.examples.embedded_systems.systems.runner.embedded_systems_simulator_runner import (
+from examples.embedded_systems.systems.runner.embedded_systems_simulator_runner import (
     BaseSimulatorRunner,
 )
-from adtool.examples.embedded_systems.types import Simulator
+from examples.embedded_systems.types import Simulator
 
 
 class Experiment:
