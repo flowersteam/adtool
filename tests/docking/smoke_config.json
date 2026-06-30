@@ -1,7 +1,14 @@
 {
-  "experiment": {"config": {"save_location": "./", "save_frequency": 10, "bootstrap_size": 1}},
+  "experiment": {
+    "config": {
+      "save_location": "./",
+      "save_frequency": 10,
+      "bootstrap_size": 1,
+      "render_every": 0
+    }
+  },
   "system": {
-    "path": "adtool.examples.docking.systems.Docking.Docking",
+    "path": "examples.docking.systems.Docking.Docking",
     "config": {
       "biomolecule": "examples/docking/systems/P22680_3V8D_A.pdb",
       "bbox": "examples/docking/systems/P22680_3V8D_A_box_2.txt"
@@ -12,17 +19,28 @@
     "config": {
       "mutator": "specific",
       "equil_time": 1,
-      "behavior_map": "adtool.examples.docking.maps.DockingStatistics.DockingStatistics",
-      "parameter_map": "adtool.examples.docking.maps.DockingParameterMap.DockingParameterMap",
-      "mutator_config": {},
-      "behavior_map_config": {},
-      "parameter_map_config": {"seed_smiles": "CC1(C(N2C(S1)C(C2=O)NC(=O)CC3=CC=CC=C3)C(=O)O)C"}
+      "behavior_map": {
+        "path": "examples.docking.maps.DockingStatistics.DockingStatistics",
+        "config": {}
+      },
+      "parameter_map": {
+        "path": "examples.docking.maps.DockingParameterMap.DockingParameterMap",
+        "config": {
+          "seed_smiles": "CC1(C(N2C(S1)C(C2=O)NC(=O)CC3=CC=CC=C3)C(=O)O)C"
+        }
+      },
+      "mutator_config": {}
     }
   },
   "input_wrappers": [],
   "output_representations": [],
   "logger_handlers": [],
   "callbacks": {
-    "on_discovery": [{"path": "adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk", "config": {}}]
+    "on_discovery": [
+      {
+        "path": "adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+        "config": {}
+      }
+    ]
   }
 }

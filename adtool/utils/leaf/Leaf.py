@@ -1,15 +1,10 @@
 import pickle
 
-# for dynamic discovery and loading of Python classes
-from pydoc import locate
 from typing import Any, Dict, List, Tuple, Union
 
+from adtool.utils.factory import class_path_of, resolve_dotted_object
 from adtool.utils.leaf.LeafUID import LeafUID
 from adtool.utils.leaf.locators.Locator import Locator, StatelessLocator
-from adtool.utils.leafutils.leafstructs.registration import (
-    get_cls_from_path,
-    get_path_from_cls,
-)
 
 
 def prune_state(state_vars: Dict[str, Any]):
@@ -126,7 +121,7 @@ class Leaf:
         # pointerize Locator object, turning into a fully qualified import path
         old_locator = self.locator
         if not isinstance(self.locator, str):
-            cls_path = get_path_from_cls(self.locator.__class__)
+            cls_path = class_path_of(self.locator.__class__)
             self._set_attr_override("locator", cls_path)
 
         bin = pickle.dumps(self)
@@ -215,7 +210,10 @@ class Leaf:
         loaded_obj = self.deserialize(bin)
 
         # dereference Locator path and initialize a Locator object
-        locator_cls = get_cls_from_path(loaded_obj.locator)
+        locator_cls = resolve_dotted_object(
+            loaded_obj.locator,
+            object_name="locator class",
+        )
         loaded_obj._set_attr_override("locator", locator_cls())
 
         # ensures instance vars are passed from self.locator.retrieve call

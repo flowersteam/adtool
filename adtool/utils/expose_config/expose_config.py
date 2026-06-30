@@ -1,12 +1,8 @@
-from collections import namedtuple
-from typing import Any, Dict, List, NamedTuple, Optional
-import sys
+from typing import Any, Dict, List, Optional
 
-#from adtool.utils.leafutils.leafstructs.registration import _REGISTRATION
+from annotated_types import BaseMetadata, Le, Ge, Gt, Lt
 
-from annotated_types import BaseMetadata, Le, Ge, Gt, Lt, Annotated
-
-from adtool.utils.leafutils.leafstructs.registration import _REGISTRATION
+_REGISTRATION: dict = {}
 
 def annotated_metadatas_to_json(annotation: List[BaseMetadata]):
     json = {}
@@ -38,10 +34,6 @@ def export_config(cls):
             json[k]["metadata"] = annotated_metadatas_to_json(v.metadata)
 
     return json
-
-
-import inspect
-
 def expose(cls):
     dict_config = export_config(cls.config  )
 
@@ -109,4 +101,3 @@ class Handlers:
     def dict_handler(domain: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
         # NOTE: this should never be used due to mutability of dicts
         return {"possible_values": domain}
-

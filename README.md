@@ -49,7 +49,7 @@ For a short beginner guide to using `adtool` as a library, see [docs/TUTORIAL.md
 ### Examples
 Various examples are provided in the `examples/` directory.
 ```bash
-python3 examples/run_experimentations.py --config_file examples/grayscott/gray_scott.json
+python3 -m adtool.runners.run_experimentations --config_file examples/grayscott/gray_scott.json
 ``` 
 Available examples are:
 - `examples/grayscott/gray_scott.json` - Discovering Gray-Scott diffusion patterns  
@@ -81,7 +81,7 @@ Available examples are:
 
 To execute examples, you need to install required dependencies:
 ```bash
-pip install .[examples]
+pip install . && pip install -r examples/<example_name>/requirements.txt
 ```  
 First launch video [Grayscott example](https://youtu.be/5iHzTO7yhuQ)
 
@@ -98,19 +98,25 @@ And also move replacements02_sa2.db downloaded here http://www.qsar4u.com/pages/
 ### Reloading
 To reload a previous exploration, simply run the same previous commands but from an existing discoveries directory. Previous discoveries must be generated with the same system and maps.
 
+Saved run layout notes:
+
+- `save_location` contains the generated `discoveries/` directory.
+- The experiment config is saved once at `discoveries/config.json`.
+- Each discovery still gets its own folder with `discovery.json` and optional rendered media.
+- `experiment.config.render_every` controls rendering cadence: `1` renders every discovery, `N` renders every `N`th discovery, and `0` disables rendering entirely.
+
 
 ### Visualization
 The tool provides a web interface to visualize the progression of the exploration. To start the web interface, run the following commands:
 ```bash
 pip install .[visu]
-cd examples/visu
-python3 server.py --discoveries PATH_TO_DISCOVERIES
+python3 -m adtool.user_tools.visu.server --discoveries PATH_TO_DISCOVERIES
 ```
 The web interface can be accessed at `http://127.0.0.1:8765/`.
 
 If the viewer should expose analysis-side discovery highlights or other analysis-driven visualization helpers, pass the analysis config explicitly. The highlight provider is configured directly with a top-level `discovery_highlights` section in that file:
 ```bash
-python3 server.py --discoveries PATH_TO_DISCOVERIES --config_file PATH_TO_ANALYSIS_CONFIG
+python3 -m adtool.user_tools.visu.server --discoveries PATH_TO_DISCOVERIES --config_file PATH_TO_ANALYSIS_CONFIG
 ```
 
 Documentation:
@@ -181,4 +187,3 @@ For this, it's possible to start from the default system definition [here](https
 You can have a look at the [simplified execution flow](docs/execution_flow) to understand a bit more about the different steps of the exploration.
 
 ### Join the [Discord community](https://discord.gg/yc5jhYM6u5)
-

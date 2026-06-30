@@ -16,6 +16,7 @@ from adtool.utils.interaction.experiment_control import (
     read_experiment_control,
     wait_if_experiment_paused,
 )
+from adtool.ExperimentPipeline import get_render_every
 
 
 
@@ -128,6 +129,11 @@ class ExperimentPipeline(Leaf):
         for callback in callbacks:
             callback(**kwargs)
 
+    def _should_render(self, render_every: int) -> bool:
+        if render_every == 0:
+            return False
+        return self.run_idx % render_every == 0
+
     def run(self, n_exploration_runs: int):
         """
         Launches the experiment for `n_exploration_runs` explorations.
@@ -232,6 +238,7 @@ class ExperimentPipeline(Leaf):
             # Replace the original sample method with wrap_sample
             self._explorer.behavior_map.sample = wrap_sample
 
+            render_every = get_render_every(self.config)
             final_run_idx = self.run_idx + n_exploration_runs
 
             while self.run_idx < final_run_idx:
@@ -257,8 +264,10 @@ class ExperimentPipeline(Leaf):
                         data_dict_mapped.pop("goal_targeting", None)
                     data_dicts.append(data_dict_mapped)
 
-                # render system output
-                rendered_outputs = self._system.render(data_dicts[0])
+                # render system output only on the configured cadence
+                rendered_outputs = None
+                if self._should_render(render_every):
+                    rendered_outputs = self._system.render(data_dicts[0])
 
 
 

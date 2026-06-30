@@ -6,7 +6,7 @@ from PIL import Image
 from adtool.utils.expose_config.expose_config import expose
 from pydantic import Field
 
-from adtool.examples.draft.maps.DraftParameterMap import DraftDynamicParams, DraftParams
+from examples.draft.maps.DraftParameterMap import DraftDynamicParams, DraftParams
 
 
 

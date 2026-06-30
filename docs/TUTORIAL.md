@@ -28,7 +28,7 @@ Then you can import the main modules like so:
 ```python
 from adtool.systems.System import System
 from adtool.maps.Map import Map
-from adtool.examples.run import main
+from adtool.runners.run_experimentations import main
 ```
 
 ## 2. What you need to build
@@ -178,7 +178,8 @@ Use your own package name in config paths. Example:
     "config": {
       "save_location": "./runs/",
       "save_frequency": 1,
-      "bootstrap_size": 1
+      "bootstrap_size": 1,
+      "render_every": 1
     }
   },
   "system": {
@@ -230,6 +231,14 @@ An empty `"config": {}` just means: "create this module with its default setting
 `save_location` is where `adtool` will create the `discoveries/` folder.
 If the `save_location` already has experiments inside, the algorithm will try to reuse them, so keep the same configuration.
 Keep the save callback at the start: it writes the files used by the viewer.
+The full config is saved once at `<save_location>/discoveries/config.json`, not inside every discovery folder.
+`render_every` controls how often `System.render(...)` is called:
+
+- `1`: render every discovery
+- `N > 1`: render every `N` discoveries using the absolute `run_idx`
+- `0`: skip rendering entirely to save time
+
+When rendering is skipped, the discovery is still saved and can still be reused by the explorer and analysis tools.
 
 ## 5. New configuration parameters
 
@@ -292,17 +301,17 @@ For more detail, the best next step is to read a few real configs in [`examples/
 The easiest way is to use the runner already provided by the library:
 
 ```bash
-python -m adtool.examples.run --config_file config.json --nb_iterations 40
+python -m adtool.runners.run_experimentations --config_file config.json --nb_iterations 40
 ```
 or helper
 ```bash
-python -m adtool.examples.run -h
+python -m adtool.runners.run_experimentations -h
 ```
 
 If you want your own small entrypoint, keep it very thin and reuse the same runner:
 
 ```python
-from adtool.examples.run import main
+from adtool.runners.run_experimentations import main
 
 if __name__ == "__main__":
     main()
@@ -323,11 +332,11 @@ This is a good starting point because later you can tweak this runner to launch 
 To open the visualization after a run:
 
 ```bash
-python -m adtool.examples.visu.server --discoveries ./runs/discoveries
+python -m adtool.user_tools.visu.server --discoveries ./runs/discoveries
 ```
 or helper
 ```bash
-python -m adtool.examples.visu.server -h
+python -m adtool.user_tools.visu.server -h
 ```
 
 Further documentation:

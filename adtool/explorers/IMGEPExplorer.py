@@ -10,9 +10,9 @@ from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.mutators import add_gaussian_noise, call_mutate_method
 from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.expose_config.expose_config import expose
+from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
 from adtool.utils.leaf.Leaf import Leaf
 from pydantic import Field
-from pydoc import locate
 from typing import Dict
 from pydantic import BaseModel
 
@@ -31,10 +31,12 @@ class MutatorEnum(Enum):
 
 class IMGEPConfig(BaseModel):
     equil_time: int = Field(1, ge=1, le=1000)
-    behavior_map: str = Field("adtool.maps.MeanBehaviorMap.MeanBehaviorMap")
-    behavior_map_config: Dict = Field({})
-    parameter_map: str = Field("adtool.maps.UniformParameterMap.UniformParameterMap")
-    parameter_map_config: Dict = Field({})
+    behavior_map: ObjectSpec = Field(
+        object_spec("adtool.maps.MeanBehaviorMap.MeanBehaviorMap")
+    )
+    parameter_map: ObjectSpec = Field(
+        object_spec("adtool.maps.UniformParameterMap.UniformParameterMap")
+    )
     mutator: MutatorEnum = Field(MutatorEnum.Specific)
     mutator_config: Dict = Field({})
 
@@ -343,14 +345,18 @@ class IMGEPExplorer():
         return explorer
 
     def make_behavior_map(self, system: System):
-        kwargs = self.config.behavior_map_config
-        behavior_map=locate(self.config.behavior_map)(system,**kwargs)
-        return behavior_map
+        return instantiate_object(
+            self.config.behavior_map,
+            system,
+            object_name="behavior map",
+        )
 
     def make_parameter_map(self, system: System):
-        kwargs = self.config.parameter_map_config
-        param_map=locate(self.config.parameter_map)(system,**kwargs)
-        return param_map
+        return instantiate_object(
+            self.config.parameter_map,
+            system,
+            object_name="parameter map",
+        )
 
     def make_mutator(self, param_map: Any = None):
         if self.config.mutator== MutatorEnum.Specific:
@@ -364,4 +370,3 @@ class IMGEPExplorer():
 
         return mutator
     
-
