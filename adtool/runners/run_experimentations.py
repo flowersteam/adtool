@@ -47,8 +47,6 @@ def create(
 
     _set_seed(seed)
     # Get logger
-    # FIXME: broken with get_cls_from_name, need to
-    # add handlers to registration
     handlers = []
     for logger_handler in parameters["logger_handlers"]:
         handler = instantiate_object(

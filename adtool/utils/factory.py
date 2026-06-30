@@ -12,6 +12,12 @@ class ObjectSpec:
     config: dict[str, Any] = field(default_factory=dict)
 
 
+def class_path_of(cls: type) -> str:
+    qualified_class_name = cls.__qualname__
+    module_name = cls.__module__
+    return module_name + "." + qualified_class_name
+
+
 def object_spec(
     path: str,
     config: Mapping[str, Any] | None = None,
