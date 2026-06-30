@@ -1,0 +1,13 @@
+# Additional Python dependencies for the `docking` example.
+# Install after `pip install .`
+# This file does not cover non-Python assets such as `gnina`,
+# Open Babel system libraries, or `replacements02_sa2.db`.
+rdkit
+selenium
+webdriver_manager
+imageio
+crem
+plip
+biopython
+selfies
+torch>=1.7.1

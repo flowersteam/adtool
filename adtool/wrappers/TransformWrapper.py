@@ -7,6 +7,9 @@ from adtool.utils.leaf.locators.locators import BlobLocator
 
 class TransformWrapper(Leaf):
     """
+    LEGACY: generic wrapper composition is deprecated in favor of explicit
+    map/system/history components.
+
     Wrapper which does basic processing of input
     Usage example:
         ```

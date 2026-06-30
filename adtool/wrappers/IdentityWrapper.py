@@ -6,6 +6,9 @@ from adtool.utils.leaf.locators.locators import BlobLocator
 
 class IdentityWrapper(TransformWrapper):
     """
+    LEGACY: kept for compatibility with existing explorer/map defaults while
+    the generic wrapper abstraction is phased out.
+
     Wrapper which passes the input without mutation.
     """
 

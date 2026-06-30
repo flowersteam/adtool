@@ -1,0 +1,4 @@
+# Additional Python dependencies for the `flowlenia` example.
+# Install after `pip install .`
+moviepy
+torch>=1.7.1

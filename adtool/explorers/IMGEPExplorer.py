@@ -4,15 +4,16 @@ from functools import partial
 import json
 import os
 from typing import Any, Dict, List, Union
+from adtool.utils.leaf.locators.locators import BlobLocator
 
 from adtool.systems import System
+from adtool.explorers.history_store import HistoryStore
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.mutators import add_gaussian_noise, call_mutate_method
-from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.expose_config.expose_config import expose
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
+from adtool.utils.leaf.Leaf import Leaf, prune_state
 from pydantic import Field
-from pydoc import locate
 from typing import Dict
 from pydantic import BaseModel
 
@@ -31,12 +32,15 @@ class MutatorEnum(Enum):
 
 class IMGEPConfig(BaseModel):
     equil_time: int = Field(1, ge=1, le=1000)
-    behavior_map: str = Field("adtool.maps.MeanBehaviorMap.MeanBehaviorMap")
-    behavior_map_config: Dict = Field({})
-    parameter_map: str = Field("adtool.maps.UniformParameterMap.UniformParameterMap")
-    parameter_map_config: Dict = Field({})
+    behavior_map: ObjectSpec = Field(
+        object_spec("adtool.maps.MeanBehaviorMap.MeanBehaviorMap")
+    )
+    parameter_map: ObjectSpec = Field(
+        object_spec("adtool.maps.UniformParameterMap.UniformParameterMap")
+    )
     mutator: MutatorEnum = Field(MutatorEnum.Specific)
     mutator_config: Dict = Field({})
+    lookback_length: int = Field(-1, ge=-1)
 
 
 
@@ -56,19 +60,24 @@ class IMGEPExplorerInstance(Leaf):
         behavior_map: Leaf = IdentityWrapper(),
         mutator: Leaf = Leaf(),
         equil_time: int = 0,
+        lookback_length: int = -1,
     ) -> None:
         super().__init__()
-
+        
+        if lookback_length != 1:
+            self.locator = BlobLocator()
+        
         self.premap_key = premap_key
         self.postmap_key = postmap_key
         self.parameter_map = parameter_map
         self.behavior_map = behavior_map
         self.equil_time = equil_time
+        self.lookback_length = lookback_length
         self.timestep = 0
 
         self.mutator = mutator
 
-        self._history_saver = SaveWrapper()
+        self._history_saver = HistoryStore()
 
     def bootstrap(self) -> Dict:
         """Return an initial sample needed to bootstrap the exploration loop."""
@@ -248,7 +257,7 @@ class IMGEPExplorerInstance(Leaf):
 
     def read_last_discovery(self) -> Dict:
         """Return last observed discovery."""
-        return self._history_saver.buffer[-1]
+        return self._history_saver.last()
 
     def optimize(self):
         """Run optimization step for online learning of the `Explorer` policy."""
@@ -314,6 +323,10 @@ class IMGEPExplorerInstance(Leaf):
 
         return source_policy
 
+    @prune_state({"_history_saver": None})
+    def serialize(self) -> bytes:
+        return super().serialize()
+
 
 @expose
 class IMGEPExplorer():
@@ -333,24 +346,30 @@ class IMGEPExplorer():
         param_map = self.make_parameter_map(system)
         mutator = self.make_mutator(param_map)
         equil_time = self.config.equil_time
+        lookback_length = self.config.lookback_length
         explorer = IMGEPExplorerInstance(
             parameter_map=param_map,
             behavior_map=behavior_map,
             equil_time=equil_time,
             mutator=mutator,
+            lookback_length=lookback_length,
         )
 
         return explorer
 
     def make_behavior_map(self, system: System):
-        kwargs = self.config.behavior_map_config
-        behavior_map=locate(self.config.behavior_map)(system,**kwargs)
-        return behavior_map
+        return instantiate_object(
+            self.config.behavior_map,
+            system,
+            object_name="behavior map",
+        )
 
     def make_parameter_map(self, system: System):
-        kwargs = self.config.parameter_map_config
-        param_map=locate(self.config.parameter_map)(system,**kwargs)
-        return param_map
+        return instantiate_object(
+            self.config.parameter_map,
+            system,
+            object_name="parameter map",
+        )
 
     def make_mutator(self, param_map: Any = None):
         if self.config.mutator== MutatorEnum.Specific:
@@ -364,4 +383,3 @@ class IMGEPExplorer():
 
         return mutator
     
-

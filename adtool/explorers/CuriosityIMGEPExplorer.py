@@ -1,13 +1,13 @@
 from functools import partial
 from typing import Any, Dict, List
+from adtool.explorers.history_store import HistoryStore
 from adtool.systems import System
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.mutators import add_gaussian_noise, call_mutate_method
-from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.expose_config.expose_config import expose
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
+from adtool.utils.leaf.Leaf import Leaf, prune_state
 from pydantic import Field, BaseModel
-from pydoc import locate
 import numpy as np
 from enum import Enum
 from scipy.spatial import KDTree
@@ -18,10 +18,12 @@ class MutatorEnum(Enum):
 
 class IMGEPConfig(BaseModel):
     equil_time: int = Field(1, ge=1, le=1000)
-    behavior_map: str = Field("adtool.maps.MeanBehaviorMap.MeanBehaviorMap")
-    behavior_map_config: Dict = Field({})
-    parameter_map: str = Field("adtool.maps.UniformParameterMap.UniformParameterMap")
-    parameter_map_config: Dict = Field({})
+    behavior_map: ObjectSpec = Field(
+        object_spec("adtool.maps.MeanBehaviorMap.MeanBehaviorMap")
+    )
+    parameter_map: ObjectSpec = Field(
+        object_spec("adtool.maps.UniformParameterMap.UniformParameterMap")
+    )
     mutator: MutatorEnum = Field(MutatorEnum.Specific)
     mutator_config: Dict = Field({})
     novelty_weight: float = Field(0.5, ge=0, le=1)
@@ -45,7 +47,7 @@ class CuriosityDrivenIMGEP(Leaf):
         self.equil_time = equil_time
         self.timestep = 0
         self.mutator = mutator
-        self._history_saver = SaveWrapper()
+        self._history_saver = HistoryStore()
         self.uncertainty_map = None
         self.kdtree = None
         self.novelty_weight = novelty_weight
@@ -133,7 +135,7 @@ class CuriosityDrivenIMGEP(Leaf):
         return system_output
 
     def read_last_discovery(self) -> Dict:
-        return self._history_saver.buffer[-1]
+        return self._history_saver.last()
 
     def optimize(self):
         pass
@@ -164,6 +166,10 @@ class CuriosityDrivenIMGEP(Leaf):
         valid_param_history = [param for i, param in enumerate(param_history) if valid_mask[i]]
         return valid_param_history[source_policy_idx]
 
+    @prune_state({"_history_saver": None})
+    def serialize(self) -> bytes:
+        return super().serialize()
+
 @expose
 class IMGEPExplorer():
     config = IMGEPConfig
@@ -188,14 +194,18 @@ class IMGEPExplorer():
         return explorer
 
     def make_behavior_map(self, system: System):
-        kwargs = self.config.behavior_map_config
-        behavior_map = locate(self.config.behavior_map)(system, **kwargs)
-        return behavior_map
+        return instantiate_object(
+            self.config.behavior_map,
+            system,
+            object_name="behavior map",
+        )
 
     def make_parameter_map(self, system: System):
-        kwargs = self.config.parameter_map_config
-        param_map = locate(self.config.parameter_map)(system, **kwargs)
-        return param_map
+        return instantiate_object(
+            self.config.parameter_map,
+            system,
+            object_name="parameter map",
+        )
 
     def make_mutator(self, param_map: Any = None):
         if self.config.mutator == MutatorEnum.Specific:

@@ -6,6 +6,9 @@ from adtool.utils.leaf.Leaf import Leaf, Locator, StatelessLocator
 
 class WrapperPipeline(Leaf):
     """
+    LEGACY: wrapper pipelines are deprecated in favor of explicit component
+    composition.
+
     Module for composing various wrappers during the input or output processing
     of the experiment.
     Usage example:

@@ -33,6 +33,14 @@ def replace_lists_with_numpy(d):
     else:
         return d
 
+
+def get_render_every(config: dict) -> int:
+    render_every = config["experiment"]["config"].get("render_every", 1)
+    render_every = int(render_every)
+    if render_every < 0:
+        raise ValueError("experiment.config.render_every must be >= 0")
+    return render_every
+
 class ExperimentPipeline(Leaf):
     """
     Pipeline of an automated discovery experiment.
@@ -128,6 +136,18 @@ class ExperimentPipeline(Leaf):
         for callback in callbacks:
             callback(**kwargs)
 
+    def _should_render(self, render_every: int) -> bool:
+        if render_every == 0:
+            return False
+        return self.run_idx % render_every == 0
+
+    def _legacy_checkpoint_enabled(self) -> bool:
+        return bool(
+            self.config.get("experiment", {})
+            .get("config", {})
+            .get("legacy_checkpoint_saves", False)
+        )
+
     def run(self, n_exploration_runs: int):
         """
         Launches the experiment for `n_exploration_runs` explorations.
@@ -146,12 +166,19 @@ class ExperimentPipeline(Leaf):
 
 
             
-
-            mypath = self.config['experiment']['config']['save_location']+"discoveries/"
+            base_path = self.config['experiment']['config']['save_location']
+            mypath = base_path+"discoveries/"
             #list all discovery.json files in subdirectories  
             #check if mypath exists and is a folder
             if not os.path.exists(mypath):
                 os.makedirs(mypath)
+            
+
+            sub_modules_dir = "discoveries/modules"
+            modules_dir = os.path.join(base_path, sub_modules_dir)
+            if not os.path.exists(modules_dir):
+                os.mkdir(modules_dir)
+
 
             discoveries_folders = [f for f in listdir(mypath) if not isfile(join(mypath, f))]
             #get discovery.json files in discoveries folders
@@ -213,6 +240,7 @@ class ExperimentPipeline(Leaf):
 
 
             bootstrap_size = self.config['experiment']['config']['bootstrap_size']
+            render_every = get_render_every(self.config)
             
             final_run_idx = self.run_idx + n_exploration_runs
 
@@ -238,8 +266,10 @@ class ExperimentPipeline(Leaf):
                 else:
                     data_dict.pop("goal_targeting", None)
 
-                # render system output
-                rendered_outputs = self._system.render(data_dict)
+                # render system output only on the configured cadence
+                rendered_outputs = None
+                if self._should_render(render_every):
+                    rendered_outputs = self._system.render(data_dict)
 
                 # exploration phase : emits new trial parameters for next loop
 
@@ -330,6 +360,20 @@ class ExperimentPipeline(Leaf):
         return
 
     def save(self, resource_uri: str):
+        if self._legacy_checkpoint_enabled():
+            # LEGACY: full-object checkpoints exist only for backwards
+            # compatibility. Replay from saved discoveries is the supported
+            # resume path.
+            modules_dir = os.path.join(self.resource_uri, "discoveries/modules")
+            os.makedirs(modules_dir, exist_ok=True)
+            uid = self.save_leaf(resource_uri=modules_dir)
+            self.uid = uid  # store for on_save_finished_callbacks
+        else:
+            self.logger.info(
+                "[LEGACY] - Skipping module checkpoint save; replay from "
+                "discoveries is the primary resume path"
+            )
+
         self._raise_callbacks(
             self._on_save_callbacks,
             experiment_id=self.experiment_id,
@@ -338,8 +382,7 @@ class ExperimentPipeline(Leaf):
             resource_uri=resource_uri,
         )
 
-        # only run on_save_finished callbacks if on_save_callbacks
-        # provide a uid for the save
+        # only run on_save_finished callbacks if a legacy checkpoint uid exists
         if self.__dict__.get("uid", None) is not None:
             self._raise_callbacks(
                 self._on_save_finished_callbacks,

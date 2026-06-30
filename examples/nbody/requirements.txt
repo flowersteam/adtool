@@ -1,0 +1,3 @@
+# Additional Python dependencies for the `nbody` example.
+# Install after `pip install .`
+tqdm

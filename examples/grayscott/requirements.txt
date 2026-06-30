@@ -1,0 +1,7 @@
+# Additional Python dependencies for the `grayscott` example.
+# Install after `pip install .`
+# Includes the optional `gray_scott_vllm.json` configuration.
+opencv-python
+openai
+torch>=1.7.1
+tqdm
