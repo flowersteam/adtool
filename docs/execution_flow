@@ -1,6 +1,6 @@
 Simplified execution flow for the Gray-Scott example of 3 iterations.
 
--> call start /examples/run_experimentations.py
+-> call start /adtool/runners/run_experimentations.py
 --> call run /adtool/ExperimentPipeline.py
 ---> call bootstrap /adtool/explorers/IMGEPExplorer.py
 ----> call sample /examples/grayscott/maps/GrayScottParameterMap.py

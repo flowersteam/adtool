@@ -7,7 +7,7 @@
     }
   },
   "system": {
-    "path": "adtool.examples.kuramoto.systems.Kuramoto.Kuramoto",
+    "path": "examples.kuramoto.systems.Kuramoto.Kuramoto",
     "config": {
       "N": 2,
       "K": 8,
@@ -19,11 +19,15 @@
     "config": {
       "mutator": "specific",
       "equil_time": 1,
-      "behavior_map": "adtool.examples.kuramoto.maps.KuramotoStatistics.KuramotoStatistics",
-      "parameter_map": "adtool.examples.kuramoto.maps.KuramotoParameterMap.KuramotoParameterMap",
-      "mutator_config": {},
-      "behavior_map_config": {},
-      "parameter_map_config": {}
+      "behavior_map": {
+        "path": "examples.kuramoto.maps.KuramotoStatistics.KuramotoStatistics",
+        "config": {}
+      },
+      "parameter_map": {
+        "path": "examples.kuramoto.maps.KuramotoParameterMap.KuramotoParameterMap",
+        "config": {}
+      },
+      "mutator_config": {}
     }
   },
   "input_wrappers": [],

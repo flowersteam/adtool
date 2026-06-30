@@ -1,41 +1,44 @@
 {
-        "experiment": {
-            "config": {
-                "save_location": "./",
-                "save_frequency": 1,
-                "bootstrap_size": 1
-            }
-        },
-        "system": {
-            "path": "adtool.examples.grayscott.systems.GrayScott.GrayScott",
-            "config": {
-                "height": 128,
-                "width": 128,
-                "num_inference_steps": 500
-            }
-        },
-        "explorer": {
-            "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
-            "config": {
-                "mutator": "specific",
-                "equil_time": 1,
-                "behavior_map": "adtool.examples.grayscott.maps.GrayScottStatistics.GrayScottStatistics",
-                "parameter_map": "adtool.examples.grayscott.maps.GrayScottParameterMap.GrayScottParameterMap",
-                "mutator_config": {},
-                "behavior_map_config": {},
-                "parameter_map_config": {  }
-            }
-        },
-        "input_wrappers": [],
-        "output_representations": [],
-        "logger_handlers":[],
-        "callbacks": {
-        "on_discovery":[
-        {"path":"adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+  "experiment": {
+    "config": {
+      "save_location": "./",
+      "save_frequency": 1,
+      "bootstrap_size": 1
+    }
+  },
+  "system": {
+    "path": "examples.grayscott.systems.GrayScott.GrayScott",
+    "config": {
+      "height": 128,
+      "width": 128,
+      "num_inference_steps": 500
+    }
+  },
+  "explorer": {
+    "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
+    "config": {
+      "mutator": "specific",
+      "equil_time": 1,
+      "behavior_map": {
+        "path": "examples.grayscott.maps.GrayScottStatistics.GrayScottStatistics",
         "config": {}
-        }
-        ]
-        
+      },
+      "parameter_map": {
+        "path": "examples.grayscott.maps.GrayScottParameterMap.GrayScottParameterMap",
+        "config": {}
+      },
+      "mutator_config": {}
     }
-    
-    }
+  },
+  "input_wrappers": [],
+  "output_representations": [],
+  "logger_handlers": [],
+  "callbacks": {
+    "on_discovery": [
+      {
+        "path": "adtool.callbacks.on_discovery_callbacks.save_discovery_on_disk.SaveDiscoveryOnDisk",
+        "config": {}
+      }
+    ]
+  }
+}

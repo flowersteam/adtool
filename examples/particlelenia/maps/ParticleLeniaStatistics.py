@@ -8,7 +8,7 @@ from adtool.wrappers.BoxProjector import BoxProjector
 from adtool.utils.misc.torch_utils import roll_n
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
-from adtool.examples.particlelenia.systems import ParticleLenia
+from examples.particlelenia.systems import ParticleLenia
 
 EPS = 0.0001
 DISTANCE_WEIGHT = 2  # 1=linear, 2=quadratic, ...
