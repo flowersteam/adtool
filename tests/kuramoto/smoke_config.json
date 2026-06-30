@@ -3,7 +3,8 @@
     "config": {
       "save_location": "./",
       "save_frequency": 10,
-      "bootstrap_size": 1
+      "bootstrap_size": 1,
+      "render_every": 0
     }
   },
   "system": {
@@ -19,11 +20,15 @@
     "config": {
       "mutator": "specific",
       "equil_time": 1,
-      "behavior_map": "examples.kuramoto.maps.KuramotoStatistics.KuramotoStatistics",
-      "parameter_map": "examples.kuramoto.maps.KuramotoParameterMap.KuramotoParameterMap",
-      "mutator_config": {},
-      "behavior_map_config": {},
-      "parameter_map_config": {}
+      "behavior_map": {
+        "path": "examples.kuramoto.maps.KuramotoStatistics.KuramotoStatistics",
+        "config": {}
+      },
+      "parameter_map": {
+        "path": "examples.kuramoto.maps.KuramotoParameterMap.KuramotoParameterMap",
+        "config": {}
+      },
+      "mutator_config": {}
     }
   },
   "input_wrappers": [],

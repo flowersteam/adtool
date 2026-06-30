@@ -12,6 +12,12 @@ import json
 
 import numpy as np
 
+from adtool.utils.interaction.experiment_control import (
+    read_experiment_control,
+    wait_if_experiment_paused,
+)
+from adtool.ExperimentPipeline import get_render_every
+
 
 
 def replace_lists_with_numpy(d):
@@ -123,6 +129,11 @@ class ExperimentPipeline(Leaf):
         for callback in callbacks:
             callback(**kwargs)
 
+    def _should_render(self, render_every: int) -> bool:
+        if render_every == 0:
+            return False
+        return self.run_idx % render_every == 0
+
     def run(self, n_exploration_runs: int):
         """
         Launches the experiment for `n_exploration_runs` explorations.
@@ -164,6 +175,8 @@ class ExperimentPipeline(Leaf):
             )
 
             
+            next_run_idx = 0
+
             for json_discovery in json_discoveries:
                 # check if config.json is the same
                 
@@ -174,6 +187,11 @@ class ExperimentPipeline(Leaf):
                 #         raise Exception("The discovery config is not the same as the current config")
                 with open(join(mypath, json_discovery,"discovery.json")) as f:
                     new_trial_data = json.load(f)
+                    metadata = new_trial_data.get("metadata")
+                    if metadata is not None:
+                        next_run_idx = max(next_run_idx, metadata["run_idx"] + 1)
+                    else:
+                        next_run_idx += 1
                     #replace each list of list of floats with a tensor, recursively but bottom-up
 
                     new_trial_data = replace_lists_with_numpy(new_trial_data)
@@ -184,6 +202,8 @@ class ExperimentPipeline(Leaf):
         
                     
                     self._explorer._history_saver.map( new_trial_data )
+
+            self.run_idx = next_run_idx
                     
             if json_discoveries:
                 self.logger.info(
@@ -218,11 +238,12 @@ class ExperimentPipeline(Leaf):
             # Replace the original sample method with wrap_sample
             self._explorer.behavior_map.sample = wrap_sample
 
+            render_every = get_render_every(self.config)
+            final_run_idx = self.run_idx + n_exploration_runs
 
-
-
-
-            while self.run_idx < n_exploration_runs:
+            while self.run_idx < final_run_idx:
+                wait_if_experiment_paused(mypath)
+                goal_targeting = read_experiment_control(mypath).get("goal_targeting", {}).get("resolved")
                 # check  if target.json exists
                 if os.path.exists(f"{mypath}/target.json"):
                     with open(f"{mypath}/target.json") as f:
@@ -236,10 +257,17 @@ class ExperimentPipeline(Leaf):
 
                 data_dicts=[]
                 for _ in range(10):
-                    data_dicts.append(self._system.map(data_dict.copy()))
+                    data_dict_mapped = self._system.map(data_dict.copy())
+                    if goal_targeting is not None:
+                        data_dict_mapped["goal_targeting"] = goal_targeting
+                    else:
+                        data_dict_mapped.pop("goal_targeting", None)
+                    data_dicts.append(data_dict_mapped)
 
-                # render system output
-                rendered_outputs = self._system.render(data_dicts[0])
+                # render system output only on the configured cadence
+                rendered_outputs = None
+                if self._should_render(render_every):
+                    rendered_outputs = self._system.render(data_dicts[0])
 
 
 
@@ -289,7 +317,7 @@ class ExperimentPipeline(Leaf):
 
                 if (
                     run_idx_start_from_one % self.save_frequency == 0
-                    or run_idx_start_from_one == n_exploration_runs
+                    or run_idx_start_from_one == final_run_idx
                 ):
                     self.save(resource_uri=self.resource_uri)
 

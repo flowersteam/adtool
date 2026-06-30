@@ -11,9 +11,9 @@ from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.mutators import add_gaussian_noise, call_mutate_method
 from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.expose_config.expose_config import expose
+from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
 from adtool.utils.leaf.Leaf import Leaf
 from pydantic import Field
-from pydoc import locate
 from typing import Dict
 from pydantic import BaseModel
 
@@ -32,10 +32,12 @@ class MutatorEnum(Enum):
 
 class IMGEPConfig(BaseModel):
     equil_time: int = Field(1, ge=1, le=1000)
-    behavior_map: str = Field("adtool.maps.MeanBehaviorMap.MeanBehaviorMap")
-    behavior_map_config: Dict = Field({})
-    parameter_map: str = Field("adtool.maps.UniformParameterMap.UniformParameterMap")
-    parameter_map_config: Dict = Field({})
+    behavior_map: ObjectSpec = Field(
+        object_spec("adtool.maps.MeanBehaviorMap.MeanBehaviorMap")
+    )
+    parameter_map: ObjectSpec = Field(
+        object_spec("adtool.maps.UniformParameterMap.UniformParameterMap")
+    )
     mutator: MutatorEnum = Field(MutatorEnum.Specific)
     mutator_config: Dict = Field({})
     lookback_length: int = Field(-1, ge=-1)
@@ -136,6 +138,8 @@ class IMGEPExplorerInstance(Leaf):
         # either do nothing, or update dict by changing "output" -> "raw_output"
         # and adding new "output" key which is the result of the behavior map
 
+        target, goal_targeting = self._extract_external_controls(system_output)
+
         if isinstance(system_output, list):
             new_trial_data = self.mean_var_goal(system_output)
         else:
@@ -159,8 +163,8 @@ class IMGEPExplorerInstance(Leaf):
         else:
             # suggest_trial reads history
             params_trial = self.suggest_trial(
-                goal=system_output['target'] if 'target' in system_output else None,
-                lookback_length=self.lookback_length
+                goal=target,
+                goal_targeting=goal_targeting,
             )
 
             # assemble dict and update parameter_map state
@@ -179,10 +183,12 @@ class IMGEPExplorerInstance(Leaf):
 
         return trial_data_reset
 
-    def suggest_trial(self, lookback_length: int = -1,
-                      goal: np.ndarray = None
-                      
-                      ):
+    def suggest_trial(
+        self,
+        lookback_length: int = -1,
+        goal: np.ndarray = None,
+        goal_targeting: Dict[str, Any] | None = None,
+    ):
         """Sample according to the policy a new trial of parameters for the
         system.
 
@@ -198,7 +204,10 @@ class IMGEPExplorerInstance(Leaf):
             A `torch.Tensor` containing the parameters to try.
         """
         if goal is None:
-            goal = self.behavior_map.sample()
+            if goal_targeting is None:
+                goal = self.behavior_map.sample()
+            else:
+                goal = self.behavior_map.sample(goal_targeting=goal_targeting)
        #     print("sampled goal", goal)
 
         source_policy = self._vector_search_for_goal(goal, lookback_length)
@@ -210,6 +219,20 @@ class IMGEPExplorerInstance(Leaf):
 
 
         return params_trial
+
+    def _extract_external_controls(
+        self,
+        system_output: Union[Dict, List[Dict]],
+    ) -> tuple[np.ndarray | None, Dict[str, Any] | None]:
+        if isinstance(system_output, list):
+            source = system_output[0] if system_output else {}
+        else:
+            source = system_output
+
+        if not isinstance(source, dict):
+            return None, None
+
+        return source.get("target"), source.get("goal_targeting")
 
     def observe_results(self, system_output: Dict) -> Dict:
         """Read the raw output observed and process it into a discovered
@@ -331,14 +354,18 @@ class IMGEPExplorer():
         return explorer
 
     def make_behavior_map(self, system: System):
-        kwargs = self.config.behavior_map_config
-        behavior_map=locate(self.config.behavior_map)(system,**kwargs)
-        return behavior_map
+        return instantiate_object(
+            self.config.behavior_map,
+            system,
+            object_name="behavior map",
+        )
 
     def make_parameter_map(self, system: System):
-        kwargs = self.config.parameter_map_config
-        param_map=locate(self.config.parameter_map)(system,**kwargs)
-        return param_map
+        return instantiate_object(
+            self.config.parameter_map,
+            system,
+            object_name="parameter map",
+        )
 
     def make_mutator(self, param_map: Any = None):
         if self.config.mutator== MutatorEnum.Specific:
@@ -352,6 +379,3 @@ class IMGEPExplorer():
 
         return mutator
     
-
-
-

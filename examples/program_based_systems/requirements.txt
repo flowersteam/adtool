@@ -1,0 +1,3 @@
+# Additional Python dependencies for the `program_based_systems` example.
+# Install after `pip install .`
+scipy

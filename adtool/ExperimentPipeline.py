@@ -12,6 +12,11 @@ import json
 
 import numpy as np
 
+from adtool.utils.interaction.experiment_control import (
+    read_experiment_control,
+    wait_if_experiment_paused,
+)
+
 
 
 def replace_lists_with_numpy(d):
@@ -27,6 +32,14 @@ def replace_lists_with_numpy(d):
         return {k:replace_lists_with_numpy(v) for k,v in d.items()}
     else:
         return d
+
+
+def get_render_every(config: dict) -> int:
+    render_every = config["experiment"]["config"].get("render_every", 1)
+    render_every = int(render_every)
+    if render_every < 0:
+        raise ValueError("experiment.config.render_every must be >= 0")
+    return render_every
 
 class ExperimentPipeline(Leaf):
     """
@@ -123,6 +136,11 @@ class ExperimentPipeline(Leaf):
         for callback in callbacks:
             callback(**kwargs)
 
+    def _should_render(self, render_every: int) -> bool:
+        if render_every == 0:
+            return False
+        return self.run_idx % render_every == 0
+
     def run(self, n_exploration_runs: int):
         """
         Launches the experiment for `n_exploration_runs` explorations.
@@ -171,6 +189,8 @@ class ExperimentPipeline(Leaf):
             )
 
             
+            next_run_idx = 0
+
             for json_discovery in json_discoveries:
                 # check if config.json is the same
                 
@@ -181,6 +201,11 @@ class ExperimentPipeline(Leaf):
                 #         raise Exception("The discovery config is not the same as the current config")
                 with open(join(mypath, json_discovery,"discovery.json")) as f:
                     new_trial_data = json.load(f)
+                    metadata = new_trial_data.get("metadata")
+                    if metadata is not None:
+                        next_run_idx = max(next_run_idx, metadata["run_idx"] + 1)
+                    else:
+                        next_run_idx += 1
                     #replace each list of list of floats with a tensor, recursively but bottom-up
 
                     new_trial_data = replace_lists_with_numpy(new_trial_data)
@@ -191,6 +216,8 @@ class ExperimentPipeline(Leaf):
         
                     
                     self._explorer._history_saver.map( new_trial_data )
+
+            self.run_idx = next_run_idx
                     
             if json_discoveries:
                 self.logger.info(
@@ -206,12 +233,13 @@ class ExperimentPipeline(Leaf):
 
 
             bootstrap_size = self.config['experiment']['config']['bootstrap_size']
+            render_every = get_render_every(self.config)
             
+            final_run_idx = self.run_idx + n_exploration_runs
 
-
-
-
-            while self.run_idx < n_exploration_runs:
+            while self.run_idx < final_run_idx:
+                wait_if_experiment_paused(mypath)
+                goal_targeting = read_experiment_control(mypath).get("goal_targeting", {}).get("resolved")
                 # check  if target.json exists
                 if os.path.exists(f"{mypath}/target.json"):
                     with open(f"{mypath}/target.json") as f:
@@ -226,9 +254,15 @@ class ExperimentPipeline(Leaf):
 
                 # pass trial parameters through system
                 data_dict = self._system.map(data_dict)
+                if goal_targeting is not None:
+                    data_dict["goal_targeting"] = goal_targeting
+                else:
+                    data_dict.pop("goal_targeting", None)
 
-                # render system output
-                rendered_outputs = self._system.render(data_dict)
+                # render system output only on the configured cadence
+                rendered_outputs = None
+                if self._should_render(render_every):
+                    rendered_outputs = self._system.render(data_dict)
 
                 # exploration phase : emits new trial parameters for next loop
 
@@ -276,7 +310,7 @@ class ExperimentPipeline(Leaf):
 
                 if (
                     run_idx_start_from_one % self.save_frequency == 0
-                    or run_idx_start_from_one == n_exploration_runs
+                    or run_idx_start_from_one == final_run_idx
                 ):
                     self.save(resource_uri=self.resource_uri)
 
