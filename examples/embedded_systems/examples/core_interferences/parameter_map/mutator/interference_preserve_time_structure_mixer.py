@@ -1,11 +1,11 @@
 import random
 from typing import List, Optional
 
-from adtool.examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
+from examples.embedded_systems.examples.core_interferences.helpers.interference_normalization import (
     normalize_instruction_sequences,
 )
-from adtool.examples.embedded_systems.examples.core_interferences.types import InstructionProgram
-from adtool.examples.embedded_systems.types import ProgramMixer
+from examples.embedded_systems.examples.core_interferences.types import InstructionProgram
+from examples.embedded_systems.types import ProgramMixer
 
 
 class PreserveTimeStructureProgramMixer(ProgramMixer):

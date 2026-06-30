@@ -7,14 +7,14 @@ from pydantic import BaseModel, Field
 from adtool.explorers.IMGEPExplorer import IMGEPExplorerInstance
 from adtool.utils.expose_config.expose_config import expose
 from adtool.systems import System
-from adtool.examples.embedded_systems.helpers.module_factory import make_module
+from examples.embedded_systems.helpers.module_factory import make_module
 import numpy as np
 
 from adtool.utils.leaf.Leaf import Leaf
-from adtool.examples.embedded_systems.behavior_map.embedded_systems_behavior_map import (
+from examples.embedded_systems.behavior_map.embedded_systems_behavior_map import (
     BaseBehaviorMap,
 )
-from adtool.examples.embedded_systems.parameter_map.embedded_systems_parameter_map import (
+from examples.embedded_systems.parameter_map.embedded_systems_parameter_map import (
     BaseParameterMap,
 )
 
@@ -32,10 +32,10 @@ class BaseExplorerConfig(BaseModel):
     periode: int = Field(1, ge=1, le=100000)
     knn: int = Field(1, ge=1, le=1000)
     behavior_map_config: Dict = Field(default_factory=lambda: {
-        "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap"
+        "path": "examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap"
     })
     parameter_map_config: Dict = Field(default_factory=lambda: {
-        "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.InterferenceParameterMap"
+        "path": "examples.embedded_systems.examples.core_interferences.parameter_map.InterferenceParameterMap"
     })
 
 class BaseIMGEPInstance(IMGEPExplorerInstance):

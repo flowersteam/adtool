@@ -2,7 +2,7 @@ from typing import List, Optional
 
 import numpy as np
 
-from adtool.examples.embedded_systems.types import GoalSampler
+from examples.embedded_systems.types import GoalSampler
 
 
 class RandomMinMaxGoalSampler(GoalSampler):

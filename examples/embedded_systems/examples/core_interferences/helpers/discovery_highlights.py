@@ -4,7 +4,7 @@ from typing import Any
 
 import numpy as np
 
-from adtool.examples.visu.highlights import (
+from adtool.user_tools.visu.highlights import (
     DiscoveryHighlightField,
     DiscoveryHighlightProvider,
     DiscoveryHighlightRule,

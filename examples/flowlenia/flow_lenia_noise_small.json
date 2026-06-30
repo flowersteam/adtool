@@ -7,7 +7,7 @@
             }
         },
         "system": {
-            "path": "adtool.examples.flowlenia.systems.FlowLeniaNoise.FlowLeniaNoise",
+            "path": "examples.flowlenia.systems.FlowLeniaNoise.FlowLeniaNoise",
             "config": {
                 "SX": 32,
                 "SY": 32,
@@ -22,8 +22,8 @@
             "config": {
                 "mutator": "specific",
                 "equil_time": 1,
-                "behavior_map": "adtool.examples.flowlenia.maps.FlowLeniaStatistics.FlowLeniaStatistics",
-                "parameter_map": "adtool.examples.flowlenia.maps.FlowLeniaParameterMap.FlowLeniaParameterMap",
+                "behavior_map": "examples.flowlenia.maps.FlowLeniaStatistics.FlowLeniaStatistics",
+                "parameter_map": "examples.flowlenia.maps.FlowLeniaParameterMap.FlowLeniaParameterMap",
                 "mutator_config": {},
                 "behavior_map_config": {},
                 "parameter_map_config": {

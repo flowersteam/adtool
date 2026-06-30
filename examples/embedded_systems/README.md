@@ -21,7 +21,7 @@ Then export it in that folder's `__init__.py`.
 Example:
 
 ```python
-from adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.my_new_mixer import MyNewMixer
+from examples.embedded_systems.examples.core_interferences.parameter_map.mutator.my_new_mixer import MyNewMixer
 ```
 
 ## 2) Configure it in JSON
@@ -36,13 +36,13 @@ Example snippets:
   "system": {
     "config": {
       "simulator_config": {
-        "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.simulator.MySimulatorBackend",
+        "path": "examples.embedded_systems.examples.core_interferences.systems.simulator.MySimulatorBackend",
         "cycles": 512,
         "num_banks": 4,
         "num_addr": 96
       },
       "simulator_runner_config": {
-        "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.runner.MyRunner"
+        "path": "examples.embedded_systems.examples.core_interferences.systems.runner.MyRunner"
       }
     }
   }
@@ -54,24 +54,24 @@ Example snippets:
   "explorer": {
     "config": {
       "behavior_map_config": {
-        "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap",
+        "path": "examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap",
         "goal_sampler_config": {
-          "path": "adtool.examples.embedded_systems.behavior_map.goal_sampler.MyGoalSampler"
+          "path": "examples.embedded_systems.behavior_map.goal_sampler.MyGoalSampler"
         },
         "behavior_encoder_config": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.encoder.MyEncoder"
+          "path": "examples.embedded_systems.examples.core_interferences.behavior_map.encoder.MyEncoder"
         }
       },
       "parameter_map_config": {
-        "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.InterferenceParameterMap",
+        "path": "examples.embedded_systems.examples.core_interferences.parameter_map.InterferenceParameterMap",
         "mixer_config": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.MyNewMixer"
+          "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.MyNewMixer"
         },
         "generator_config": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.MyGenerator"
+          "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.MyGenerator"
         },
         "mutator_config": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.parameter_map.mutator.MyMutator"
+          "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.MyMutator"
         }
       }
     }

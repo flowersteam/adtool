@@ -10,7 +10,7 @@ import torch
 
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.wrappers.BoxProjector import BoxProjector
-from adtool.examples.grayscott.systems.GrayScott import GrayScott
+from examples.grayscott.systems.GrayScott import GrayScott
 
 from openai import OpenAI
 

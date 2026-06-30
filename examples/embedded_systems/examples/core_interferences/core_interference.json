@@ -7,7 +7,7 @@
         }
     },
     "system": {
-        "path": "adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem",
+        "path": "examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem",
         "config": {
             "simulator_config": {
                 "path": "examples.embedded_systems.examples.core_interferences.systems.simulator.Sim3Backend",
@@ -21,16 +21,16 @@
         }
     },
     "explorer": {
-        "path": "examples.embedded_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
+        "path": "examples.embedded_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer",
         "config": {
             "periode": 5,
             "knn": 1,
             "behavior_map_config": {
-                "path": "examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap.InterferenceBehaviorMap",
+                "path": "examples.embedded_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap",
                 "goal_sampler_config": {
-                    "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.goal_sampler.InterferenceZoneGoalSampler",
+                    "path": "examples.embedded_systems.examples.core_interferences.behavior_map.goal_sampler.InterferenceZoneGoalSampler",
                     "base_sampler_config": {
-                        "path": "adtool.examples.embedded_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler"
+                        "path": "examples.embedded_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler"
                     }
                 },
                 "behavior_encoder_config": {
@@ -38,7 +38,7 @@
                 }
             },
             "parameter_map_config": {
-                "path": "examples.embedded_systems.examples.core_interferences.parameter_map.InterferenceParameterMap.InterferenceParameterMap",
+                "path": "examples.embedded_systems.examples.core_interferences.parameter_map.InterferenceParameterMap",
                 "generator_config": {
                     "path": "examples.embedded_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionGenerator"
                 },

@@ -1,0 +1,6 @@
+# Additional Python dependencies for the `wphysics` example.
+# Install after `pip install .`
+# This file does not cover the local Wolfram Kernel installation.
+networkx
+pygraphviz
+wolframclient

@@ -15,7 +15,7 @@ from enum import Enum, auto
 import numpy as np
 from typing import Any, Dict
 
-from adtool.examples.embedded_systems.systems.simulator.embedded_systems_simulator import (
+from examples.embedded_systems.systems.simulator.embedded_systems_simulator import (
     BaseSimulator,
 )
 

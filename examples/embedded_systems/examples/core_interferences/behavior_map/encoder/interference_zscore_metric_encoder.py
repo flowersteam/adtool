@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from adtool.examples.embedded_systems.types import BehaviorEncoder
+from examples.embedded_systems.types import BehaviorEncoder
 
 
 class ZScoreMetricEncoder(BehaviorEncoder):
