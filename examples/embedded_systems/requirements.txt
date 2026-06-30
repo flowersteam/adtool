@@ -1,3 +1,0 @@
-# Additional Python dependencies for the `embedded_systems` example.
-# Install after `pip install .`
-scipy

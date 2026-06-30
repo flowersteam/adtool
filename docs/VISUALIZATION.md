@@ -283,7 +283,7 @@ class MyZoneGoalSampler:
 
 For a concrete reference, see:
 
-- [interference_zone_goal_sampler.py](../examples/embedded_systems/examples/core_interferences/behavior_map/goal_sampler/interference_zone_goal_sampler.py)
+- [interference_zone_goal_sampler.py](../examples/program_based_systems/examples/core_interferences/behavior_map/goal_sampler/interference_zone_goal_sampler.py)
 
 ## Analysis From The Viewer
 
