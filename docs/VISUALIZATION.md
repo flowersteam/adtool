@@ -54,9 +54,11 @@ python -m adtool.user_tools.visu.server \
 The viewer primarily consumes:
 
 - a discoveries directory,
-- rendered media already produced by the experiment,
+- optional rendered media already produced by the experiment,
 - optional saved `filters` inside each `discovery.json`,
 - optional visualization config passed through `--config_file`.
+
+If the experiment uses `experiment.config.render_every` with a value greater than `1`, or `0`, some discoveries may have no preview media. The viewer still loads those discoveries from `discovery.json`, but image and video previews are only available for the discoveries that were actually rendered.
 
 When `--config_file` is provided, the viewer can also consume top-level visualization hooks such as:
 

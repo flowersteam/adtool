@@ -6,12 +6,20 @@ The analysis module system is the offline post-processing layer of the library.
 
 It runs on saved `discoveries/*/discovery.json` files after or alongside an exploration run. Unlike the explorer itself, an analysis module is allowed to use the full saved dataset at once. This is why analysis is meant for offline metrics, comparisons, summaries, plots, and batch post-processing.
 
+Analysis modules operate on the saved numeric discovery payloads, not on rendered preview media. This matters when an experiment uses `experiment.config.render_every` with `0` or a sparse cadence: analysis still works because `discovery.json` is always saved even when `.png` or `.mp4` outputs are skipped.
+
 Typical uses are:
 
 - compare one discovery folder against one or more other folders,
 - compute progression curves over discovery order,
 - generate plots from all discoveries at once,
 - add experiment-specific metrics without touching the central analysis runner or analysis UI.
+
+Related saved files:
+
+- discoveries live under `<save_location>/discoveries/`
+- the shared run config is saved at `<save_location>/discoveries/config.json`
+- rendered media inside each discovery folder is optional and may be absent when rendering is disabled or throttled
 
 Analysis can be launched in two ways:
 
