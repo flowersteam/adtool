@@ -134,6 +134,13 @@ class ExperimentPipeline(Leaf):
             return False
         return self.run_idx % render_every == 0
 
+    def _legacy_checkpoint_enabled(self) -> bool:
+        return bool(
+            self.config.get("experiment", {})
+            .get("config", {})
+            .get("legacy_checkpoint_saves", False)
+        )
+
     def run(self, n_exploration_runs: int):
         """
         Launches the experiment for `n_exploration_runs` explorations.
@@ -360,6 +367,20 @@ class ExperimentPipeline(Leaf):
         return
 
     def save(self, resource_uri: str):
+        if self._legacy_checkpoint_enabled():
+            # LEGACY: full-object checkpoints exist only for backwards
+            # compatibility. Replay from saved discoveries is the supported
+            # resume path.
+            modules_dir = os.path.join(self.resource_uri, "discoveries/modules")
+            os.makedirs(modules_dir, exist_ok=True)
+            uid = self.save_leaf(resource_uri=modules_dir)
+            self.uid = uid  # store for on_save_finished_callbacks
+        else:
+            self.logger.info(
+                "[LEGACY] - Skipping module checkpoint save; replay from "
+                "discoveries is the primary resume path"
+            )
+
         self._raise_callbacks(
             self._on_save_callbacks,
             experiment_id=self.experiment_id,
@@ -368,8 +389,7 @@ class ExperimentPipeline(Leaf):
             resource_uri=resource_uri,
         )
 
-        # only run on_save_finished callbacks if on_save_callbacks
-        # provide a uid for the save
+        # only run on_save_finished callbacks if a legacy checkpoint uid exists
         if self.__dict__.get("uid", None) is not None:
             self._raise_callbacks(
                 self._on_save_finished_callbacks,

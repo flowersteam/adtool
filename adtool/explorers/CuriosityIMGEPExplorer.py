@@ -1,12 +1,12 @@
 from functools import partial
 from typing import Any, Dict, List
+from adtool.explorers.history_store import HistoryStore
 from adtool.systems import System
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.mutators import add_gaussian_noise, call_mutate_method
-from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.expose_config.expose_config import expose
 from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.utils.leaf.Leaf import Leaf, prune_state
 from pydantic import Field, BaseModel
 import numpy as np
 from enum import Enum
@@ -47,7 +47,7 @@ class CuriosityDrivenIMGEP(Leaf):
         self.equil_time = equil_time
         self.timestep = 0
         self.mutator = mutator
-        self._history_saver = SaveWrapper()
+        self._history_saver = HistoryStore()
         self.uncertainty_map = None
         self.kdtree = None
         self.novelty_weight = novelty_weight
@@ -135,7 +135,7 @@ class CuriosityDrivenIMGEP(Leaf):
         return system_output
 
     def read_last_discovery(self) -> Dict:
-        return self._history_saver.buffer[-1]
+        return self._history_saver.last()
 
     def optimize(self):
         pass
@@ -165,6 +165,10 @@ class CuriosityDrivenIMGEP(Leaf):
         param_history = self._extract_dict_history(history_buffer, self.postmap_key)
         valid_param_history = [param for i, param in enumerate(param_history) if valid_mask[i]]
         return valid_param_history[source_policy_idx]
+
+    @prune_state({"_history_saver": None})
+    def serialize(self) -> bytes:
+        return super().serialize()
 
 @expose
 class IMGEPExplorer():

@@ -125,11 +125,7 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
         return self.timestep % self.periode == 0
 
     def _get_history_features(self, lookback_length: int) -> Tuple[np.ndarray, List[Any]]:
-        history_length = lookback_length
-        if self._history_saver.locator.resource_uri == "":
-            history_length = 1
-
-        history = self._history_saver.get_history(lookback_length=history_length)
+        history = self._history_saver.get_history(lookback_length=lookback_length)
         feature_history = []
         param_history = []
         for item in history:

@@ -7,12 +7,12 @@ from typing import Any, Dict, List, Union
 from adtool.utils.leaf.locators.locators import BlobLocator
 
 from adtool.systems import System
+from adtool.explorers.history_store import HistoryStore
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.mutators import add_gaussian_noise, call_mutate_method
-from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.expose_config.expose_config import expose
 from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.utils.leaf.Leaf import Leaf, prune_state
 from pydantic import Field
 from typing import Dict
 from pydantic import BaseModel
@@ -77,7 +77,7 @@ class IMGEPExplorerInstance(Leaf):
 
         self.mutator = mutator
 
-        self._history_saver = SaveWrapper()
+        self._history_saver = HistoryStore()
 
     def bootstrap(self) -> Dict:
         """Return an initial sample needed to bootstrap the exploration loop."""
@@ -257,7 +257,7 @@ class IMGEPExplorerInstance(Leaf):
 
     def read_last_discovery(self) -> Dict:
         """Return last observed discovery."""
-        return self._history_saver.buffer[-1]
+        return self._history_saver.last()
 
     def optimize(self):
         """Run optimization step for online learning of the `Explorer` policy."""
@@ -322,6 +322,10 @@ class IMGEPExplorerInstance(Leaf):
         source_policy = param_history[source_policy_idx]
 
         return source_policy
+
+    @prune_state({"_history_saver": None})
+    def serialize(self) -> bytes:
+        return super().serialize()
 
 
 @expose

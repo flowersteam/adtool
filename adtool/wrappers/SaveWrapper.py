@@ -14,6 +14,13 @@ from adtool.utils.leaf.locators.locators import LinearLocator
 
 class SaveWrapper(TransformWrapper):
     """
+    LEGACY: this wrapper used to combine history caching, SQLite-backed
+    trajectory storage, and serialization concerns.
+
+    Explorer history now uses a replay-first in-memory store rebuilt from
+    `discoveries/*/discovery.json`. This class is kept only for backwards
+    compatibility with legacy checkpoint code paths.
+
     Wrapper which does basic processing and
     saving of captured *input* history
     Usage example:
@@ -71,6 +78,8 @@ class SaveWrapper(TransformWrapper):
         return output
 
     def save_leaf(self, resource_uri: str, parent_uid: int = -1) -> "LeafUID":
+        # LEGACY: recursive wrapper checkpoint persistence is deprecated in
+        # favor of replaying saved discoveries.
         # parent_uid is passed for specifying the parent node,
         # when passed to LinearLocator.store() by super().save_leaf()
         uid = super().save_leaf(resource_uri, parent_uid)
@@ -85,6 +94,8 @@ class SaveWrapper(TransformWrapper):
 
     def serialize(self) -> bytes:
         """
+        LEGACY: only used by the legacy checkpoint flow.
+
         Custom serialize method needed for producing appropriately padded
         binary with metadata.
         """
@@ -107,6 +118,9 @@ class SaveWrapper(TransformWrapper):
 
     def get_history(self, lookback_length: int = 1) -> List[Dict]:
         """
+        LEGACY: explorer history queries should go through the replay-first
+        `HistoryStore` instead of this wrapper/SQLite path.
+
         Retrieve the history of inputs to the wrapper.
         `lookback_length = -1` corresponds to retrieving the entire history,
         which may be very large as it will query the on-disk SQLite db.
@@ -157,6 +171,8 @@ class SaveWrapper(TransformWrapper):
 
     def _retrieve_buffer(self, buffer_src_uri: str, length: int) -> List[Dict]:
         """
+        LEGACY: SQLite-backed history retrieval is deprecated.
+
         Temporarily query SQLite db to retrieve buffer, taking the top-level
         resource_uri and the length of the buffer to retrieve.
 
@@ -188,6 +204,8 @@ class SaveWrapper(TransformWrapper):
         self, buffer_src_uri: str, cachebuf_size: int = 1
     ) -> Iterable[Dict]:
         """
+        LEGACY: retained only for the deprecated SQLite-backed history path.
+
         Query SQLite DB to retrieve an iterable which lazy loads the DB tree.
         """
         return BufferStreamer(
@@ -221,6 +239,9 @@ class SaveWrapper(TransformWrapper):
 
 class BufferStreamer:
     """
+    LEGACY: retained only for compatibility with the deprecated
+    SQLite-backed `SaveWrapper` history path.
+
     Class for streaming buffers of arbitrary length from SQLite db.
 
     `mode` is set to one of "serial" or "batched" which specifies whether

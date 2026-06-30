@@ -6,6 +6,7 @@ for example in remote configurations.
 import argparse
 import json
 import random
+import warnings
 from typing import Callable, Dict, List
 
 import numpy as np
@@ -86,9 +87,16 @@ def create(
 
 
 
-    # short circuit if "resume_from_uid" is set
+    # LEGACY: `resume_from_uid` restores a recursive object checkpoint.
+    # Replay from saved discoveries is now the primary resume path.
     resume_ckpt = parameters["experiment"]["config"].get("resume_from_uid", None)
     if resume_ckpt is not None:
+        warnings.warn(
+            "experiment.config.resume_from_uid is legacy; prefer replay from "
+            "saved discoveries instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         resource_uri = parameters["experiment"]["config"]["save_location"]
         experiment = ExperimentPipeline().load_leaf(
             uid=resume_ckpt, resource_uri=resource_uri
