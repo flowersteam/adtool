@@ -37,12 +37,15 @@ Example snippets:
     "config": {
       "simulator_config": {
         "path": "examples.program_based_systems.examples.core_interferences.systems.simulator.MySimulatorBackend",
-        "cycles": 512,
-        "num_banks": 4,
-        "num_addr": 96
+        "config": {
+          "cycles": 512,
+          "num_banks": 4,
+          "num_addr": 96
+        }
       },
       "simulator_runner_config": {
-        "path": "examples.program_based_systems.examples.core_interferences.systems.runner.MyRunner"
+        "path": "examples.program_based_systems.examples.core_interferences.systems.runner.MyRunner",
+        "config": {}
       }
     }
   }
@@ -53,25 +56,34 @@ Example snippets:
 {
   "explorer": {
     "config": {
-      "behavior_map_config": {
+      "behavior_map": {
         "path": "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap",
-        "goal_sampler_config": {
-          "path": "examples.program_based_systems.behavior_map.goal_sampler.MyGoalSampler"
-        },
-        "behavior_encoder_config": {
-          "path": "examples.program_based_systems.examples.core_interferences.behavior_map.encoder.MyEncoder"
+        "config": {
+          "goal_sampler_config": {
+            "path": "examples.program_based_systems.behavior_map.goal_sampler.MyGoalSampler",
+            "config": {}
+          },
+          "behavior_encoder_config": {
+            "path": "examples.program_based_systems.examples.core_interferences.behavior_map.encoder.MyEncoder",
+            "config": {}
+          }
         }
       },
-      "parameter_map_config": {
+      "parameter_map": {
         "path": "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap",
-        "mixer_config": {
-          "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.MyNewMixer"
-        },
-        "generator_config": {
-          "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.MyGenerator"
-        },
-        "mutator_config": {
-          "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.MyMutator"
+        "config": {
+          "mixer_config": {
+            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.MyNewMixer",
+            "config": {}
+          },
+          "generator_config": {
+            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.MyGenerator",
+            "config": {}
+          },
+          "mutator_config": {
+            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.MyMutator",
+            "config": {}
+          }
         }
       }
     }

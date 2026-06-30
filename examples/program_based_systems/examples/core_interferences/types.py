@@ -1,4 +1,6 @@
-from typing_extensions import Any, Dict, Literal, Tuple, TypedDict
+from typing_extensions import Dict, Literal, Tuple, TypedDict
+
+from adtool.utils.factory import ObjectSpec
 
 
 InstructionType = Literal["read", "write"]
@@ -15,12 +17,5 @@ class InterferenceParamsPayload(TypedDict):
     dynamic_params: InterferenceDynamicParams
 
 
-class InterferenceSimulatorConfig(TypedDict):
-    path: str
-    cycles: int
-    num_banks: int
-    num_addr: int
-
-
-class InterferenceSimulatorRunnerConfig(TypedDict):
-    path: str
+InterferenceSimulatorConfig = ObjectSpec
+InterferenceSimulatorRunnerConfig = ObjectSpec

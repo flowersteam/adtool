@@ -7,8 +7,8 @@ from pydantic import BaseModel, Field
 
 from adtool.explorers.IMGEPExplorer import IMGEPExplorerInstance
 from adtool.utils.expose_config.expose_config import expose
+from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
 from adtool.systems import System
-from examples.program_based_systems.helpers.module_factory import make_module
 import numpy as np
 
 from adtool.utils.leaf.Leaf import Leaf
@@ -32,12 +32,16 @@ class BaseExplorerFactory(ABC):
 class BaseExplorerConfig(BaseModel):
     periode: int = Field(1, ge=1, le=100000)
     knn: int = Field(1, ge=1, le=1000)
-    behavior_map_config: Dict = Field(default_factory=lambda: {
-        "path": "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap"
-    })
-    parameter_map_config: Dict = Field(default_factory=lambda: {
-        "path": "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap"
-    })
+    behavior_map: ObjectSpec = Field(
+        object_spec(
+            "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap"
+        )
+    )
+    parameter_map: ObjectSpec = Field(
+        object_spec(
+            "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap"
+        )
+    )
 
 class BaseIMGEPInstance(IMGEPExplorerInstance):
     """Program-based systems IMGEP policy with periodic goals and kNN retrieval."""
@@ -184,10 +188,16 @@ class BaseIMGEPExplorer(BaseExplorerFactory):
         pass
 
     def __call__(self, system: System) -> BaseIMGEPInstance:
-        behavior_map = make_module(
-            "behavior_map", system, **self.config.behavior_map_config)
-        param_map = make_module("parameter_map", system,
-                                **self.config.parameter_map_config)
+        behavior_map = instantiate_object(
+            self.config.behavior_map,
+            system,
+            object_name="behavior map",
+        )
+        param_map = instantiate_object(
+            self.config.parameter_map,
+            system,
+            object_name="parameter map",
+        )
 
         return BaseIMGEPInstance(
             parameter_map=param_map,

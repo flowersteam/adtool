@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from pydoc import locate
+
+from adtool.utils.factory import instantiate_object
 
 from .provider import DiscoveryHighlightProvider
 
@@ -25,13 +26,10 @@ def load_highlight_export_context(
     if provider_config is None:
         return HighlightExportContext(provider=None, schema=empty_highlight_schema())
 
-    provider_path = provider_config["path"]
-    provider_kwargs = provider_config.get("config", {})
-    provider_class = locate(provider_path)
-    if provider_class is None:
-        raise ValueError(f"Could not import discovery highlight provider: {provider_path}")
-
-    provider = provider_class(**provider_kwargs)
+    provider = instantiate_object(
+        provider_config,
+        object_name="discovery highlight provider",
+    )
     return HighlightExportContext(provider=provider, schema=provider.schema())
 
 

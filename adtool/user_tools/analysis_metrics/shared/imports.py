@@ -1,8 +1,5 @@
-from pydoc import locate
+from adtool.utils.factory import resolve_dotted_object
 
 
 def load_dotted_object(path: str):
-    obj = locate(path)
-    if obj is None:
-        raise ValueError(f"Could not import {path}")
-    return obj
+    return resolve_dotted_object(path, object_name="analysis object")

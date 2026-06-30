@@ -4,17 +4,16 @@ This file `run_experimentations.py` can also be run as `__main__`,
 for example in remote configurations.
 """
 import argparse
-from ctypes import cast
 import json
 import random
 from typing import Callable, Dict, List
-from pydoc import locate as _locate
 
 import numpy as np
 #from adtool.ExperimentPipelineVariance import ExperimentPipeline
 from adtool.ExperimentPipeline import ExperimentPipeline
 
 from adtool.utils.logger import AutoDiscLogger
+from adtool.utils.factory import instantiate_object
 from collections import defaultdict
 
 
@@ -52,10 +51,11 @@ def create(
     # add handlers to registration
     handlers = []
     for logger_handler in parameters["logger_handlers"]:
-        logger_handler["path"]
-        cls_path=f"{logger_handler['path']}"
-        handler_class=cast(type, _locate(cls_path))
-        handler = handler_class(**logger_handler["config"], experiment_id=experiment_id)
+        handler = instantiate_object(
+            logger_handler,
+            object_name="logger handler",
+            experiment_id=experiment_id,
+        )
         handlers.append(handler)
     if additional_handlers is not None:
         handlers.extend(additional_handlers)
@@ -75,9 +75,9 @@ def create(
 
             cb_requests = parameters["callbacks"][cb_key]
             for cb in cb_requests:
-                callback = _locate(cb["path"])
-                    # initialize callback instance
-                callbacks[cb_key].append(callback(**cb['config']))
+                callbacks[cb_key].append(
+                    instantiate_object(cb, object_name=f"{cb_key} callback")
+                )
         
 
     # add additional callbacks which are already initialized Callables
@@ -108,22 +108,13 @@ def create(
 
         return experiment
     
-    system_class = _locate(parameters["system"]["path"])
-    if system_class is None:
-        raise ValueError(
-            f"Could not retrieve class from path: {parameters['system']['path']}."
-        )
-    
-    system = system_class(**parameters["system"]["config"])
+    system = instantiate_object(parameters["system"], object_name="system")
 
     # Get explorer factory and generate explorer
-    explorer_factory_class = _locate(parameters["explorer"]["path"])
-    if explorer_factory_class is None:
-        raise ValueError(
-            f"Could not retrieve class from path: {parameters['explorer']['path']}."
-        )
-  
-    explorer_factory = explorer_factory_class(**parameters["explorer"]["config"])
+    explorer_factory = instantiate_object(
+        parameters["explorer"],
+        object_name="explorer factory",
+    )
     explorer = explorer_factory(system)
     
 

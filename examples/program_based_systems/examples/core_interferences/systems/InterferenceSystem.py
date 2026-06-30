@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 from typing import Any, Dict, Optional, Tuple
 
-from examples.program_based_systems.helpers.module_factory import make_module
 from pydantic import BaseModel, Field
 
 from examples.program_based_systems.systems.program_based_systems_system import BaseProgramSystem
 from adtool.utils.expose_config.expose_config import expose
+from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
 from examples.program_based_systems.examples.core_interferences.helpers.interference_visualizer import (
     render_interference_dashboard,
 )
@@ -22,17 +22,19 @@ from examples.program_based_systems.examples.core_interferences.types import (
 
 class InterferenceConfig(BaseModel):
     simulator_config: InterferenceSimulatorConfig = Field(
-        default_factory=lambda: {
-            "path": "examples.program_based_systems.examples.core_interferences.systems.simulator.Sim3Backend",
-            "cycles": 80,
-            "num_banks": 4,
-            "num_addr": 41,
-        }
+        object_spec(
+            "examples.program_based_systems.examples.core_interferences.systems.simulator.Sim3Backend",
+            {
+                "cycles": 80,
+                "num_banks": 4,
+                "num_addr": 41,
+            },
+        )
     )
     simulator_runner_config: InterferenceSimulatorRunnerConfig = Field(
-        default_factory=lambda: {
-            "path": "examples.program_based_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner",
-        }
+        object_spec(
+            "examples.program_based_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner"
+        )
     )
 
 
@@ -44,28 +46,28 @@ class InterferenceSystem(BaseProgramSystem):
 
     def __init__(
             self,
-            simulator_config: Optional[InterferenceSimulatorConfig] = None,
-            simulator_runner_config: Optional[InterferenceSimulatorRunnerConfig] = None,
+            simulator_config: Optional[ObjectSpec] = None,
+            simulator_runner_config: Optional[ObjectSpec] = None,
             *args,
             **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
         if simulator_config is None and simulator_runner_config is None:
-            simulator_runner_config = dict(self.config.simulator_runner_config)
-            simulator_config = dict(self.config.simulator_config)
+            simulator_runner_config = self.config.simulator_runner_config
+            simulator_config = self.config.simulator_config
         elif simulator_config is None or simulator_runner_config is None:
             raise ValueError(
                 "Both simulator_config and simulator_runner_config must be provided together."
             )
 
-        simulator = make_module(
-            "simulator",
-            **simulator_config,
+        simulator = instantiate_object(
+            simulator_config,
+            object_name="simulator",
         )
-        self.simulator_runner = make_module(
-            "simulator_runner",
+        self.simulator_runner = instantiate_object(
+            simulator_runner_config,
             simulator=simulator,
-            **simulator_runner_config,
+            object_name="simulator runner",
         )
 
     def map(self, input: Dict) -> Dict:

@@ -2,10 +2,10 @@ import json
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from pydoc import locate
 
 import numpy as np
 
+from adtool.utils.factory import instantiate_object
 from .discovery import (
     build_discovery,
     write_discovery,
@@ -36,21 +36,14 @@ def _load_json(path):
         return json.load(handle)
 
 
-def _load_object(path):
-    obj = locate(path)
-    if obj is None:
-        raise ValueError(f"Could not import {path}")
-    return obj
-
-
 def _build_system_and_explorer(config):
     system_config = config["system"]
     explorer_config = config["explorer"]
-    system_cls = _load_object(system_config["path"])
-    explorer_factory_cls = _load_object(explorer_config["path"])
-
-    system = system_cls(**dict(system_config.get("config") or {}))
-    explorer_factory = explorer_factory_cls(**dict(explorer_config.get("config") or {}))
+    system = instantiate_object(system_config, object_name="system")
+    explorer_factory = instantiate_object(
+        explorer_config,
+        object_name="explorer factory",
+    )
     return system, explorer_factory(system)
 
 

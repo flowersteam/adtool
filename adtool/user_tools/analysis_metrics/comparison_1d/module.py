@@ -8,8 +8,8 @@ from ..shared import AnalysisModule
 class Comparison1DModule(AnalysisModule):
     module_id = "comparison_1d"
 
-    def __init__(self, config: dict | None = None) -> None:
-        super().__init__(config)
+    def __init__(self, **config) -> None:
+        super().__init__(**config)
         self.module_config = load_comparison_1d_config(self.config)
 
     def run(self, datasets, labels, run_dir) -> dict:
