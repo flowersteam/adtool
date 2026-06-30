@@ -3,7 +3,7 @@ import pickle
 from typing import Any, Callable, Dict, Type
 
 import numpy as np
-import torch
+# import torch
 from adtool.utils.leaf.Leaf import Leaf
 
 
@@ -21,9 +21,10 @@ class _JSONEncoderFactory:
 
 class _CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
+        # TODO FIX TOML : is there a way to not import torch here
         # catch torch Tensors
-        if isinstance(obj, torch.Tensor):
-            return obj.tolist()
+        # if isinstance(obj, torch.Tensor):
+        #     return obj.tolist()
         # catch numpy arrays
         if isinstance(obj, np.ndarray):
             return obj.tolist()

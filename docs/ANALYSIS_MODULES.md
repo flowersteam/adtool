@@ -15,7 +15,7 @@ Typical uses are:
 
 Analysis can be launched in two ways:
 
-- from the command line with `python examples/run_analysis.py ...`,
+- from the command line with `python -m adtool.runners.run_analysis ...`,
 - from the `Analysis` page of the visualization UI.
 
 The UI does not change the execution model: it still launches offline analysis jobs on saved discoveries.
@@ -24,8 +24,8 @@ The UI does not change the execution model: it still launches offline analysis j
 
 The entrypoint is `run_analysis`, exposed through:
 
-- [examples/run_analysis.py](../examples/run_analysis.py)
-- `adtool.examples.analysis_metrics.analysis_run.run_analysis`
+- [adtool/runners/run_analysis.py](../adtool/runners/run_analysis.py)
+- `adtool.user_tools.analysis_metrics.analysis_run.run_analysis`
 
 Analysis is driven by a config file with a top-level `analysis_modules` list:
 
@@ -33,11 +33,11 @@ Analysis is driven by a config file with a top-level `analysis_modules` list:
 {
   "analysis_modules": [
     {
-      "path": "adtool.examples.analysis_metrics.comparison_1d.Comparison1DModule",
+      "path": "adtool.user_tools.analysis_metrics.comparison_1d.Comparison1DModule",
       "config": {}
     },
     {
-      "path": "adtool.examples.embedded_systems.examples.core_interferences.analysis_modules.MutualMissHeatmapModule",
+      "path": "examples.program_based_systems.examples.core_interferences.analysis_modules.MutualMissHeatmapModule",
       "config": {}
     }
   ]
@@ -78,11 +78,11 @@ The library currently ships with these built-in analysis modules:
 
 There is also an experiment-local example custom module in core interferences:
 
-- [mutual_miss_heatmap.py](../examples/embedded_systems/examples/core_interferences/analysis_modules/mutual_miss_heatmap.py)
+- [mutual_miss_heatmap.py](../examples/program_based_systems/examples/core_interferences/analysis_modules/mutual_miss_heatmap.py)
 
 That example shows the intended extension model:
 
-- shared generic plumbing stays in `examples/analysis_metrics`,
+- shared generic plumbing stays in `adtool.user_tools.analysis_metrics`,
 - experiment-specific metrics stay next to the system that owns them.
 
 ### Using Built-In Modules
@@ -95,10 +95,10 @@ Minimal `Comparison1DModule` example:
 {
   "analysis_modules": [
     {
-      "path": "adtool.examples.analysis_metrics.comparison_1d.Comparison1DModule",
+      "path": "adtool.user_tools.analysis_metrics.comparison_1d.Comparison1DModule",
       "config": {
         "projection": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+          "path": "examples.program_based_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
           "config": {}
         },
         "dimensions": "all",
@@ -123,10 +123,10 @@ Minimal `Comparison2DModule` example:
 {
   "analysis_modules": [
     {
-      "path": "adtool.examples.analysis_metrics.comparison_2d.Comparison2DModule",
+      "path": "adtool.user_tools.analysis_metrics.comparison_2d.Comparison2DModule",
       "config": {
         "projection": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+          "path": "examples.program_based_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
           "config": {}
         },
         "pairs": [[0, 12], [2, 12]],
@@ -149,14 +149,14 @@ Minimal `SpaceCoverageModule` example:
 {
   "analysis_modules": [
     {
-      "path": "adtool.examples.analysis_metrics.space_coverage.SpaceCoverageModule",
+      "path": "adtool.user_tools.analysis_metrics.space_coverage.SpaceCoverageModule",
       "config": {
         "projection": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+          "path": "examples.program_based_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
           "config": {}
         },
         "metric": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.space_coverage.GridSpaceCoverageMetric",
+          "path": "examples.program_based_systems.examples.core_interferences.behavior_map.space_coverage.GridSpaceCoverageMetric",
           "config": {
             "dimensions": [0, 1, 2],
             "boundaries": [[-25, 25], [-25, 25], [-25, 25]],
@@ -179,7 +179,7 @@ Minimal `SpaceCoverageModule` example:
 
 You can combine several built-in modules and custom modules in the same file. A full real example is available in:
 
-- [core_interference_analysis.json](../examples/embedded_systems/examples/core_interferences/core_interference_analysis.json)
+- [core_interference_analysis.json](../examples/program_based_systems/examples/core_interferences/core_interference_analysis.json)
 
 ## Add a New Analysis Module
 
@@ -197,7 +197,7 @@ Minimal template:
 ```python
 from pathlib import Path
 
-from adtool.examples.analysis_metrics.shared import AnalysisImage, AnalysisModule
+from adtool.user_tools.analysis_metrics.shared import AnalysisImage, AnalysisModule
 
 
 class MyAnalysisModule(AnalysisModule):
@@ -245,7 +245,7 @@ Minimal config entry:
 Example:
 
 ```bash
-python examples/run_analysis.py \
+python -m adtool.runners.run_analysis \
   PATH_TO_PRIMARY_DISCOVERIES \
   PATH_TO_COMPARISON_DISCOVERIES \
   --config_file PATH_TO_ANALYSIS_CONFIG \
@@ -272,7 +272,7 @@ The `Analysis` page of the visualization server provides two actions:
 Minimal launch flow:
 
 ```bash
-python -m adtool.examples.visu.server \
+python -m adtool.user_tools.visu.server \
   --discoveries PATH_TO_DISCOVERIES \
   --config_file PATH_TO_ANALYSIS_CONFIG
 ```

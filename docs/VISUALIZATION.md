@@ -26,14 +26,14 @@ The visualization layer is useful for:
 Manual mode:
 
 ```bash
-python -m adtool.examples.visu.server \
+python -m adtool.user_tools.visu.server \
   --discoveries PATH_TO_DISCOVERIES
 ```
 
 With analysis-side extensions such as highlights:
 
 ```bash
-python -m adtool.examples.visu.server \
+python -m adtool.user_tools.visu.server \
   --discoveries PATH_TO_DISCOVERIES \
   --config_file PATH_TO_ANALYSIS_CONFIG
 ```
@@ -41,7 +41,7 @@ python -m adtool.examples.visu.server \
 With live online updates:
 
 ```bash
-python -m adtool.examples.visu.server \
+python -m adtool.user_tools.visu.server \
   --discoveries PATH_TO_DISCOVERIES \
   --config_file PATH_TO_ANALYSIS_CONFIG \
   --refresh
@@ -171,7 +171,7 @@ They must define:
 Minimal template:
 
 ```python
-from adtool.examples.visu.highlights import (
+from adtool.user_tools.visu.highlights import (
     DiscoveryHighlightField,
     DiscoveryHighlightProvider,
     DiscoveryHighlightRule,
@@ -283,7 +283,7 @@ class MyZoneGoalSampler:
 
 For a concrete reference, see:
 
-- [interference_zone_goal_sampler.py](../examples/embedded_systems/examples/core_interferences/behavior_map/goal_sampler/interference_zone_goal_sampler.py)
+- [interference_zone_goal_sampler.py](../examples/program_based_systems/examples/core_interferences/behavior_map/goal_sampler/interference_zone_goal_sampler.py)
 
 ## Analysis From The Viewer
 

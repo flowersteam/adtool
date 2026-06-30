@@ -1,1 +1,0 @@
-from adtool.examples.embedded_systems.systems.embedded_systems_system import BaseEmbeddedSystem

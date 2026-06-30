@@ -8,8 +8,8 @@ from adtool.wrappers.BoxProjector import BoxProjector
 from adtool.utils.misc.torch_utils import roll_n
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
-from adtool.examples.lenia.systems.Lenia import Lenia
-from adtool.examples.stable_diffusion.systems.StableDiffusionPropagator import StableDiffusionPropagator
+from examples.lenia.systems.Lenia import Lenia
+from examples.stable_diffusion.systems.StableDiffusionPropagator import StableDiffusionPropagator
 
 EPS = 0.0001
 

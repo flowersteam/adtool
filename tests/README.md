@@ -69,7 +69,7 @@ This writes baseline_ranges.json to the test folder.
 
 The runner logic lives under tests/smoke_runner and does the following:
 - Loads test specs from tests/*/test_spec.json
-- Runs run_experimentations.py with a temporary config and isolated save directory
+- Runs `python -m adtool.runners.run_experimentations` with a temporary config and isolated save directory
 - Reads discoveries from the run output
 - Computes generic numeric metrics
 - Compares metrics to baseline_ranges.json

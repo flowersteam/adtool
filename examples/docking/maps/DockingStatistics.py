@@ -12,7 +12,7 @@ from plip.exchange.report import BindingSiteReport
 
 from io import BytesIO
 
-from adtool.examples.docking.systems import Docking
+from examples.docking.systems import Docking
 
 
 d_MIN = 1.5
