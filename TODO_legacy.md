@@ -91,8 +91,28 @@ Notes from the audit:
 - [ ] Remove any now-unused imports, comments, and compatibility shims left behind by the legacy cleanup.
 
 ## Needs discussion
-- `CuriosityIMGEPExplorer` looks odd and specialized, but it is still referenced by current FlashLenia configs. It should only be removed if FlashLenia is changed first.
-- `BoxProjector` is active code, but its location under `wrappers/` is legacy naming. It likely belongs in a renamed non-wrapper location later.
-- `IdentityBehaviorMap` appears to be used only by `examples/stable_diffusion/sd.py`, not by shipped JSON configs. Decide whether that script is maintained or just leftover experimentation.
-- `MeanBehaviorMap` is still the default explorer behavior-map path, even though shipped example/test JSON usually override it. Decide whether to keep it as a default, rename it, or replace the default behavior entirely.
-- `examples/draft/` is described in `README.md` as a skeleton. Decide whether that is intentional scaffolding or dead code that should leave the repository.
+- What to do about the database layer, and whether any of it should remain:
+  - The old persistence path currently pulls in locator/database code even for normal imports.
+  - Decide whether all file/SQLite/ExpeDB persistence code should be removed with legacy checkpoint saving, or whether a smaller database abstraction is still needed for some future non-legacy use.
+  - This includes deciding the fate of `LinearBase`, locator factories, ExpeDB locators, and any SQLAlchemy dependency that only exists for the old save/reload path.
+- What to do about leaf state saving, and whether it is still relevant at all:
+  - The current runtime already resumes by replaying `discoveries/*/discovery.json`, which bypasses recursive object-state reload.
+  - Decide whether `Leaf` should remain only as a lightweight composition/container utility, or whether its save/load/UID machinery has any real remaining use.
+  - If leaf state save is no longer relevant, the whole object checkpoint model should disappear rather than stay as dormant compatibility code.
+- What to do about [`adtool/utils/interaction/FeedbackQueueClient.py`](/home/arthur/Documents/INRIA/codes/adtool/adtool/utils/interaction/FeedbackQueueClient.py):
+  - Decide whether it is part of any still-supported workflow or just leftover integration code.
+  - If it is unused, it should be added to the removal work; if it is still needed, its supported entrypoints and ownership should be made explicit.
+  - This also affects whether the rest of `adtool.utils.interaction` should be kept as-is or reduced to the experiment control path only.
+- Whether all callbacks should really be removed:
+  - Current shipped example/test JSON only prove active use of `SaveDiscoveryOnDisk`.
+  - Decide whether the target state is “keep only discovery-saving callbacks”, “keep minimal event hook interfaces with no built-in legacy implementations”, or “remove the callback system entirely and hardwire the remaining save flow”.
+  - This decision affects `ExperimentPipeline` hook structure, callback base classes, and config schema stability.
+- Whether all maps and explorers that are not defaults should really be removed:
+  - Some non-default modules are clearly dead, but some odd ones are still referenced by examples, such as `CuriosityIMGEPExplorer` in FlashLenia.
+  - Decide whether the removal rule is “not default”, “not referenced by shipped configs/tests”, or “not part of the supported public surface”.
+  - This also affects modules like `IdentityBehaviorMap`, `MeanBehaviorMap`, and any example-specific explorer/map that survives only through a single maintained example.
+- The wrappers are now useless as an abstraction; decide how to handle the few still-relevant pieces:
+  - `SaveWrapper`, `TransformWrapper`, `IdentityWrapper`, and `WrapperPipeline` look removable.
+  - `BoxProjector` is still actively used, but the `wrapper` naming and location no longer match its role.
+  - CPPN-related wrappers should move into the examples that use them.
+  - Decide whether relevant survivors should keep the `wrapper` nomination for compatibility, or be migrated to clearer module names and locations now.
