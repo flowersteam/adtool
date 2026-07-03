@@ -1,17 +1,16 @@
 import json
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
+import numpy as np
 from pydantic import BaseModel, Field
 
 from adtool.explorers.IMGEPExplorer import IMGEPExplorerInstance
+from adtool.systems import System
+from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.expose_config.expose_config import expose
 from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
-from adtool.systems import System
-import numpy as np
-
-from adtool.utils.leaf.Leaf import Leaf
 from examples.program_based_systems.behavior_map.program_based_systems_behavior_map import (
     BaseBehaviorMap,
 )
@@ -68,6 +67,7 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
         self.periode = max(1, int(periode))
         self.knn = max(1, int(knn))
         self._current_goal: Optional[np.ndarray] = None
+        self._current_goal_targeting_key = ""
 
     def suggest_trial(
         self,
@@ -75,7 +75,7 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
         goal: Optional[np.ndarray] = None,
         goal_targeting: Optional[Dict[str, Any]] = None,
     ) -> Any:
-        feature_matrix, param_history = self._get_history_features(lookback_length)
+        feature_matrix = self._get_history_feature_matrix(lookback_length)
 
         if feature_matrix.shape[0] == 0:
             return self.parameter_map.sample()
@@ -103,15 +103,11 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
                     goal_targeting=goal_targeting,
                 )
 
-        min_, max_ = self._compute_min_max(feature_matrix)
-        indices = self._feature_to_closest_indices(
+        selected = self._nearest_params(
             goal=np.asarray(goal, dtype=float),
-            features=feature_matrix,
-            min_=min_,
-            max_=max_,
+            lookback_length=lookback_length,
+            k=self.knn,
         )
-
-        selected = [param_history[i] for i in indices]
         base_policy = self._compose_base_policy(selected)
         return self.parameter_map.mutate(base_policy)
 
@@ -124,46 +120,17 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
             return True
         return self.timestep % self.periode == 0
 
-    def _get_history_features(self, lookback_length: int) -> Tuple[np.ndarray, List[Any]]:
-        history = self._history_saver.get_history(lookback_length=lookback_length)
-        feature_history = []
-        param_history = []
-        for item in history:
-            feature = np.asarray(item.get(self.premap_key, []), dtype=float).reshape(-1)
-            params = item.get(self.postmap_key, None)
-            if params is None or feature.size == 0:
-                continue
-            if np.isnan(feature).any() or np.isinf(feature).any():
-                continue
-            feature_history.append(feature)
-            param_history.append(params)
-
-        if lookback_length > 0:
-            feature_history = feature_history[-lookback_length:]
-            param_history = param_history[-lookback_length:]
-
-        if not feature_history:
-            return np.zeros((0, 0), dtype=float), []
-
-        feature_matrix = np.vstack(feature_history)
-        return feature_matrix, param_history
-
-    def _compute_min_max(self, features: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        return features.min(axis=0), features.max(axis=0)
-
-    def _feature_to_closest_indices(
+    def _distance_to_retrieval_history(
         self,
         goal: np.ndarray,
         features: np.ndarray,
-        min_: np.ndarray,
-        max_: np.ndarray,
     ) -> np.ndarray:
-        goal = goal.reshape(1, -1)
+        goal = np.asarray(goal, dtype=float).reshape(1, -1)
+        min_ = features.min(axis=0)
+        max_ = features.max(axis=0)
         denominator = max_ - min_
         denominator[denominator == 0] = 1.0
-        distances = np.sum(((goal - features) / denominator) ** 2, axis=1)
-        k_eff = min(self.knn, len(distances))
-        return np.argsort(distances)[:k_eff]
+        return np.sum(((goal - features) / denominator) ** 2, axis=1)
 
     def _compose_base_policy(self, selected_params: List[Any]) -> Any:
         if not selected_params:

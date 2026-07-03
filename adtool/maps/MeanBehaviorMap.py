@@ -3,7 +3,6 @@ from typing import Dict, Tuple
 
 from adtool.maps.Map import Map
 from adtool.wrappers.BoxProjector import BoxProjector
-from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 
@@ -25,7 +24,6 @@ class MeanBehaviorMap(Map):
         self.premap_key = premap_key
         self.postmap_key = postmap_key
         self.input_shape = input_shape  # unused by the module itself here
-        # self.history_saver = SaveWrapper()
         self.projector = BoxProjector(premap_key=self.postmap_key)
 
     def map(self, input: Dict) -> Dict:
@@ -48,18 +46,8 @@ class MeanBehaviorMap(Map):
         intermed_dict[self.postmap_key] = mean
 
         behavior_dict = self.projector.map(intermed_dict)
-        # behavior_dict = self.history_saver.map(projected_dict)
 
         return behavior_dict
 
     def sample(self) :
         return self.projector.sample()
-
-    # def get_tensor_history(self):
-    #     tensor_history = \
-    #         self.history_saver.buffer[0][self.premap_key].unsqueeze(0)
-    #     for dict in self.history_saver.buffer[1:]:
-    #         tensor_history = torch.cat(
-    #             (tensor_history, dict[self.premap_key].unsqueeze(0)),
-    #             dim=0)
-    #     return tensor_history

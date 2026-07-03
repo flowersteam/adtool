@@ -222,7 +222,7 @@ class ExperimentPipeline(Leaf):
                   #  print(new_trial_data)
         
                     
-                    self._explorer._history_saver.map( new_trial_data )
+                    self._explorer._history_saver.record(new_trial_data)
 
             self.run_idx = next_run_idx
                     
