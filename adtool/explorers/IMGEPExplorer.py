@@ -77,7 +77,8 @@ class IMGEPExplorerInstance(Leaf):
 
         self.mutator = mutator
 
-        self._history_saver = HistoryStore()
+        self._history_saver = HistoryStore(retain_full_history=False)
+        self._history_saver.configure_retrieval_view(self._extract_retrieval_view)
 
     def bootstrap(self) -> Dict:
         """Return an initial sample needed to bootstrap the exploration loop."""
@@ -146,7 +147,7 @@ class IMGEPExplorerInstance(Leaf):
             new_trial_data = self.observe_results(system_output)
 
         # save results
-        trial_data_reset = self._history_saver.map( new_trial_data )
+        trial_data_reset = self._record_discovery(new_trial_data)
 
 
         # TODO: check gradients here
@@ -263,65 +264,89 @@ class IMGEPExplorerInstance(Leaf):
         """Run optimization step for online learning of the `Explorer` policy."""
         pass
 
-    def _extract_dict_history(self, dict_history: List[Dict], key: str) -> List[Dict]:
-        """Extract history from an array of dicts with labelled data,
-        with the desired subdict being labelled by key.
+    def _extract_retrieval_view(
+        self,
+        item: Dict[str, Any],
+    ) -> tuple[np.ndarray, Any] | None:
+        """Build the retrieval-cache view of one stored discovery.
+
+        By the time a discovery reaches history, `behavior_map.map(...)` has
+        usually already converted raw system output into behavior space. This
+        method does not redo that projection. It simply selects:
+
+        - the numeric feature vector used to index nearest neighbors
+        - the payload returned when a neighbor is selected
         """
-        key_history = []
-        for dict in dict_history:
-            key_history.append(dict[key])
-        return key_history
+        feature = np.asarray(item.get(self.premap_key, []), dtype=float).reshape(-1)
+        params = item.get(self.postmap_key, None)
+        if params is None or feature.size == 0:
+            return None
+        if np.isnan(feature).any() or np.isinf(feature).any():
+            return None
+        return feature, params
 
-    def _extract_tensor_history(
-        self, dict_history: List[Dict], key: str
-    ) :
-        """Extract tensor history from an array of dicts with labelled data,
-        with the tensor being labelled by key.
-        """
-        # append history of tensors along a new dimension at index 0
-        tensor_history = np.array([dict_history[0][key]])
-        for dict in dict_history[1:]:
-          #  tensor_history = torch.cat((tensor_history, dict[key].unsqueeze(0)), dim=0)
-            tensor_history = np.concatenate((tensor_history, [dict[key]]), axis=0)
+    def _record_discovery(self, discovery: Dict) -> Dict:
+        """Store one discovery through the shared history interface."""
+        return self._history_saver.record(discovery)
 
-        return tensor_history
+    def _get_history_feature_matrix(self, lookback_length: int) -> np.ndarray:
+        return self._history_saver.get_retrieval_features(lookback_length=lookback_length)
 
-    def _find_closest(self, goal: np.ndarray,
-                       goal_history: np.ndarray):
-        # TODO: simple L2 distance right now
-        # (200,17) , (17,)
-        # return the argmin of the L2 distance with numpy
+    def _get_history_features(self, lookback_length: int) -> tuple[np.ndarray, List[Any]]:
+        return self._history_saver.get_retrieval_view(lookback_length=lookback_length)
 
-        return np.argmin(np.linalg.norm(goal_history - goal, axis=1))
+    def _distance_to_retrieval_history(
+        self,
+        goal: np.ndarray,
+        features: np.ndarray,
+    ) -> np.ndarray:
+        goal = np.asarray(goal, dtype=float).reshape(1, -1)
+        return np.sum((goal - features) ** 2, axis=1)
+
+    def _nearest_params(
+        self,
+        goal: np.ndarray,
+        lookback_length: int,
+        *,
+        k: int = 1,
+    ) -> List[Any]:
+        return self._history_saver.find_nearest_payloads(
+            goal,
+            k=k,
+            lookback_length=lookback_length,
+            distance_fn=self._distance_to_retrieval_history,
+        )
+
+    def _nearest_indices(
+        self,
+        goal: np.ndarray,
+        lookback_length: int,
+        *,
+        k: int = 1,
+    ) -> np.ndarray:
+        return self._history_saver.find_nearest_indices(
+            goal,
+            k=k,
+            lookback_length=lookback_length,
+            distance_fn=self._distance_to_retrieval_history,
+        )
     
     def _vector_search_for_goal(self, goal: np.ndarray, lookback_length: int) -> Dict:
-        history_buffer = self._history_saver.get_history(
-            lookback_length=lookback_length
+        selected = self._nearest_params(
+            np.asarray(goal, dtype=float),
+            lookback_length,
+            k=1,
         )
-
-
-        goal_history = self._extract_tensor_history(history_buffer, self.premap_key)
-
-
-        source_policy_idx = self._find_closest(goal, goal_history)
-
-
-        param_history = self._extract_dict_history(history_buffer, self.postmap_key)
-        source_policy = param_history[source_policy_idx]
-
-        return source_policy
+        if not selected:
+            return self.parameter_map.sample()
+        return selected[0]
 
     def _random_history_sample(self, lookback_length: int) -> Dict:
-        history_buffer = self._history_saver.get_history(
-            lookback_length=lookback_length
-        )
-
-        source_policy_idx = np.random.randint(0, len(history_buffer))
-
-        param_history = self._extract_dict_history(history_buffer, self.postmap_key)
-        source_policy = param_history[source_policy_idx]
-
-        return source_policy
+        _, param_history = self._get_history_features(lookback_length)
+        if not param_history:
+            return self.parameter_map.sample()
+        source_policy_idx = np.random.randint(0, len(param_history))
+        return param_history[source_policy_idx]
 
     @prune_state({"_history_saver": None})
     def serialize(self) -> bytes:

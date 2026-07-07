@@ -1,19 +1,15 @@
 """The simplest possible algorithm of Intrinsically Motivated Goal Exploration Processes
 """
 from functools import partial
-import json
-import os
-from typing import Any, Dict, List
+from typing import Any, Dict
 
-from adtool.explorers.history_store import HistoryStore
+from adtool.explorers.IMGEPExplorer import IMGEPExplorerInstance as BaseIMGEPExplorerInstance
 from adtool.systems import System
-from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.mutators import add_gaussian_noise, call_mutate_method
 from adtool.utils.expose_config.expose_config import expose
 from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
-from adtool.utils.leaf.Leaf import Leaf, prune_state
+from adtool.utils.leaf.Leaf import Leaf
 from pydantic import Field
-from typing import Dict
 from pydantic import BaseModel
 
 import numpy as np
@@ -42,108 +38,13 @@ class IMGEPConfig(BaseModel):
 
 
 
-class IMGEPExplorerInstance(Leaf):
-    """Basic IMGEP that diffuses in goalspace.
-
-    A class instance of `IMGEPExplorerInstance` has access to a provided
-    `parameter_map`, `behavior_map`, and `mutator` as attributes, whereas it
-    receives data from the system under study through the `.map` method.
-    """
-
-    def __init__(
+class IMGEPExplorerInstance(BaseIMGEPExplorerInstance):
+    def suggest_trial(
         self,
-        premap_key: str = "output",
-        postmap_key: str = "params",
-        parameter_map: Leaf = IdentityWrapper(),
-        behavior_map: Leaf = IdentityWrapper(),
-        mutator: Leaf = Leaf(),
-        equil_time: int = 0,
-    ) -> None:
-        super().__init__()
-
-        self.premap_key = premap_key
-        self.postmap_key = postmap_key
-        self.parameter_map = parameter_map
-        self.behavior_map = behavior_map
-        self.equil_time = equil_time
-        self.timestep = 0
-
-        self.mutator = mutator
-
-        self._history_saver = HistoryStore()
-
-    def bootstrap(self) -> Dict:
-        """Return an initial sample needed to bootstrap the exploration loop."""
-        data_dict = {}
-        # initialize sample
-        params_init = self.parameter_map.sample()
-
-        data_dict[self.postmap_key] = params_init
-
-
-        # first timestep recorded
-        # NOTE: therefore, regardless of self.equil_time, 1 equil step
-        # will always happen
-        data_dict["equil"] = 1
-        self.timestep += 1
-
-
-        return data_dict
-
-    def map(self, system_output: Dict) -> Dict:
-        """Map the raw output of the system rollout to a subsequent parameter
-        configuration to try.
-
-        Args:
-            system_output:
-                A dictionary where the key `self.premap_key` indexes the raw
-                output given at the end of the previous system rollout.
-
-        Returns:
-            A dictionary where the key `self.postmap_key` indexes the parameters to try in the next trial.
-        """
-        # either do nothing, or update dict by changing "output" -> "raw_output"
-        # and adding new "output" key which is the result of the behavior map
-        new_trial_data = self.observe_results(system_output)
-
-        # save results
-        trial_data_reset = self._history_saver.map( new_trial_data )
-
-
-        # TODO: check gradients here
-        if self.timestep < self.equil_time:
-
-
-            # sets "params" key
-            trial_data_reset = self.parameter_map.map(
-                trial_data_reset, override_existing=True
-            )
-
-            # label which trials were from random initialization
-            trial_data_reset["equil"] = 1
-        else:
-            # suggest_trial reads history
-            params_trial = self.suggest_trial(
-                goal=system_output['target'] if 'target' in system_output else None
-            )
-
-            # assemble dict and update parameter_map state
-            # NOTE: that this pass through parameter_map should not modify
-            # the "params" data, but only so that parameter_map can update
-            # its own state from reading the new parameters
-            trial_data_reset[self.postmap_key] = params_trial
-            trial_data_reset = self.parameter_map.map(
-                trial_data_reset, override_existing=False
-            )
-
-            # label that trials are now from the usual IMGEP procedure
-            trial_data_reset["equil"] = 0
-
-        self.timestep += 1
-
-        return trial_data_reset
-
-    def suggest_trial(self, lookback_length: int = -1, goal: np.ndarray = None):
+        lookback_length: int = -1,
+        goal: np.ndarray = None,
+        goal_targeting: Dict[str, Any] | None = None,
+    ):
         if goal is None:
             goal = self.behavior_map.sample()
 
@@ -152,64 +53,6 @@ class IMGEPExplorerInstance(Leaf):
         params_trial = self.mutator(interpolated_policy)
 
         return params_trial
-
-    def observe_results(self, system_output: Dict) -> Dict:
-        """Read the raw output observed and process it into a discovered
-        behavior.
-
-        Args:
-            system_output: See arguments for `.map`.
-
-        Returns:
-            A dictionary of the observed behavior/feature vector associated with
-            the raw `system_output`
-        """
-        # check we are not in the initialization case
-        if system_output.get(self.premap_key, None) is not None:
-            # recall that behavior_maps will remove the dict entry of
-            # self.premap_key
-            system_output = self.behavior_map.map(system_output)
-        else:
-            pass
-
-        return system_output
-
-    def read_last_discovery(self) -> Dict:
-        """Return last observed discovery."""
-        return self._history_saver.last()
-
-    def optimize(self):
-        """Run optimization step for online learning of the `Explorer` policy."""
-        pass
-
-    def _extract_dict_history(self, dict_history: List[Dict], key: str) -> List[Dict]:
-        """Extract history from an array of dicts with labelled data,
-        with the desired subdict being labelled by key.
-        """
-        key_history = []
-        for dict in dict_history:
-            key_history.append(dict[key])
-        return key_history
-
-    def _extract_tensor_history(
-        self, dict_history: List[Dict], key: str
-    ) :
-        """Extract tensor history from an array of dicts with labelled data,
-        with the tensor being labelled by key.
-        """
-        # append history of tensors along a new dimension at index 0
-        tensor_history = np.array([dict_history[0][key]])
-        for dict in dict_history[1:]:
-          #  tensor_history = torch.cat((tensor_history, dict[key].unsqueeze(0)), dim=0)
-            tensor_history = np.concatenate((tensor_history, [dict[key]]), axis=0)
-
-        return tensor_history
-
-    def _find_two_closest(self, goal: np.ndarray, goal_history: np.ndarray):
-        distances = np.linalg.norm(goal_history - goal, axis=1)
-        return np.argsort(distances)[:2]
-    
-
 
     def _interpolate_policies_recursive(self, policy1, policy2, weight: float):
         
@@ -237,17 +80,17 @@ class IMGEPExplorerInstance(Leaf):
         dynamic_params= self._interpolate_policies_recursive(policy1['dynamic_params'], policy2['dynamic_params'], weight)
         return {'dynamic_params': dynamic_params}
                     
-
     def _vector_search_for_goal(self, goal: np.ndarray, lookback_length: int) -> Dict:
-        history_buffer = self._history_saver.get_history(
-            lookback_length=lookback_length
+        goal_history, param_history = self._get_history_features(lookback_length)
+        if goal_history.shape[0] == 0:
+            return self.parameter_map.sample()
+
+        closest_indices = self._nearest_indices(
+            np.asarray(goal, dtype=float),
+            lookback_length,
+            k=2,
         )
 
-        goal_history = self._extract_tensor_history(history_buffer, self.premap_key)
-
-        closest_indices = self._find_two_closest(goal, goal_history)
-
-        param_history = self._extract_dict_history(history_buffer, self.postmap_key)
         policy1 = param_history[closest_indices[0]]
         if len(closest_indices) == 1:
             return policy1
@@ -262,10 +105,6 @@ class IMGEPExplorerInstance(Leaf):
         interpolated_policy = self._interpolate_policies(policy1, policy2, weight)
 
         return interpolated_policy
-
-    @prune_state({"_history_saver": None})
-    def serialize(self) -> bytes:
-        return super().serialize()
 
 @expose
 class IMGEPExplorer():
