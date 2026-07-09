@@ -20,11 +20,19 @@ def default_goal_targeting() -> dict:
     return {
         "radius": DEFAULT_GOAL_ZONE_RADIUS,
         "zones": [],
-        "placement_supported": False,
-        "projection_method": "",
-        "projection_axes": [],
-        "message": "",
         "resolved": None,
+    }
+
+
+def persisted_goal_targeting(goal_targeting: dict | None) -> dict:
+    payload = {
+        **default_goal_targeting(),
+        **(goal_targeting or {}),
+    }
+    return {
+        "radius": payload["radius"],
+        "zones": payload.get("zones", []),
+        "resolved": payload.get("resolved"),
     }
 
 
@@ -70,10 +78,7 @@ def write_experiment_control(
     if paused is not _UNSET:
         payload["paused"] = bool(paused)
     if goal_targeting is not _UNSET:
-        payload["goal_targeting"] = {
-            **default_goal_targeting(),
-            **(goal_targeting or {}),
-        }
+        payload["goal_targeting"] = persisted_goal_targeting(goal_targeting)
 
     payload = {
         **payload,

@@ -31,6 +31,8 @@ const SELECTED_COLOR = "#bc6c25";
 const SELECTION_LIST_HOVER_COLOR = "#e63946";
 const GOAL_ZONE_FILL_COLOR = "#f4a261";
 const GOAL_ZONE_LINE_COLOR = "#e76f51";
+const GOAL_ZONE_POINT_RADIUS = 0.06 * SCALE_FACTOR;
+const GOAL_ZONE_POINT_OPACITY = 0.5;
 const GOAL_ZONE_SEGMENTS = 72;
 const MAX_PREVIEW_SCALE_BOOST = 1.24;
 const HYBRID_VIEW_REBUILD_DEBOUNCE_MS = 120;
@@ -215,69 +217,67 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         goalZoneGroups = [];
     }
 
-    function createGoalZoneGroup(zone, radius) {
-        const worldRadius = Math.max(0.01, Number(radius || 0)) * SCALE_FACTOR;
-        const center = new THREE.Vector3(
-            SCALE_FACTOR * Number(zone.center?.[0] || 0),
-            SCALE_FACTOR * Number(zone.center?.[1] || 0),
+    function createGoalZoneCoverageMesh(points) {
+        const group = new THREE.Group();
+        const geometry = new THREE.CircleGeometry(GOAL_ZONE_POINT_RADIUS, 18);
+        const material = new THREE.MeshBasicMaterial({
+            color: GOAL_ZONE_FILL_COLOR,
+            transparent: true,
+            opacity: GOAL_ZONE_POINT_OPACITY,
+            depthTest: true,
+            depthWrite: true,
+            depthFunc: THREE.LessDepth,
+        });
+        const coverage = new THREE.InstancedMesh(geometry, material, points.length);
+        const matrix = new THREE.Matrix4();
+        for (const [index, point] of points.entries()) {
+            matrix.makeTranslation(point.x, point.y, point.z);
+            coverage.setMatrixAt(index, matrix);
+        }
+        coverage.instanceMatrix.needsUpdate = true;
+        coverage.renderOrder = 5;
+        group.add(coverage);
+        return group;
+    }
+
+    function createGoalZoneGroup(zone) {
+        const points = (zone.points || []).map((point) => new THREE.Vector3(
+            SCALE_FACTOR * Number(point[0] || 0),
+            SCALE_FACTOR * Number(point[1] || 0),
+            0.03,
+        ));
+        const centroid = new THREE.Vector3(
+            SCALE_FACTOR * Number(zone.centroid?.[0] || 0),
+            SCALE_FACTOR * Number(zone.centroid?.[1] || 0),
             0.02,
         );
-        const group = new THREE.Group();
-
-        const fill = new THREE.Mesh(
-            new THREE.CircleGeometry(worldRadius, GOAL_ZONE_SEGMENTS),
-            new THREE.MeshBasicMaterial({
-                color: GOAL_ZONE_FILL_COLOR,
-                opacity: 0.12,
-                transparent: true,
-                depthWrite: false,
-            }),
-        );
-        fill.position.copy(center);
-
-        const points = [];
-        for (let idx = 0; idx < GOAL_ZONE_SEGMENTS; idx += 1) {
-            const angle = (idx / GOAL_ZONE_SEGMENTS) * Math.PI * 2;
-            points.push(
-                new THREE.Vector3(
-                    center.x + worldRadius * Math.cos(angle),
-                    center.y + worldRadius * Math.sin(angle),
-                    center.z + 0.01,
-                ),
-            );
-        }
-        const outline = new THREE.LineLoop(
-            new THREE.BufferGeometry().setFromPoints(points),
-            new THREE.LineBasicMaterial({
-                color: GOAL_ZONE_LINE_COLOR,
-                transparent: true,
-                opacity: 0.95,
-            }),
-        );
-
+        const group = createGoalZoneCoverageMesh(points);
         const marker = new THREE.Mesh(
             new THREE.CircleGeometry(0.06 * SCALE_FACTOR, 24),
             new THREE.MeshBasicMaterial({
                 color: GOAL_ZONE_LINE_COLOR,
                 opacity: 0.95,
                 transparent: true,
+                depthTest: false,
                 depthWrite: false,
             }),
         );
-        marker.position.copy(center);
+        marker.position.copy(centroid);
         marker.scale.set(0.12, 0.12, 1);
+        marker.renderOrder = 10;
 
-        group.add(fill);
-        group.add(outline);
         group.add(marker);
         scene.add(group);
         return group;
     }
 
-    function renderGoalZones(zones, radius) {
+    function renderGoalZones(zones) {
         clearGoalZoneMeshes();
         for (const zone of zones || []) {
-            goalZoneGroups.push(createGoalZoneGroup(zone, radius));
+            if ((zone.points || []).length === 0) {
+                continue;
+            }
+            goalZoneGroups.push(createGoalZoneGroup(zone));
         }
     }
 

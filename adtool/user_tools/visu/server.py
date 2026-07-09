@@ -20,6 +20,7 @@ from .analysis_runs import (
 )
 from .exporter import export_selected_discoveries
 from .goal_targeting import (
+    apply_goal_targeting_action,
     goal_targeting_enabled,
     sync_goal_targeting,
 )
@@ -51,7 +52,6 @@ from .runtime import (
 )
 from .server_support import is_relative_to, mime_type
 from adtool.utils.interaction.experiment_control import (
-    default_goal_targeting,
     read_experiment_control,
     write_experiment_control,
 )
@@ -287,12 +287,15 @@ def create_app(config: ServerConfig, state: RuntimeState | None = None) -> FastA
             raise HTTPException(status_code=400, detail="Goal targeting is not enabled for this refresh session.")
 
         current = read_experiment_control(config.discoveries)["goal_targeting"]
-        goal_targeting = {
-            **default_goal_targeting(),
-            **current,
-            "radius": float(payload.get("radius", current.get("radius"))),
-            "zones": payload.get("zones", current.get("zones", [])),
-        }
+        try:
+            goal_targeting = apply_goal_targeting_action(
+                current,
+                payload,
+                state,
+                enabled=goal_targeting_is_enabled,
+            )
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
         control = write_experiment_control(config.discoveries, goal_targeting=goal_targeting)
         control = sync_goal_targeting(
             str(config.discoveries),

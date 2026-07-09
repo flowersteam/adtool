@@ -20,6 +20,7 @@ export function createGoalTargetingController({
         return state?.goal_targeting || {
             radius: Number(elements.goalZoneRadiusInput.value || 0.18),
             zones: [],
+            display_zones: [],
             placement_supported: false,
             message: "",
         };
@@ -38,8 +39,9 @@ export function createGoalTargetingController({
 
     function renderList(goalTargeting) {
         elements.goalZoneList.replaceChildren();
+        const zones = goalTargeting.display_zones || [];
 
-        if ((goalTargeting.zones || []).length === 0) {
+        if (zones.length === 0) {
             const empty = document.createElement("div");
             empty.className = "goalZoneEmpty";
             empty.textContent = goalTargeting.placement_supported
@@ -49,7 +51,7 @@ export function createGoalTargetingController({
             return;
         }
 
-        goalTargeting.zones.forEach((zone, index) => {
+        zones.forEach((zone, index) => {
             const item = document.createElement("div");
             item.className = "goalZoneItem";
 
@@ -57,7 +59,8 @@ export function createGoalTargetingController({
             const title = document.createElement("strong");
             title.textContent = zoneLabel(index);
             const meta = document.createElement("span");
-            meta.textContent = `x ${formatCoord(zone.center[0])} · y ${formatCoord(zone.center[1])}`;
+            const centroid = Array.isArray(zone.centroid) ? zone.centroid : [0, 0];
+            meta.textContent = `${zone.point_count || 0} pts · x ${formatCoord(centroid[0])} · y ${formatCoord(centroid[1])}`;
             text.appendChild(title);
             text.appendChild(meta);
 
@@ -78,7 +81,7 @@ export function createGoalTargetingController({
         elements.goalTargetingSection.hidden = !payload.feature_enabled;
         if (elements.goalTargetingSection.hidden) {
             setPlacementActive(false);
-            discoveryMap.renderGoalZones([], 0);
+            discoveryMap.renderGoalZones([]);
             return;
         }
 
@@ -88,19 +91,19 @@ export function createGoalTargetingController({
         elements.goalZoneSupportText.hidden = !supported;
         elements.goalZoneRadiusControl.hidden = !supported;
         elements.goalZoneList.hidden = !supported;
-        elements.goalZoneSupportText.textContent = goalTargeting.message || "Click on the map to place circular goal zones.";
+        elements.goalZoneSupportText.textContent = goalTargeting.message || "Click on the map to collect anchor zones from nearby discoveries.";
         elements.goalZoneRadiusInput.value = `${goalTargeting.radius}`;
         updateRadiusLabel(goalTargeting.radius);
         elements.goalZonePlacementButton.disabled = !supported;
-        elements.goalZoneClearButton.disabled = (goalTargeting.zones || []).length === 0;
+        elements.goalZoneClearButton.disabled = (goalTargeting.display_zones || []).length === 0;
         if (!supported) {
             setPlacementActive(false);
-            discoveryMap.renderGoalZones([], 0);
-            renderList({ ...goalTargeting, zones: [] });
+            discoveryMap.renderGoalZones([]);
+            renderList({ ...goalTargeting, display_zones: [] });
             return;
         }
 
-        discoveryMap.renderGoalZones(goalTargeting.zones || [], Number(elements.goalZoneRadiusInput.value));
+        discoveryMap.renderGoalZones(goalTargeting.display_zones || []);
         renderList(goalTargeting);
     }
 
@@ -115,8 +118,10 @@ export function createGoalTargetingController({
     async function save(nextGoalTargeting) {
         try {
             render(await setGoalTargeting(nextGoalTargeting));
+            return true;
         } catch (error) {
             updateStatus(error.message || "Goal targeting update failed.");
+            return false;
         }
     }
 
@@ -126,35 +131,34 @@ export function createGoalTargetingController({
             return;
         }
 
-        const zones = [
-            ...(goalTargeting.zones || []),
-            {
-                id: `zone_${Date.now()}_${Math.floor(Math.random() * 1_000_000)}`,
-                center: [point.x, point.y],
-            },
-        ];
-        await save({
+        if (!await save({
+            action: "add",
+            center: [point.x, point.y],
             radius: Number(elements.goalZoneRadiusInput.value),
-            zones,
-        });
+        })) {
+            return;
+        }
         updateStatus(`Goal zone added at (${formatCoord(point.x)}, ${formatCoord(point.y)}).`);
     }
 
     async function clearZones() {
-        await save({
+        if (!await save({
+            action: "clear",
             radius: Number(elements.goalZoneRadiusInput.value),
-            zones: [],
-        });
+        })) {
+            return;
+        }
         updateStatus("Goal zones cleared.");
     }
 
     async function deleteZone(zoneId) {
-        const goalTargeting = currentGoalTargeting();
-        const zones = (goalTargeting.zones || []).filter((zone) => zone.id !== zoneId);
-        await save({
+        if (!await save({
+            action: "delete",
+            zone_id: zoneId,
             radius: Number(elements.goalZoneRadiusInput.value),
-            zones,
-        });
+        })) {
+            return;
+        }
         updateStatus("Goal zone removed.");
     }
 
@@ -168,16 +172,14 @@ export function createGoalTargetingController({
         elements.goalZoneClearButton.addEventListener("click", clearZones);
         elements.goalZoneRadiusInput.addEventListener("input", () => {
             updateRadiusLabel(elements.goalZoneRadiusInput.value);
-            discoveryMap.renderGoalZones(
-                currentGoalTargeting().zones || [],
-                Number(elements.goalZoneRadiusInput.value),
-            );
         });
         elements.goalZoneRadiusInput.addEventListener("change", async () => {
-            await save({
+            if (!await save({
+                action: "set_radius",
                 radius: Number(elements.goalZoneRadiusInput.value),
-                zones: currentGoalTargeting().zones || [],
-            });
+            })) {
+                return;
+            }
             updateStatus("Goal zone radius updated.");
         });
         elements.goalZoneList.addEventListener("click", async (event) => {
