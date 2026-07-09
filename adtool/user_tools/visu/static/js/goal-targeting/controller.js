@@ -34,7 +34,11 @@ export function createGoalTargetingController({
         placementActive = Boolean(active);
         elements.goalZonePlacementButton.classList.toggle("active", placementActive);
         elements.goalZonePlacementButton.textContent = placementActive ? "Placing..." : "Place zone";
-        discoveryMap.setGoalZonePlacement(placementActive, placementActive ? placeZone : null);
+        discoveryMap.setGoalZonePlacement(
+            placementActive,
+            placementActive ? placeZone : null,
+            placementActive ? () => Number(elements.goalZoneRadiusInput.value || 0.18) : null,
+        );
     }
 
     function renderList(goalTargeting) {
@@ -172,6 +176,7 @@ export function createGoalTargetingController({
         elements.goalZoneClearButton.addEventListener("click", clearZones);
         elements.goalZoneRadiusInput.addEventListener("input", () => {
             updateRadiusLabel(elements.goalZoneRadiusInput.value);
+            discoveryMap.refreshGoalZonePlacementPreview();
         });
         elements.goalZoneRadiusInput.addEventListener("change", async () => {
             if (!await save({

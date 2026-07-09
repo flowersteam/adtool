@@ -33,6 +33,7 @@ const GOAL_ZONE_FILL_COLOR = "#f4a261";
 const GOAL_ZONE_LINE_COLOR = "#e76f51";
 const GOAL_ZONE_POINT_RADIUS = 0.02 * SCALE_FACTOR;
 const GOAL_ZONE_POINT_OPACITY = 0.5;
+const GOAL_ZONE_PREVIEW_OPACITY = 0.16;
 const GOAL_ZONE_SEGMENTS = 72;
 const MAX_PREVIEW_SCALE_BOOST = 1.24;
 const HYBRID_VIEW_REBUILD_DEBOUNCE_MS = 120;
@@ -70,6 +71,9 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     let goalZoneGroups = [];
     let goalZonePlacementActive = false;
     let goalZonePlacementHandler = null;
+    let goalZonePlacementRadius = null;
+    let goalZonePreviewGroup = null;
+    let lastPointerWorldPoint = null;
     let focusedSelectionSource = null;
 
     function refreshHighlightStyles() {
@@ -215,6 +219,67 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             scene.remove(group);
         }
         goalZoneGroups = [];
+    }
+
+    function clearGoalZonePreview() {
+        if (!goalZonePreviewGroup) {
+            return;
+        }
+        for (const child of goalZonePreviewGroup.children) {
+            child.geometry?.dispose();
+            child.material?.dispose();
+        }
+        scene.remove(goalZonePreviewGroup);
+        goalZonePreviewGroup = null;
+    }
+
+    function updateGoalZonePreview(point) {
+        if (!goalZonePlacementActive || !point) {
+            clearGoalZonePreview();
+            return;
+        }
+
+        const radius = Math.max(0, Number(goalZonePlacementRadius ? goalZonePlacementRadius() : 0) || 0);
+        if (radius <= 0) {
+            clearGoalZonePreview();
+            return;
+        }
+
+        if (!goalZonePreviewGroup) {
+            const group = new THREE.Group();
+            const fill = new THREE.Mesh(
+                new THREE.CircleGeometry(1, GOAL_ZONE_SEGMENTS),
+                new THREE.MeshBasicMaterial({
+                    color: GOAL_ZONE_FILL_COLOR,
+                    opacity: GOAL_ZONE_PREVIEW_OPACITY,
+                    transparent: true,
+                    depthTest: false,
+                    depthWrite: false,
+                }),
+            );
+            fill.renderOrder = 4;
+            group.add(fill);
+
+            const outline = new THREE.Mesh(
+                new THREE.RingGeometry(0.985, 1, GOAL_ZONE_SEGMENTS),
+                new THREE.MeshBasicMaterial({
+                    color: GOAL_ZONE_LINE_COLOR,
+                    opacity: 0.9,
+                    transparent: true,
+                    depthTest: false,
+                    depthWrite: false,
+                }),
+            );
+            outline.renderOrder = 9;
+            group.add(outline);
+
+            goalZonePreviewGroup = group;
+            scene.add(goalZonePreviewGroup);
+        }
+
+        const worldRadius = radius * SCALE_FACTOR;
+        goalZonePreviewGroup.position.set(point.x, point.y, 0.015);
+        goalZonePreviewGroup.scale.set(worldRadius, worldRadius, 1);
     }
 
     function createGoalZoneCoverageMesh(points) {
@@ -701,6 +766,9 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     }
 
     function updateHoverState(event) {
+        const worldPoint = mapScene.worldPointAtPointer(event);
+        lastPointerWorldPoint = worldPoint ? worldPoint.clone() : null;
+
         if (goalZonePlacementActive) {
             if (hoveredEntry) {
                 const previous = hoveredEntry;
@@ -709,6 +777,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             }
             renderer.domElement.style.cursor = "crosshair";
             preview.hide();
+            updateGoalZonePreview(worldPoint);
             return;
         }
 
@@ -751,15 +820,22 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         updateStatus("Selection cleared.");
     }
 
-    function setGoalZonePlacement(active, onPlace) {
+    function setGoalZonePlacement(active, onPlace, getRadius) {
         goalZonePlacementActive = Boolean(active);
         goalZonePlacementHandler = onPlace || null;
+        goalZonePlacementRadius = getRadius || null;
         if (!goalZonePlacementActive) {
+            clearGoalZonePreview();
             renderer.domElement.style.cursor = hoveredEntry ? "pointer" : "grab";
         } else {
             preview.hide();
             renderer.domElement.style.cursor = "crosshair";
+            updateGoalZonePreview(lastPointerWorldPoint);
         }
+    }
+
+    function refreshGoalZonePlacementPreview() {
+        updateGoalZonePreview(lastPointerWorldPoint);
     }
 
     function selectedEntries() {
@@ -831,10 +907,12 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     renderer.domElement.addEventListener("pointerleave", () => {
         const previous = hoveredEntry;
         hoveredEntry = null;
+        lastPointerWorldPoint = null;
         if (previous) {
             updateEntryStyle(previous, false);
         }
         preview.hide();
+        clearGoalZonePreview();
     });
     renderer.domElement.addEventListener("click", (event) => {
         if (pointerDown && Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y) > 5) {
@@ -844,6 +922,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         if (goalZonePlacementActive && goalZonePlacementHandler) {
             const point = mapScene.worldPointAtPointer(event);
             if (point) {
+                lastPointerWorldPoint = point.clone();
                 goalZonePlacementHandler({
                     x: point.x / SCALE_FACTOR,
                     y: point.y / SCALE_FACTOR,
@@ -869,6 +948,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         markLiveRefreshNow,
         refreshDiscoveries,
         renderGoalZones,
+        refreshGoalZonePlacementPreview,
         resizeRenderer,
         selectedEntries,
         setGoalZonePlacement,
