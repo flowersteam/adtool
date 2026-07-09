@@ -10,6 +10,7 @@ import numpy as np
 from .coordinates import _ensure_2d_projection
 from .runtime import RuntimeState
 from adtool.utils.interaction.experiment_control import (
+    DEFAULT_GOAL_ZONE_RADIUS,
     default_goal_targeting,
     persisted_goal_targeting,
     read_experiment_control,
@@ -40,6 +41,10 @@ def _coverage_radius(radius: float, point_count: int) -> float:
     return max(radius / sqrt(max(1, point_count)), 1e-6)
 
 
+def _synthetic_anchor_count(radius: float) -> int:
+    return max(8, int(round(TARGET_ZONE_ANCHOR_COUNT * (radius / DEFAULT_GOAL_ZONE_RADIUS) ** 2)))
+
+
 def _sanitize_zones(raw_zones: Any, radius: float) -> list[dict[str, Any]]:
     zones = []
     for index, raw_zone in enumerate(raw_zones or []):
@@ -63,7 +68,7 @@ def _sanitize_zones(raw_zones: Any, radius: float) -> list[dict[str, Any]]:
                 "behavior_vectors": vectors.tolist(),
                 "coverage_radius": max(
                     1e-6,
-                    float(raw_zone.get("coverage_radius", _coverage_radius(radius, len(vectors)))),
+                    float(raw_zone.get("coverage_radius", _coverage_radius(radius, _synthetic_anchor_count(radius)))),
                 ),
             }
         )
@@ -228,11 +233,23 @@ def _build_zone_vectors(center: np.ndarray, radius: float, runtime_state: Runtim
     projected = project_behavior_vectors(behavior_matrix, runtime_state)
     inside_mask = np.linalg.norm(projected - center.reshape(1, 2), axis=1) <= radius
     real_vectors = behavior_matrix[inside_mask]
-    missing_count = max(0, TARGET_ZONE_ANCHOR_COUNT - len(real_vectors))
-    if missing_count == 0:
+    synthetic_anchor_count = _synthetic_anchor_count(radius)
+    coverage_radius = _coverage_radius(radius, synthetic_anchor_count)
+    synthetic_points = _sunflower_disk_points(center, radius, synthetic_anchor_count)
+    if len(real_vectors) > 0:
+        real_points = projected[inside_mask]
+        synthetic_points = synthetic_points[
+            np.array(
+                [
+                    np.all(np.linalg.norm(real_points - point.reshape(1, 2), axis=1) > coverage_radius)
+                    for point in synthetic_points
+                ],
+                dtype=bool,
+            )
+        ]
+    if len(synthetic_points) == 0:
         return real_vectors
 
-    synthetic_points = _sunflower_disk_points(center, radius, missing_count)
     projection_model = online_state.projection_model
     if projection_model.method == "pca":
         synthetic_vectors = _inverse_project_pca_points(synthetic_points, projection_model)
@@ -272,7 +289,7 @@ def apply_goal_targeting_action(
             "zones": [
                 {
                     **zone,
-                    "coverage_radius": _coverage_radius(next_radius, len(zone["behavior_vectors"])),
+                    "coverage_radius": _coverage_radius(next_radius, _synthetic_anchor_count(next_radius)),
                 }
                 for zone in zones
             ],
@@ -312,7 +329,7 @@ def apply_goal_targeting_action(
         {
             "id": f"zone_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%f')}",
             "behavior_vectors": zone_vectors.tolist(),
-            "coverage_radius": _coverage_radius(next_radius, len(zone_vectors)),
+            "coverage_radius": _coverage_radius(next_radius, _synthetic_anchor_count(next_radius)),
         }
     )
     return {
