@@ -10,7 +10,7 @@ from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.wrappers.mutators import add_gaussian_noise
 from adtool.utils.leaf.Leaf import Leaf
 
-from adtool.examples.nbody.systems.NBody import NBodyParams, NBodySimulation
+from examples.nbody.systems.NBody import NBodyParams, NBodySimulation
 
 class NBodyParameterMap(Leaf):
     def __init__(

@@ -7,7 +7,7 @@
             }
         },
         "system": {
-            "path": "adtool.examples.lenia.systems.LeniaCPPN.LeniaCPPN",
+            "path": "examples.lenia.systems.LeniaCPPN.LeniaCPPN",
             "config": {
                 "SX": 256,
                 "SY": 256,
@@ -21,8 +21,8 @@
             "config": {
                 "mutator": "specific",
                 "equil_time": 1,
-                "behavior_map": "adtool.examples.lenia.maps.LeniaStatistics.LeniaStatistics",
-                "parameter_map": "adtool.examples.lenia.maps.LeniaCPPNParameterMap.LeniaParameterMap",
+                "behavior_map": "examples.lenia.maps.LeniaStatistics.LeniaStatistics",
+                "parameter_map": "examples.lenia.maps.LeniaCPPNParameterMap.LeniaParameterMap",
                 "mutator_config": {},
                 "behavior_map_config": {},
                 "parameter_map_config": {

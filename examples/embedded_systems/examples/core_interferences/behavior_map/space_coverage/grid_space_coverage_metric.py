@@ -4,7 +4,7 @@ from math import prod
 
 import numpy as np
 
-from adtool.examples.analysis_metrics.space_coverage import SpaceCoverageMetric
+from adtool.user_tools.analysis_metrics.space_coverage import SpaceCoverageMetric
 
 
 class GridSpaceCoverageMetric(SpaceCoverageMetric):

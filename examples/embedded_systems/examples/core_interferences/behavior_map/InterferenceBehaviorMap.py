@@ -1,12 +1,12 @@
 from typing import Any, Dict, Optional
 
-from adtool.examples.embedded_systems.behavior_map.embedded_systems_behavior_map import (
+from examples.embedded_systems.behavior_map.embedded_systems_behavior_map import (
     BaseBehaviorMap,
 )
-from adtool.examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem import (
+from examples.embedded_systems.examples.core_interferences.systems.InterferenceSystem import (
     InterferenceSystem,
 )
-from adtool.examples.embedded_systems.helpers.module_factory import make_module
+from examples.embedded_systems.helpers.module_factory import make_module
 
 
 class InterferenceBehaviorMap(BaseBehaviorMap):
@@ -18,13 +18,13 @@ class InterferenceBehaviorMap(BaseBehaviorMap):
             premap_key: str = "output",
             postmap_key: str = "output",
             goal_sampler_config: Optional[Dict[str, Any]] = {
-                "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.goal_sampler.InterferenceZoneGoalSampler",
+                "path": "examples.embedded_systems.examples.core_interferences.behavior_map.goal_sampler.InterferenceZoneGoalSampler",
                 "base_sampler_config": {
-                    "path": "adtool.examples.embedded_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler"
+                    "path": "examples.embedded_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler"
                 },
             },
             behavior_encoder_config: Optional[Dict[str, Any]] = {
-                "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder"
+                "path": "examples.embedded_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder"
             },
     ) -> None:
         _ = system

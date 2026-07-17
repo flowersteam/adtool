@@ -1,0 +1,4 @@
+# Additional Python dependencies for the `block_ca` example.
+# Install after `pip install .`
+torch>=1.7.1
+tqdm

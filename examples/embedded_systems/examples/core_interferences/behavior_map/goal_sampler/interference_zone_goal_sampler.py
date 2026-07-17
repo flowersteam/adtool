@@ -4,8 +4,8 @@ from typing import Any, Optional
 
 import numpy as np
 
-from adtool.examples.embedded_systems.helpers.module_factory import make_module
-from adtool.examples.embedded_systems.types import GoalSampler
+from examples.embedded_systems.helpers.module_factory import make_module
+from examples.embedded_systems.types import GoalSampler
 
 
 class InterferenceZoneGoalSampler(GoalSampler):

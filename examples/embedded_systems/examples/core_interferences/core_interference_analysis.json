@@ -1,15 +1,15 @@
 {
   "goal_oriented_sampler": true,
   "discovery_highlights": {
-    "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.discovery_highlights.CoreInterferenceDiscoveryHighlights",
+    "path": "examples.embedded_systems.examples.core_interferences.helpers.discovery_highlights.CoreInterferenceDiscoveryHighlights",
     "config": {}
   },
   "analysis_modules": [
     {
-      "path": "adtool.examples.analysis_metrics.comparison_1d.Comparison1DModule",
+      "path": "adtool.user_tools.analysis_metrics.comparison_1d.Comparison1DModule",
       "config": {
         "projection": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+          "path": "examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
           "config": {}
         },
         "dimensions": "all",
@@ -25,10 +25,10 @@
       }
     },
     {
-      "path": "adtool.examples.analysis_metrics.comparison_2d.Comparison2DModule",
+      "path": "adtool.user_tools.analysis_metrics.comparison_2d.Comparison2DModule",
       "config": {
         "projection": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+          "path": "examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
           "config": {}
         },
         "pairs": [
@@ -67,14 +67,14 @@
       }
     },
     {
-      "path": "adtool.examples.analysis_metrics.space_coverage.SpaceCoverageModule",
+      "path": "adtool.user_tools.analysis_metrics.space_coverage.SpaceCoverageModule",
       "config": {
         "projection": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+          "path": "examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
           "config": {}
         },
         "metric": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.space_coverage.GridSpaceCoverageMetric",
+          "path": "examples.embedded_systems.examples.core_interferences.behavior_map.space_coverage.GridSpaceCoverageMetric",
           "config": {
             "dimensions": [
               0,
@@ -148,7 +148,7 @@
       }
     },
     {
-      "path": "adtool.examples.embedded_systems.examples.core_interferences.analysis_modules.MutualMissHeatmapModule"
+      "path": "examples.embedded_systems.examples.core_interferences.analysis_modules.MutualMissHeatmapModule"
     }
   ]
 }
