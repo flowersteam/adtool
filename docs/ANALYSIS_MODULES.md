@@ -37,7 +37,7 @@ Analysis is driven by a config file with a top-level `analysis_modules` list:
       "config": {}
     },
     {
-      "path": "adtool.examples.embedded_systems.examples.core_interferences.analysis_modules.MutualMissHeatmapModule",
+      "path": "examples.program_based_systems.examples.core_interferences.analysis_modules.MutualMissHeatmapModule",
       "config": {}
     }
   ]
@@ -78,7 +78,7 @@ The library currently ships with these built-in analysis modules:
 
 There is also an experiment-local example custom module in core interferences:
 
-- [mutual_miss_heatmap.py](../examples/embedded_systems/examples/core_interferences/analysis_modules/mutual_miss_heatmap.py)
+- [mutual_miss_heatmap.py](../examples/program_based_systems/examples/core_interferences/analysis_modules/mutual_miss_heatmap.py)
 
 That example shows the intended extension model:
 
@@ -98,7 +98,7 @@ Minimal `Comparison1DModule` example:
       "path": "adtool.user_tools.analysis_metrics.comparison_1d.Comparison1DModule",
       "config": {
         "projection": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+          "path": "examples.program_based_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
           "config": {}
         },
         "dimensions": "all",
@@ -126,7 +126,7 @@ Minimal `Comparison2DModule` example:
       "path": "adtool.user_tools.analysis_metrics.comparison_2d.Comparison2DModule",
       "config": {
         "projection": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+          "path": "examples.program_based_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
           "config": {}
         },
         "pairs": [[0, 12], [2, 12]],
@@ -152,11 +152,11 @@ Minimal `SpaceCoverageModule` example:
       "path": "adtool.user_tools.analysis_metrics.space_coverage.SpaceCoverageModule",
       "config": {
         "projection": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
+          "path": "examples.program_based_systems.examples.core_interferences.helpers.coverage_pretreatment.compact_interference_metrics",
           "config": {}
         },
         "metric": {
-          "path": "adtool.examples.embedded_systems.examples.core_interferences.behavior_map.space_coverage.GridSpaceCoverageMetric",
+          "path": "examples.program_based_systems.examples.core_interferences.behavior_map.space_coverage.GridSpaceCoverageMetric",
           "config": {
             "dimensions": [0, 1, 2],
             "boundaries": [[-25, 25], [-25, 25], [-25, 25]],
@@ -179,7 +179,7 @@ Minimal `SpaceCoverageModule` example:
 
 You can combine several built-in modules and custom modules in the same file. A full real example is available in:
 
-- [core_interference_analysis.json](../examples/embedded_systems/examples/core_interferences/core_interference_analysis.json)
+- [core_interference_analysis.json](../examples/program_based_systems/examples/core_interferences/core_interference_analysis.json)
 
 ## Add a New Analysis Module
 
