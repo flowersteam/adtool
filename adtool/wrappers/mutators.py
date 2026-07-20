@@ -1,4 +1,5 @@
-from typing import Any, Dict
+from functools import partial
+from typing import Any, Callable, Dict
 
 import numpy as np
 from adtool.utils.leaf.Leaf import Leaf
@@ -26,3 +27,17 @@ def call_mutate_method(param_dict: Dict, param_map: Any = None) -> Dict:
     parameters controlling.
     """
     return param_map.mutate(param_dict)
+
+
+def make_mutator(
+    method: str,
+    param_map: Any = None,
+    **method_config: Any,
+) -> Callable:
+    """Build a mutation callable from a named built-in strategy."""
+
+    if method == "specific":
+        return partial(call_mutate_method, param_map=param_map, **method_config)
+    if method == "gaussian":
+        return partial(add_gaussian_noise, **method_config)
+    raise ValueError(f"Unknown mutator method: {method}")

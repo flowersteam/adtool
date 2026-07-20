@@ -18,7 +18,12 @@
   "explorer": {
     "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
     "config": {
-      "mutator": "specific",
+      "mutator": {
+        "path": "adtool.wrappers.mutators.make_mutator",
+        "config": {
+          "method": "specific"
+        }
+      },
       "equil_time": 1,
       "behavior_map": {
         "path": "examples.kuramoto.maps.KuramotoStatistics.KuramotoStatistics",
@@ -27,8 +32,7 @@
       "parameter_map": {
         "path": "examples.kuramoto.maps.KuramotoParameterMap.KuramotoParameterMap",
         "config": {}
-      },
-      "mutator_config": {}
+      }
     }
   },
   "input_wrappers": [],

@@ -21,19 +21,16 @@ from examples.program_based_systems.examples.core_interferences.types import (
 
 
 class InterferenceConfig(BaseModel):
-    simulator_config: InterferenceSimulatorConfig = Field(
+    simulator: ObjectSpec[InterferenceSimulatorConfig] = Field(
         object_spec(
             "examples.program_based_systems.examples.core_interferences.systems.simulator.Sim3Backend",
-            {
-                "cycles": 80,
-                "num_banks": 4,
-                "num_addr": 41,
-            },
+            InterferenceSimulatorConfig(cycles=80, num_banks=4, num_addr=41),
         )
     )
-    simulator_runner_config: InterferenceSimulatorRunnerConfig = Field(
+    simulator_runner: ObjectSpec[InterferenceSimulatorRunnerConfig] = Field(
         object_spec(
-            "examples.program_based_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner"
+            "examples.program_based_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner",
+            InterferenceSimulatorRunnerConfig(),
         )
     )
 
@@ -46,27 +43,29 @@ class InterferenceSystem(BaseProgramSystem):
 
     def __init__(
             self,
-            simulator_config: Optional[ObjectSpec] = None,
-            simulator_runner_config: Optional[ObjectSpec] = None,
+            simulator: Optional[ObjectSpec[InterferenceSimulatorConfig]] = None,
+            simulator_runner: Optional[
+                ObjectSpec[InterferenceSimulatorRunnerConfig]
+            ] = None,
             *args,
             **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
-        if simulator_config is None and simulator_runner_config is None:
-            simulator_runner_config = self.config.simulator_runner_config
-            simulator_config = self.config.simulator_config
-        elif simulator_config is None or simulator_runner_config is None:
+        if simulator is None and simulator_runner is None:
+            simulator_runner = self.config.simulator_runner
+            simulator = self.config.simulator
+        elif simulator is None or simulator_runner is None:
             raise ValueError(
-                "Both simulator_config and simulator_runner_config must be provided together."
+                "Both simulator and simulator_runner must be provided together."
             )
 
-        simulator = instantiate_object(
-            simulator_config,
+        simulator_instance = instantiate_object(
+            simulator,
             object_name="simulator",
         )
         self.simulator_runner = instantiate_object(
-            simulator_runner_config,
-            simulator=simulator,
+            simulator_runner,
+            simulator=simulator_instance,
             object_name="simulator runner",
         )
 

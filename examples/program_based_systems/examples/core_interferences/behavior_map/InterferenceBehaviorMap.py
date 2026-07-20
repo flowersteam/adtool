@@ -17,26 +17,26 @@ class InterferenceBehaviorMap(BaseBehaviorMap):
             system: InterferenceSystem,
             premap_key: str = "output",
             postmap_key: str = "output",
-            goal_sampler_config: Optional[Dict[str, Any]] = object_spec(
+            goal_sampler: Optional[Dict[str, Any]] = object_spec(
                 "examples.program_based_systems.examples.core_interferences.behavior_map.goal_sampler.InterferenceZoneGoalSampler",
                 {
-                    "base_sampler_config": {
+                    "base_sampler": {
                         "path": "examples.program_based_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler",
                         "config": {},
                     },
                 },
             ),
-            behavior_encoder_config: Optional[Dict[str, Any]] = object_spec(
+            behavior_encoder: Optional[Dict[str, Any]] = object_spec(
                 "examples.program_based_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder"
             ),
     ) -> None:
         _ = system
         goal_sampler = instantiate_object(
-            goal_sampler_config,
+            goal_sampler,
             object_name="goal sampler",
         )
         behavior_encoder = instantiate_object(
-            behavior_encoder_config,
+            behavior_encoder,
             object_name="behavior encoder",
         )
         super().__init__(

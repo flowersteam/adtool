@@ -10,7 +10,7 @@
   "system": {
     "path": "examples.program_based_systems.examples.core_interferences.systems.InterferenceSystem",
     "config": {
-      "simulator_config": {
+      "simulator": {
         "path": "examples.program_based_systems.examples.core_interferences.systems.simulator.Sim3Backend",
         "config": {
           "cycles": 256,
@@ -18,7 +18,7 @@
           "num_addr": 48
         }
       },
-      "simulator_runner_config": {
+      "simulator_runner": {
         "path": "examples.program_based_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner",
         "config": {}
       }
@@ -32,16 +32,16 @@
       "behavior_map": {
         "path": "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap",
         "config": {
-          "goal_sampler_config": {
+          "goal_sampler": {
             "path": "examples.program_based_systems.examples.core_interferences.behavior_map.goal_sampler.InterferenceZoneGoalSampler",
             "config": {
-              "base_sampler_config": {
+              "base_sampler": {
                 "path": "examples.program_based_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler",
                 "config": {}
               }
             }
           },
-          "behavior_encoder_config": {
+          "behavior_encoder": {
             "path": "examples.program_based_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder",
             "config": {}
           }
@@ -50,22 +50,22 @@
       "parameter_map": {
         "path": "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap",
         "config": {
-          "generator_config": {
-            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionGenerator",
-            "config": {}
-          },
-          "mutator_config": {
-            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionMutator",
-            "config": {
-              "num_mutations": 5
-            }
-          },
           "num_instructions": 25,
           "min_address_core0": 0,
           "max_address_core0": 23,
           "min_address_core1": 23,
           "max_address_core1": 47,
-          "max_cycle": 127
+          "max_cycle": 127,
+          "generator": {
+            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionGenerator",
+            "config": {}
+          },
+          "mutator": {
+            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionMutator",
+            "config": {
+              "num_mutations": 5
+            }
+          }
         }
       }
     }

@@ -20,7 +20,12 @@
   "explorer": {
     "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
     "config": {
-      "mutator": "specific",
+      "mutator": {
+        "path": "adtool.wrappers.mutators.make_mutator",
+        "config": {
+          "method": "specific"
+        }
+      },
       "equil_time": 1,
       "behavior_map": {
         "path": "examples.flowlenia.maps.FlowLeniaStatistics.FlowLeniaStatistics",
@@ -35,8 +40,7 @@
           ],
           "neat_config_path": "adtool/maps/cppn/config.cfg"
         }
-      },
-      "mutator_config": {}
+      }
     }
   },
   "input_wrappers": [],

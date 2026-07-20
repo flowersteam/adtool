@@ -189,13 +189,21 @@ Use your own package name in config paths. Example:
   "explorer": {
     "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
     "config": {
-      "mutator": "specific",
       "equil_time": 1,
-      "behavior_map": "my_project.behavior_map.MyBehaviorMap.MyBehaviorMap",
-      "parameter_map": "my_project.parameter_map.MyParameterMap.MyParameterMap",
-      "mutator_config": {},
-      "behavior_map_config": {},
-      "parameter_map_config": {}
+      "behavior_map": {
+        "path": "my_project.behavior_map.MyBehaviorMap.MyBehaviorMap",
+        "config": {}
+      },
+      "parameter_map": {
+        "path": "my_project.parameter_map.MyParameterMap.MyParameterMap",
+        "config": {}
+      },
+      "mutator": {
+        "path": "adtool.wrappers.mutators.make_mutator",
+        "config": {
+          "method": "specific"
+        }
+      }
     }
   },
   "logger_handlers": [],
@@ -221,10 +229,12 @@ So, for example:
 - `explorer.config` contains the settings of the explorer
 - `callbacks.on_discovery[i].config` contains the settings of one callback
 
-Some modules also create sub-modules internally.
-This is why you may see fields such as `parameter_map_config`,
-`behavior_map_config`, or `mutator_config` inside `explorer.config`.
-These are simply the configuration dictionaries passed to these inner modules.
+Some modules also create objects internally. Every configurable object uses the
+same specification: `path` selects the Python class or builder, and `config`
+contains its arguments. Nested objects therefore have their own nested `path`
+and `config`; constructor arguments must not be placed next to `path`. Strategies
+selected by a method name use a builder path and put the method in `config`, as
+shown by the mutator above.
 
 An empty `"config": {}` just means: "create this module with its default settings".
 

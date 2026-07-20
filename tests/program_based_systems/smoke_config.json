@@ -10,7 +10,7 @@
   "system": {
     "path": "examples.program_based_systems.examples.core_interferences.systems.InterferenceSystem",
     "config": {
-      "simulator_config": {
+      "simulator": {
         "path": "examples.program_based_systems.examples.core_interferences.systems.simulator.Sim3Backend",
         "config": {
           "cycles": 512,
@@ -18,7 +18,7 @@
           "num_addr": 96
         }
       },
-      "simulator_runner_config": {
+      "simulator_runner": {
         "path": "examples.program_based_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner",
         "config": {}
       }
@@ -32,11 +32,11 @@
       "behavior_map": {
         "path": "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap",
         "config": {
-          "goal_sampler_config": {
+          "goal_sampler": {
             "path": "examples.program_based_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler",
             "config": {}
           },
-          "behavior_encoder_config": {
+          "behavior_encoder": {
             "path": "examples.program_based_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder",
             "config": {}
           }
@@ -45,28 +45,28 @@
       "parameter_map": {
         "path": "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap",
         "config": {
-          "mixer_config": {
-            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.ChunkProgramMixer",
-            "config": {
-              "num_parts": 3
-            }
-          },
-          "generator_config": {
-            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionGenerator",
-            "config": {}
-          },
-          "mutator_config": {
-            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionMutator",
-            "config": {
-              "num_mutations": 2
-            }
-          },
           "num_instructions": 10,
           "min_address_core0": 0,
           "max_address_core0": 47,
           "min_address_core1": 48,
           "max_address_core1": 95,
-          "max_cycle": 128
+          "max_cycle": 128,
+          "generator": {
+            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionGenerator",
+            "config": {}
+          },
+          "mutator": {
+            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionMutator",
+            "config": {
+              "num_mutations": 2
+            }
+          },
+          "mixer": {
+            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.ChunkProgramMixer",
+            "config": {
+              "num_parts": 3
+            }
+          }
         }
       }
     }

@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
-from adtool.utils.factory import instantiate_object
+from adtool.utils.factory import resolve_dotted_object
 
 
 @dataclass(frozen=True)
@@ -15,8 +15,8 @@ class AnalysisModuleSpec:
 class AnalysisModule(ABC):
     module_id = "analysis_module"
 
-    def __init__(self, **config) -> None:
-        self.config = dict(config)
+    def __init__(self, config: dict | None = None) -> None:
+        self.config = dict(config or {})
 
     @property
     def identifier(self) -> str:
@@ -28,4 +28,5 @@ class AnalysisModule(ABC):
 
 
 def load_analysis_module(spec: AnalysisModuleSpec) -> AnalysisModule:
-    return instantiate_object(spec, object_name="analysis module")
+    module_cls = resolve_dotted_object(spec.path, object_name="analysis module")
+    return module_cls(spec.config)
