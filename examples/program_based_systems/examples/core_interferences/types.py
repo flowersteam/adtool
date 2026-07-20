@@ -1,6 +1,5 @@
+from pydantic import BaseModel, ConfigDict
 from typing_extensions import Dict, Literal, Tuple, TypedDict
-
-from adtool.utils.factory import ObjectSpec
 
 
 InstructionType = Literal["read", "write"]
@@ -17,5 +16,13 @@ class InterferenceParamsPayload(TypedDict):
     dynamic_params: InterferenceDynamicParams
 
 
-InterferenceSimulatorConfig = ObjectSpec
-InterferenceSimulatorRunnerConfig = ObjectSpec
+class InterferenceSimulatorConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    cycles: int
+    num_banks: int
+    num_addr: int
+
+
+class InterferenceSimulatorRunnerConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")

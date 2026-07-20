@@ -15,7 +15,12 @@
   "explorer": {
     "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
     "config": {
-      "mutator": "specific",
+      "mutator": {
+        "path": "adtool.wrappers.mutators.make_mutator",
+        "config": {
+          "method": "specific"
+        }
+      },
       "equil_time": 1,
       "behavior_map": {
         "path": "examples.draft.maps.DraftStatistics.DraftStatistics",
@@ -24,8 +29,7 @@
       "parameter_map": {
         "path": "examples.draft.maps.DraftParameterMap.DraftParameterMap",
         "config": {}
-      },
-      "mutator_config": {}
+      }
     }
   },
   "input_wrappers": [],

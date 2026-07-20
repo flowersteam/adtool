@@ -35,7 +35,7 @@ Example snippets:
 {
   "system": {
     "config": {
-      "simulator_config": {
+      "simulator": {
         "path": "examples.program_based_systems.examples.core_interferences.systems.simulator.MySimulatorBackend",
         "config": {
           "cycles": 512,
@@ -43,7 +43,7 @@ Example snippets:
           "num_addr": 96
         }
       },
-      "simulator_runner_config": {
+      "simulator_runner": {
         "path": "examples.program_based_systems.examples.core_interferences.systems.runner.MyRunner",
         "config": {}
       }
@@ -59,11 +59,11 @@ Example snippets:
       "behavior_map": {
         "path": "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap",
         "config": {
-          "goal_sampler_config": {
+          "goal_sampler": {
             "path": "examples.program_based_systems.behavior_map.goal_sampler.MyGoalSampler",
             "config": {}
           },
-          "behavior_encoder_config": {
+          "behavior_encoder": {
             "path": "examples.program_based_systems.examples.core_interferences.behavior_map.encoder.MyEncoder",
             "config": {}
           }
@@ -72,15 +72,15 @@ Example snippets:
       "parameter_map": {
         "path": "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap",
         "config": {
-          "mixer_config": {
+          "mixer": {
             "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.MyNewMixer",
             "config": {}
           },
-          "generator_config": {
+          "generator": {
             "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.MyGenerator",
             "config": {}
           },
-          "mutator_config": {
+          "mutator": {
             "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.MyMutator",
             "config": {}
           }

@@ -1,20 +1,13 @@
-from functools import partial
 from typing import Any, Dict, List
 from adtool.systems import System
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
-from adtool.wrappers.mutators import add_gaussian_noise, call_mutate_method
 from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.expose_config.expose_config import expose
 from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
 from adtool.utils.leaf.Leaf import Leaf
 from pydantic import Field, BaseModel
 import numpy as np
-from enum import Enum
 from scipy.spatial import KDTree
-
-class MutatorEnum(Enum):
-    Gaussian = 'gaussian'
-    Specific = 'specific'
 
 class IMGEPConfig(BaseModel):
     equil_time: int = Field(1, ge=1, le=1000)
@@ -24,8 +17,12 @@ class IMGEPConfig(BaseModel):
     parameter_map: ObjectSpec = Field(
         object_spec("adtool.maps.UniformParameterMap.UniformParameterMap")
     )
-    mutator: MutatorEnum = Field(MutatorEnum.Specific)
-    mutator_config: Dict = Field({})
+    mutator: ObjectSpec = Field(
+        object_spec(
+            "adtool.wrappers.mutators.make_mutator",
+            {"method": "specific"},
+        )
+    )
     novelty_weight: float = Field(0.5, ge=0, le=1)
 
 class CuriosityDrivenIMGEP(Leaf):
@@ -204,12 +201,8 @@ class IMGEPExplorer():
         )
 
     def make_mutator(self, param_map: Any = None):
-        if self.config.mutator == MutatorEnum.Specific:
-            mutator = partial(call_mutate_method, param_map=param_map)
-        elif self.config.mutator == MutatorEnum.Gaussian:
-            mutator = partial(
-                add_gaussian_noise, std=self.config.mutator_config["std"]
-            )
-        else:
-            mutator = None
-        return mutator
+        return instantiate_object(
+            self.config.mutator,
+            object_name="mutator",
+            param_map=param_map,
+        )
