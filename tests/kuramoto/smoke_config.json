@@ -17,13 +17,21 @@
   "explorer": {
     "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
     "config": {
-      "mutator": "specific",
+      "mutator": {
+        "path": "adtool.wrappers.mutators.make_mutator",
+        "config": {
+          "method": "specific"
+        }
+      },
       "equil_time": 1,
-      "behavior_map": "examples.kuramoto.maps.KuramotoStatistics.KuramotoStatistics",
-      "parameter_map": "examples.kuramoto.maps.KuramotoParameterMap.KuramotoParameterMap",
-      "mutator_config": {},
-      "behavior_map_config": {},
-      "parameter_map_config": {}
+      "behavior_map": {
+        "path": "examples.kuramoto.maps.KuramotoStatistics.KuramotoStatistics",
+        "config": {}
+      },
+      "parameter_map": {
+        "path": "examples.kuramoto.maps.KuramotoParameterMap.KuramotoParameterMap",
+        "config": {}
+      }
     }
   },
   "input_wrappers": [],

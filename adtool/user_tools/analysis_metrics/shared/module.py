@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
-from .imports import load_dotted_object
+from adtool.utils.factory import resolve_dotted_object
 
 
 @dataclass(frozen=True)
@@ -28,5 +28,5 @@ class AnalysisModule(ABC):
 
 
 def load_analysis_module(spec: AnalysisModuleSpec) -> AnalysisModule:
-    module_cls = load_dotted_object(spec.path)
+    module_cls = resolve_dotted_object(spec.path, object_name="analysis module")
     return module_cls(spec.config)

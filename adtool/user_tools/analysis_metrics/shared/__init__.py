@@ -2,7 +2,6 @@ from .discovery import (
     load_discovery_set,
     order_sequence_by_run_idx,
 )
-from .imports import load_dotted_object
 from .module import (
     AnalysisModule,
     AnalysisModuleSpec,
@@ -34,7 +33,6 @@ __all__ = [
     "create_run_dir",
     "load_discovery_set",
     "load_analysis_module",
-    "load_dotted_object",
     "load_projection_config",
     "order_sequence_by_run_idx",
     "series_colors",

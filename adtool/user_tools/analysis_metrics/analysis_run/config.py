@@ -2,6 +2,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from adtool.utils.factory import coerce_object_spec
 from ..shared import AnalysisModuleSpec
 
 
@@ -21,9 +22,10 @@ def load_analysis_run_config(config_path):
     return AnalysisRunConfig(
         analysis_modules=[
             AnalysisModuleSpec(
-                path=module["path"],
-                config=dict(module.get("config") or {}),
+                path=spec.path,
+                config=spec.config,
             )
             for module in raw_modules
+            for spec in [coerce_object_spec(module, object_name="analysis module")]
         ],
     )

@@ -17,14 +17,25 @@
   "explorer": {
     "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
     "config": {
-      "mutator": "specific",
+      "mutator": {
+        "path": "adtool.wrappers.mutators.make_mutator",
+        "config": {
+          "method": "specific"
+        }
+      },
       "equil_time": 1,
-      "behavior_map": "examples.lenia.maps.LeniaStatistics.LeniaStatistics",
-      "parameter_map": "examples.lenia.maps.LeniaNoiseParameterMap.LeniaParameterMap",
-      "mutator_config": {},
-      "behavior_map_config": {},
-      "parameter_map_config": {
-        "init_state_dim": [6, 6]
+      "behavior_map": {
+        "path": "examples.lenia.maps.LeniaStatistics.LeniaStatistics",
+        "config": {}
+      },
+      "parameter_map": {
+        "path": "examples.lenia.maps.LeniaNoiseParameterMap.LeniaParameterMap",
+        "config": {
+          "init_state_dim": [
+            6,
+            6
+          ]
+        }
       }
     }
   },

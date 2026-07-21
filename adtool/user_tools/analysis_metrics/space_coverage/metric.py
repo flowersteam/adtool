@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from ..shared import load_dotted_object
+from adtool.utils.factory import instantiate_object
 
 
 class SpaceCoverageMetric(ABC):
@@ -15,5 +15,4 @@ class SpaceCoverageMetric(ABC):
 
 
 def load_space_coverage_metric(config):
-    metric_cls = load_dotted_object(config.path)
-    return metric_cls(**dict(config.config or {}))
+    return instantiate_object(config, object_name="space coverage metric")

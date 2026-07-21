@@ -4,22 +4,22 @@ from typing import Any, Optional
 
 import numpy as np
 
-from examples.program_based_systems.helpers.module_factory import make_module
+from adtool.utils.factory import instantiate_object, object_spec
 from examples.program_based_systems.types import GoalSampler
 
 
 class InterferenceZoneGoalSampler(GoalSampler):
     def __init__(
         self,
-        base_sampler_config: Optional[dict[str, Any]] = None,
+        base_sampler: Optional[dict[str, Any]] = object_spec(
+            "examples.program_based_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler"
+        ),
         inside_probability: float = 0.8,
         max_attempts: int = 256,
     ) -> None:
-        self.base_sampler = make_module(
-            "base_goal_sampler",
-            **(
-                base_sampler_config
-            ),
+        self.base_sampler = instantiate_object(
+            base_sampler,
+            object_name="base goal sampler",
         )
         self.inside_probability = float(inside_probability)
         self.max_attempts = int(max_attempts)

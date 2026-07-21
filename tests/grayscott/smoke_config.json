@@ -17,13 +17,21 @@
   "explorer": {
     "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
     "config": {
-      "mutator": "specific",
+      "mutator": {
+        "path": "adtool.wrappers.mutators.make_mutator",
+        "config": {
+          "method": "specific"
+        }
+      },
       "equil_time": 1,
-      "behavior_map": "examples.grayscott.maps.GrayScottStatistics.GrayScottStatistics",
-      "parameter_map": "examples.grayscott.maps.GrayScottParameterMap.GrayScottParameterMap",
-      "mutator_config": {},
-      "behavior_map_config": {},
-      "parameter_map_config": {}
+      "behavior_map": {
+        "path": "examples.grayscott.maps.GrayScottStatistics.GrayScottStatistics",
+        "config": {}
+      },
+      "parameter_map": {
+        "path": "examples.grayscott.maps.GrayScottParameterMap.GrayScottParameterMap",
+        "config": {}
+      }
     }
   },
   "input_wrappers": [],

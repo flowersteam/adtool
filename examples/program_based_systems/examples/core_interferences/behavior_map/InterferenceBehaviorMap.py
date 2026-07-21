@@ -1,12 +1,12 @@
 from typing import Any, Dict, Optional
 
+from adtool.utils.factory import instantiate_object, object_spec
 from examples.program_based_systems.behavior_map.program_based_systems_behavior_map import (
     BaseBehaviorMap,
 )
 from examples.program_based_systems.examples.core_interferences.systems.InterferenceSystem import (
     InterferenceSystem,
 )
-from examples.program_based_systems.helpers.module_factory import make_module
 
 
 class InterferenceBehaviorMap(BaseBehaviorMap):
@@ -17,19 +17,28 @@ class InterferenceBehaviorMap(BaseBehaviorMap):
             system: InterferenceSystem,
             premap_key: str = "output",
             postmap_key: str = "output",
-            goal_sampler_config: Optional[Dict[str, Any]] = {
-                "path": "examples.program_based_systems.examples.core_interferences.behavior_map.goal_sampler.InterferenceZoneGoalSampler",
-                "base_sampler_config": {
-                    "path": "examples.program_based_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler"
+            goal_sampler: Optional[Dict[str, Any]] = object_spec(
+                "examples.program_based_systems.examples.core_interferences.behavior_map.goal_sampler.InterferenceZoneGoalSampler",
+                {
+                    "base_sampler": {
+                        "path": "examples.program_based_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler",
+                        "config": {},
+                    },
                 },
-            },
-            behavior_encoder_config: Optional[Dict[str, Any]] = {
-                "path": "examples.program_based_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder"
-            },
+            ),
+            behavior_encoder: Optional[Dict[str, Any]] = object_spec(
+                "examples.program_based_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder"
+            ),
     ) -> None:
         _ = system
-        goal_sampler = make_module("goal_sampler", **goal_sampler_config)
-        behavior_encoder = make_module("behavior_encoder", **behavior_encoder_config)
+        goal_sampler = instantiate_object(
+            goal_sampler,
+            object_name="goal sampler",
+        )
+        behavior_encoder = instantiate_object(
+            behavior_encoder,
+            object_name="behavior encoder",
+        )
         super().__init__(
             premap_key=premap_key,
             postmap_key=postmap_key,

@@ -3,6 +3,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
+from adtool.utils.factory import instantiate_object, object_spec
 from examples.program_based_systems.parameter_map.program_based_systems_parameter_map import (
     BaseParameterMap,
 )
@@ -16,7 +17,6 @@ from examples.program_based_systems.examples.core_interferences.types import (
     InstructionProgram,
     InterferenceParamsPayload,
 )
-from examples.program_based_systems.helpers.module_factory import make_module
 
 
 @dataclass
@@ -37,14 +37,16 @@ class InterferenceParameterMap(BaseParameterMap):
             system: InterferenceSystem,
             premap_key: str = "params",
             param_obj: InterferenceParams = None,
-            generator_config: Optional[Dict[str, Any]] = {
-                "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_generator.RandomInstructionGenerator"
-            },
-            mutator_config: Optional[Dict[str, Any]] = {
-                "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_mutator.RandomInstructionMutator",
-                "num_mutations": 2,
-            },
-            mixer_config: Optional[Dict[str, Any]] = None,
+            generator: Optional[Dict[str, Any]] = object_spec(
+                "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_generator.RandomInstructionGenerator"
+            ),
+            mutator: Optional[Dict[str, Any]] = object_spec(
+                "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_mutator.RandomInstructionMutator",
+                {
+                    "num_mutations": 2,
+                },
+            ),
+            mixer: Optional[Dict[str, Any]] = None,
             **config_decorator_kwargs,
     ) -> None:
         _ = system
@@ -59,11 +61,17 @@ class InterferenceParameterMap(BaseParameterMap):
 
         self.premap_key = premap_key
         self.param_obj = param_obj
-        self.generator = make_module("generator", **generator_config)
-        self.mutator = make_module("mutator", **mutator_config)
+        self.generator = instantiate_object(
+            generator,
+            object_name="generator",
+        )
+        self.mutator = instantiate_object(
+            mutator,
+            object_name="mutator",
+        )
         self.mixer = (
-            make_module("mixer", **mixer_config)
-            if mixer_config is not None
+            instantiate_object(mixer, object_name="mixer")
+            if mixer is not None
             else None
         )
 

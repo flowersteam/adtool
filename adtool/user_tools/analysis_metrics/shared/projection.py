@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .imports import load_dotted_object
+from adtool.utils.factory import coerce_object_spec, resolve_dotted_object
 
 
 @dataclass(frozen=True)
@@ -12,15 +12,12 @@ class ProjectionConfig:
 
 
 def load_projection_config(section):
-    projection = section["projection"]
-    return ProjectionConfig(
-        path=projection["path"],
-        config=dict(projection.get("config") or {}),
-    )
+    projection = coerce_object_spec(section["projection"], object_name="projection")
+    return ProjectionConfig(path=projection.path, config=projection.config)
 
 
 def apply_projection(config, datasets):
-    projection = load_dotted_object(config.path)
+    projection = resolve_dotted_object(config.path, object_name="projection")
     result = projection(datasets, config.config)
     values = [np.asarray(value, dtype=float) for value in result[:-1]]
     normalized = []

@@ -1,4 +1,5 @@
-from typing_extensions import Any, Dict, Literal, Tuple, TypedDict
+from pydantic import BaseModel, ConfigDict
+from typing_extensions import Dict, Literal, Tuple, TypedDict
 
 
 InstructionType = Literal["read", "write"]
@@ -15,12 +16,13 @@ class InterferenceParamsPayload(TypedDict):
     dynamic_params: InterferenceDynamicParams
 
 
-class InterferenceSimulatorConfig(TypedDict):
-    path: str
+class InterferenceSimulatorConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     cycles: int
     num_banks: int
     num_addr: int
 
 
-class InterferenceSimulatorRunnerConfig(TypedDict):
-    path: str
+class InterferenceSimulatorRunnerConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")

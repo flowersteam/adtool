@@ -1,12 +1,11 @@
-from collections import namedtuple
-from typing import Any, Dict, List, NamedTuple, Optional
-import sys
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
-#from adtool.utils.leafutils.leafstructs.registration import _REGISTRATION
-
-from annotated_types import BaseMetadata, Le, Ge, Gt, Lt, Annotated
+from annotated_types import BaseMetadata, Le, Ge, Gt, Lt
+from pydantic_core import to_jsonable_python
 
 from adtool.utils.leafutils.leafstructs.registration import _REGISTRATION
+
 
 def annotated_metadatas_to_json(annotation: List[BaseMetadata]):
     json = {}
@@ -21,63 +20,57 @@ def annotated_metadatas_to_json(annotation: List[BaseMetadata]):
             json["lt"] = m.lt
     return json
 
-from enum import Enum
 
 def export_config(cls):
-    json = {}
-    for k,v in cls.model_fields.items():
-        json[k] = {
-            "type": v.annotation.__name__,
-        #   "required": field.required,
-            "default": v.default if v.default is not None else None
+    exported = {}
+    for name, field in cls.model_fields.items():
+        annotation = field.annotation
+        type_name = getattr(annotation, "__name__", str(annotation))
+        default = (
+            None
+            if field.is_required()
+            else to_jsonable_python(field.get_default(call_default_factory=True))
+        )
+        exported[name] = {
+            "type": type_name,
+            "default": default,
         }
-        if  isinstance(v.annotation, Enum):
-            json[k]["enum"] =  map(lambda x: x.value, v.annotation)
+        if isinstance(annotation, type) and issubclass(annotation, Enum):
+            exported[name]["enum"] = [item.value for item in annotation]
 
-        if v.metadata:
-            json[k]["metadata"] = annotated_metadatas_to_json(v.metadata)
+        if field.metadata:
+            exported[name]["metadata"] = annotated_metadatas_to_json(field.metadata)
 
-    return json
+    return exported
 
-
-import inspect
 
 def expose(cls):
-    dict_config = export_config(cls.config  )
+    dict_config = export_config(cls.config)
 
     previous_init = cls.__init__
 
-
     cls.JSON_CONFIG = dict_config
+
     def __init__(self, *args, **kwargs):
-        self.config=self.config(*args, **kwargs)
+        self.config = self.config(*args, **kwargs)
         previous_init(self, **kwargs)
 
     cls.__init__ = __init__
 
-
     sub = cls.__module__.split(".")
     current = _REGISTRATION
-    for i in range(1, len(sub)-1):
+    for i in range(1, len(sub) - 1):
         if sub[i] not in current:
             current[sub[i]] = {}
         current = current[sub[i]]
     if sub[-1] not in current:
-
-        current[sub[-1]] = [cls.__name__] 
+        current[sub[-1]] = [cls.__name__]
     else:
         if not isinstance(current[sub[-1]], list):
             raise Exception(f"Error: {sub[-1]} is not a list")
         current[sub[-1]].append(cls.__name__)
 
-
     return cls
-
-
-
-
-
-
 class Handlers:
     """Namespace for handlers"""
 
@@ -109,4 +102,3 @@ class Handlers:
     def dict_handler(domain: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
         # NOTE: this should never be used due to mutability of dicts
         return {"possible_values": domain}
-

@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 
+from adtool.utils.factory import coerce_object_spec
 from ..shared import ProjectionConfig, load_projection_config
 
 
@@ -33,13 +34,13 @@ class SpaceCoverageConfig:
 
 
 def load_space_coverage_config(section):
-    metric = section["metric"]
+    metric = coerce_object_spec(section["metric"], object_name="space coverage metric")
     plot = section.get("plot") or {}
     return SpaceCoverageConfig(
         projection=load_projection_config(section),
         metric=SpaceCoverageMetricConfig(
-            path=metric["path"],
-            config=dict(metric.get("config") or {}),
+            path=metric.path,
+            config=metric.config,
         ),
         plot=SpaceCoveragePlotConfig(
             color_a=str(plot.get("color_a", DEFAULT_COLOR_A)),
