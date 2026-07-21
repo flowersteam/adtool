@@ -178,7 +178,8 @@ Use your own package name in config paths. Example:
     "config": {
       "save_location": "./runs/",
       "save_frequency": 1,
-      "bootstrap_size": 1
+      "bootstrap_size": 1,
+      "render_every": 1
     }
   },
   "system": {
@@ -240,6 +241,14 @@ An empty `"config": {}` just means: "create this module with its default setting
 `save_location` is where `adtool` will create the `discoveries/` folder.
 If the `save_location` already has experiments inside, the algorithm will try to reuse them, so keep the same configuration.
 Keep the save callback at the start: it writes the files used by the viewer.
+The full config is saved once at `<save_location>/discoveries/config.json`, not inside every discovery folder.
+`render_every` controls how often `System.render(...)` is called:
+
+- `1`: render every discovery
+- `N > 1`: render every `N` discoveries using the absolute `run_idx`
+- `0`: skip rendering entirely to save time
+
+When rendering is skipped, the discovery is still saved and can still be reused by the explorer and analysis tools.
 
 ## 5. New configuration parameters
 

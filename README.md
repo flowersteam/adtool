@@ -98,6 +98,13 @@ And also move replacements02_sa2.db downloaded here http://www.qsar4u.com/pages/
 ### Reloading
 To reload a previous exploration, simply run the same previous commands but from an existing discoveries directory. Previous discoveries must be generated with the same system and maps.
 
+Saved run layout notes:
+
+- `save_location` contains the generated `discoveries/` directory.
+- The experiment config is saved once at `discoveries/config.json`.
+- Each discovery still gets its own folder with `discovery.json` and optional rendered media.
+- `experiment.config.render_every` controls rendering cadence: `1` renders every discovery, `N` renders every `N`th discovery, and `0` disables rendering entirely.
+
 
 ### Visualization
 The tool provides a web interface to visualize the progression of the exploration. To start the web interface, run the following commands:

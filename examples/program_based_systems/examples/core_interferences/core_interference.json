@@ -3,7 +3,8 @@
     "config": {
       "save_location": "./discoveries/interferences/",
       "save_frequency": 1000,
-      "bootstrap_size": 500
+      "bootstrap_size": 500,
+      "render_every": 1
     }
   },
   "system": {

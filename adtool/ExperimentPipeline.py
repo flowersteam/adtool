@@ -33,6 +33,14 @@ def replace_lists_with_numpy(d):
     else:
         return d
 
+
+def get_render_every(config: dict) -> int:
+    render_every = config["experiment"]["config"].get("render_every", 1)
+    render_every = int(render_every)
+    if render_every < 0:
+        raise ValueError("experiment.config.render_every must be >= 0")
+    return render_every
+
 class ExperimentPipeline(Leaf):
     """
     Pipeline of an automated discovery experiment.
@@ -128,6 +136,11 @@ class ExperimentPipeline(Leaf):
         for callback in callbacks:
             callback(**kwargs)
 
+    def _should_render(self, render_every: int) -> bool:
+        if render_every == 0:
+            return False
+        return self.run_idx % render_every == 0
+
     def run(self, n_exploration_runs: int):
         """
         Launches the experiment for `n_exploration_runs` explorations.
@@ -213,6 +226,7 @@ class ExperimentPipeline(Leaf):
 
 
             bootstrap_size = self.config['experiment']['config']['bootstrap_size']
+            render_every = get_render_every(self.config)
             
             final_run_idx = self.run_idx + n_exploration_runs
 
@@ -238,8 +252,10 @@ class ExperimentPipeline(Leaf):
                 else:
                     data_dict.pop("goal_targeting", None)
 
-                # render system output
-                rendered_outputs = self._system.render(data_dict)
+                # render system output only on the configured cadence
+                rendered_outputs = None
+                if self._should_render(render_every):
+                    rendered_outputs = self._system.render(data_dict)
 
                 # exploration phase : emits new trial parameters for next loop
 

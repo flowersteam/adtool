@@ -3,7 +3,8 @@
     "config": {
       "save_location": "./",
       "save_frequency": 10,
-      "bootstrap_size": 1
+      "bootstrap_size": 1,
+      "render_every": 0
     }
   },
   "system": {
