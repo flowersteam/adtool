@@ -1,7 +1,6 @@
 import dataclasses
 from copy import deepcopy
 from dataclasses import asdict, dataclass
-from functools import partial
 from io import StringIO
 from typing import Dict, Optional, Tuple
 
@@ -10,7 +9,7 @@ from adtool.systems import System
 from examples.flowlenia.systems.FlowLenia import FlowLenia
 from examples.flowlenia.systems.FlowLeniaParameters import FlowLeniaDynamicalParameters, FlowLeniaHyperParameters, FlowLeniaKernelGrowthDynamicalParameters
 from adtool.maps.UniformParameterMap import UniformParameterMap
-from adtool.wrappers.mutators import add_gaussian_noise
+from adtool.mutators import GaussianMutator
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 import sys
@@ -58,8 +57,7 @@ class FlowLeniaParameterMap(Leaf):
         )
 
 
-        self.uniform_mutator = partial(
-            add_gaussian_noise,
+        self.uniform_mutator = GaussianMutator(
             mean=FlowLeniaDynamicalParameters(
                 R = 0.2,
                 KernelGrowths = [

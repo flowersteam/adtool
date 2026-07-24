@@ -25,10 +25,7 @@ class IMGEPConfig(BaseModel):
         object_spec("adtool.maps.UniformParameterMap.UniformParameterMap")
     )
     mutator: ObjectSpec = Field(
-        object_spec(
-            "adtool.wrappers.mutators.make_mutator",
-            {"method": "specific"},
-        )
+        object_spec("adtool.mutators.SpecificMutator")
     )
 
 
@@ -270,7 +267,7 @@ class IMGEPExplorer():
         behavior_map = self.make_behavior_map(system)
         param_map = self.make_parameter_map(system)
         mutator = self.make_mutator(param_map)
-        equil_time = self.config.equil_time
+        mutator = instantiate_object(self.config.mutator, object_name="mutator")
         explorer = IMGEPExplorerInstance(
             parameter_map=param_map,
             behavior_map=behavior_map,

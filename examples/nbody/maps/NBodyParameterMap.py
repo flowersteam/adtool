@@ -1,13 +1,12 @@
 import dataclasses
 from copy import deepcopy
 from dataclasses import asdict, dataclass
-from functools import partial
 from typing import Dict, Optional
 
 import numpy as np
 from adtool.systems import System
 from adtool.maps.UniformParameterMap import UniformParameterMap
-from adtool.wrappers.mutators import add_gaussian_noise
+from adtool.mutators import GaussianMutator
 from adtool.utils.leaf.Leaf import Leaf
 
 from examples.nbody.systems.NBody import NBodyParams, NBodySimulation
@@ -41,8 +40,7 @@ class NBodyParameterMap(Leaf):
             tensor_bound_low=np.full((system.N * 4,), -1).astype(np.float32),
         )
 
-        self.uniform_mutator = partial(
-            add_gaussian_noise,
+        self.uniform_mutator = GaussianMutator(
             mean=np.zeros(system.N * 4),
             std=np.full((system.N * 4,), 0.1),
         )

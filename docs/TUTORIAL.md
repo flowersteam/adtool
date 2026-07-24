@@ -199,10 +199,8 @@ Use your own package name in config paths. Example:
         "config": {}
       },
       "mutator": {
-        "path": "adtool.wrappers.mutators.make_mutator",
-        "config": {
-          "method": "specific"
-        }
+        "path": "adtool.mutators.SpecificMutator",
+        "config": {}
       }
     }
   },
@@ -222,6 +220,12 @@ In the JSON file, most modules have two parts:
 
 - `"path"`: which Python class to load
 - `"config"`: the parameters given to this class when it is created
+
+`SpecificMutator` delegates mutation to the configured parameter map. It is
+an independent, importable object: the explorer supplies the parameter map at
+call time, so checkpoints do not serialize callable closures or their parent
+object tree. For flat numeric policies, use `adtool.mutators.GaussianMutator`
+with `mean` and `std` in its `config` object.
 
 So, for example:
 

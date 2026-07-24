@@ -1,13 +1,12 @@
 import dataclasses
 from copy import deepcopy
 from dataclasses import asdict, dataclass
-from functools import partial
 from typing import Dict
 
 import torch
 import numpy as np
 from adtool.maps.UniformParameterMap import UniformParameterMap
-from adtool.wrappers.mutators import add_gaussian_noise
+from adtool.mutators import GaussianMutator
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 from examples.kuramoto.systems.Kuramoto import Kuramoto, KuramotoParams
@@ -55,14 +54,12 @@ class KuramotoParameterMap(Leaf):
             tensor_bound_high=np.ones((self.N, self.N))
         )
 
-        self.uniform_mutator_intra = partial(
-            add_gaussian_noise,
+        self.uniform_mutator_intra = GaussianMutator(
             mean=np.zeros(self.N),
             std=np.ones(self.N) * 0.1
         )
 
-        self.uniform_mutator_inter = partial(
-            add_gaussian_noise,
+        self.uniform_mutator_inter = GaussianMutator(
             mean=np.zeros((self.N, self.N)),
             std=np.ones((self.N, self.N)) * 0.1
         )

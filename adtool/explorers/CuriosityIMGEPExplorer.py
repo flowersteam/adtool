@@ -18,10 +18,7 @@ class IMGEPConfig(BaseModel):
         object_spec("adtool.maps.UniformParameterMap.UniformParameterMap")
     )
     mutator: ObjectSpec = Field(
-        object_spec(
-            "adtool.wrappers.mutators.make_mutator",
-            {"method": "specific"},
-        )
+        object_spec("adtool.mutators.SpecificMutator")
     )
     novelty_weight: float = Field(0.5, ge=0, le=1)
 

@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from adtool.explorers.IMGEPExplorer import IMGEPExplorerInstance
+from adtool.mutators import SpecificMutator
 from adtool.utils.expose_config.expose_config import expose
 from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
 from adtool.systems import System
@@ -62,7 +63,7 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
             postmap_key=postmap_key,
             parameter_map=parameter_map,
             behavior_map=behavior_map,
-            mutator=parameter_map.mutate,
+            mutator=SpecificMutator(),
             equil_time=0,
         )
         self.periode = max(1, int(periode))
@@ -113,7 +114,7 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
 
         selected = [param_history[i] for i in indices]
         base_policy = self._compose_base_policy(selected)
-        return self.parameter_map.mutate(base_policy)
+        return self.mutator(base_policy, parameter_map=self.parameter_map)
 
     def _should_refresh_goal(self, goal_targeting: Optional[Dict[str, Any]]) -> bool:
         if self._current_goal is None:

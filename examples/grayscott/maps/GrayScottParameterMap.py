@@ -1,14 +1,13 @@
 import dataclasses
 from copy import deepcopy
 from dataclasses import asdict, dataclass
-from functools import partial
 from typing import Dict, Optional
 
 import torch
 import numpy as np
 from adtool.systems import System
 from adtool.maps.UniformParameterMap import UniformParameterMap
-from adtool.wrappers.mutators import add_gaussian_noise
+from adtool.mutators import GaussianMutator
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 
@@ -74,8 +73,7 @@ class GrayScottParameterMap(Leaf):
         #    tensor_bound_high=torch.tensor([0.07, 0.068], dtype=torch.float32),
         )
 
-        self.uniform_mutator = partial(
-            add_gaussian_noise,
+        self.uniform_mutator = GaussianMutator(
             mean=param_obj.to_tensor().numpy(),
             std=torch.tensor([0.01, 0.02],
                              

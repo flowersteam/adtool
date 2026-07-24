@@ -8,6 +8,7 @@ from adtool.systems import System
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.expose_config.expose_config import expose
+from adtool.mutators import SpecificMutator
 from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
 from adtool.utils.leaf.Leaf import Leaf
 from pydantic import Field
@@ -25,10 +26,7 @@ class IMGEPConfig(BaseModel):
         object_spec("adtool.maps.UniformParameterMap.UniformParameterMap")
     )
     mutator: ObjectSpec = Field(
-        object_spec(
-            "adtool.wrappers.mutators.make_mutator",
-            {"method": "specific"},
-        )
+        object_spec("adtool.mutators.SpecificMutator")
     )
 
 
@@ -47,7 +45,7 @@ class IMGEPExplorerInstance(Leaf):
         postmap_key: str = "params",
         parameter_map: Leaf = IdentityWrapper(),
         behavior_map: Leaf = IdentityWrapper(),
-        mutator: Leaf = Leaf(),
+        mutator: Any = None,
         equil_time: int = 0,
     ) -> None:
         super().__init__()
@@ -59,7 +57,7 @@ class IMGEPExplorerInstance(Leaf):
         self.equil_time = equil_time
         self.timestep = 0
 
-        self.mutator = mutator
+        self.mutator = mutator if mutator is not None else SpecificMutator()
 
         self._history_saver = SaveWrapper()
 
@@ -324,7 +322,7 @@ class IMGEPExplorer():
     def __call__(self,system) -> "IMGEPExplorerInstance":
         behavior_map = self.make_behavior_map(system)
         param_map = self.make_parameter_map(system)
-        mutator = self.make_mutator(param_map)
+        mutator = self.make_mutator()
         equil_time = self.config.equil_time
         explorer = IMGEPExplorerInstance(
             parameter_map=param_map,
@@ -349,10 +347,9 @@ class IMGEPExplorer():
             object_name="parameter map",
         )
 
-    def make_mutator(self, param_map: Any = None):
+    def make_mutator(self):
         return instantiate_object(
             self.config.mutator,
             object_name="mutator",
-            param_map=param_map,
         )
     
