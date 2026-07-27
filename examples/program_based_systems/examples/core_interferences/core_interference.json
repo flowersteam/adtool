@@ -8,10 +8,10 @@
     }
   },
   "system": {
-    "path": "examples.program_based_systems.examples.core_interferences.systems.InterferenceSystem",
+    "path": "examples.program_based_systems.examples.core_interferences.systems.InterferenceSystem.InterferenceSystem",
     "config": {
       "simulator": {
-        "path": "examples.program_based_systems.examples.core_interferences.systems.simulator.Sim3Backend",
+        "path": "examples.program_based_systems.examples.core_interferences.systems.simulator.interference_sim3.Sim3Backend",
         "config": {
           "cycles": 256,
           "num_banks": 4,
@@ -19,36 +19,36 @@
         }
       },
       "simulator_runner": {
-        "path": "examples.program_based_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner",
+        "path": "examples.program_based_systems.examples.core_interferences.systems.runner.interference_env_simulator_runner.DefaultEnvSimulatorRunner",
         "config": {}
       }
     }
   },
   "explorer": {
-    "path": "examples.program_based_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer",
+    "path": "examples.program_based_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
     "config": {
       "periode": 5,
       "knn": 1,
       "behavior_map": {
-        "path": "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap",
+        "path": "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap.InterferenceBehaviorMap",
         "config": {
           "goal_sampler": {
-            "path": "examples.program_based_systems.examples.core_interferences.behavior_map.goal_sampler.InterferenceZoneGoalSampler",
+            "path": "examples.program_based_systems.examples.core_interferences.behavior_map.goal_sampler.interference_zone_goal_sampler.InterferenceZoneGoalSampler",
             "config": {
               "base_sampler": {
-                "path": "examples.program_based_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler",
+                "path": "examples.program_based_systems.behavior_map.goal_sampler.random_minmax_goal_sampler.RandomMinMaxGoalSampler",
                 "config": {}
               }
             }
           },
           "behavior_encoder": {
-            "path": "examples.program_based_systems.examples.core_interferences.behavior_map.encoder.InterferenceMetricEncoder",
+            "path": "examples.program_based_systems.examples.core_interferences.behavior_map.encoder.interference_metric_encoder.InterferenceMetricEncoder",
             "config": {}
           }
         }
       },
       "parameter_map": {
-        "path": "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap",
+        "path": "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap.InterferenceParameterMap",
         "config": {
           "num_instructions": 25,
           "min_address_core0": 0,
@@ -57,11 +57,11 @@
           "max_address_core1": 47,
           "max_cycle": 127,
           "generator": {
-            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionGenerator",
+            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_generator.RandomInstructionGenerator",
             "config": {}
           },
           "mutator": {
-            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.RandomInstructionMutator",
+            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_mutator.RandomInstructionMutator",
             "config": {
               "num_mutations": 5
             }
