@@ -1,18 +1,15 @@
 """The simplest possible algorithm of Intrinsically Motivated Goal Exploration Processes
 """
-import json
-import os
 from typing import Any, Dict, List, Union
 
 from adtool.systems import System
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
-from adtool.wrappers.SaveWrapper import SaveWrapper
+from adtool.history import HistoryStore
 from adtool.utils.expose_config.expose_config import expose
 from adtool.mutators import SpecificMutator
 from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
 from adtool.utils.leaf.Leaf import Leaf
 from pydantic import Field
-from typing import Dict
 from pydantic import BaseModel
 
 import numpy as np
@@ -47,6 +44,7 @@ class IMGEPExplorerInstance(Leaf):
         behavior_map: Leaf = IdentityWrapper(),
         mutator: Any = None,
         equil_time: int = 0,
+        lookback_length: int = -1,
     ) -> None:
         super().__init__()
 
@@ -55,11 +53,15 @@ class IMGEPExplorerInstance(Leaf):
         self.parameter_map = parameter_map
         self.behavior_map = behavior_map
         self.equil_time = equil_time
+        self.lookback_length = lookback_length
         self.timestep = 0
 
         self.mutator = mutator if mutator is not None else SpecificMutator()
 
-        self._history_saver = SaveWrapper()
+        self.history = HistoryStore(
+            feature_key=self.premap_key,
+            payload_key=self.postmap_key,
+        )
 
     def bootstrap(self) -> Dict:
         """Return an initial sample needed to bootstrap the exploration loop."""
@@ -128,7 +130,7 @@ class IMGEPExplorerInstance(Leaf):
             new_trial_data = self.observe_results(system_output)
 
         # save results
-        trial_data_reset = self._history_saver.map( new_trial_data )
+        trial_data_reset = self.history.record(new_trial_data)
 
 
         # TODO: check gradients here
@@ -145,6 +147,7 @@ class IMGEPExplorerInstance(Leaf):
         else:
             # suggest_trial reads history
             params_trial = self.suggest_trial(
+                lookback_length=self.lookback_length,
                 goal=target,
                 goal_targeting=goal_targeting,
             )
@@ -190,15 +193,10 @@ class IMGEPExplorerInstance(Leaf):
                 goal = self.behavior_map.sample()
             else:
                 goal = self.behavior_map.sample(goal_targeting=goal_targeting)
-       #     print("sampled goal", goal)
 
         source_policy = self._vector_search_for_goal(goal, lookback_length)
-     #   source_policy = self._random_history_sample(lookback_length)
 
-        # instead take a random policy
-
-        params_trial = self.mutator(source_policy)
-
+        params_trial = self.mutator(source_policy, parameter_map=self.parameter_map)
 
         return params_trial
 
@@ -239,71 +237,29 @@ class IMGEPExplorerInstance(Leaf):
 
     def read_last_discovery(self) -> Dict:
         """Return last observed discovery."""
-        return self._history_saver.buffer[-1]
+        return self.history.last()
 
     def optimize(self):
         """Run optimization step for online learning of the `Explorer` policy."""
         pass
 
-    def _extract_dict_history(self, dict_history: List[Dict], key: str) -> List[Dict]:
-        """Extract history from an array of dicts with labelled data,
-        with the desired subdict being labelled by key.
-        """
-        key_history = []
-        for dict in dict_history:
-            key_history.append(dict[key])
-        return key_history
-
-    def _extract_tensor_history(
-        self, dict_history: List[Dict], key: str
-    ) :
-        """Extract tensor history from an array of dicts with labelled data,
-        with the tensor being labelled by key.
-        """
-        # append history of tensors along a new dimension at index 0
-        tensor_history = np.array([dict_history[0][key]])
-        for dict in dict_history[1:]:
-          #  tensor_history = torch.cat((tensor_history, dict[key].unsqueeze(0)), dim=0)
-            tensor_history = np.concatenate((tensor_history, [dict[key]]), axis=0)
-
-        return tensor_history
-
-    def _find_closest(self, goal: np.ndarray,
-                       goal_history: np.ndarray):
-        # TODO: simple L2 distance right now
-        # (200,17) , (17,)
-        # return the argmin of the L2 distance with numpy
-
-        return np.argmin(np.linalg.norm(goal_history - goal, axis=1))
-    
     def _vector_search_for_goal(self, goal: np.ndarray, lookback_length: int) -> Dict:
-        history_buffer = self._history_saver.get_history(
-            lookback_length=lookback_length
+        matches = self.history.nearest(
+            np.asarray(goal, dtype=float),
+            k=1,
+            lookback_length=lookback_length,
         )
 
+        if not matches:
+            matches = self.history.random(lookback_length=lookback_length)
 
-        goal_history = self._extract_tensor_history(history_buffer, self.premap_key)
+        return matches[0].payload if matches else self.parameter_map.sample()
 
-
-        source_policy_idx = self._find_closest(goal, goal_history)
-
-
-        param_history = self._extract_dict_history(history_buffer, self.postmap_key)
-        source_policy = param_history[source_policy_idx]
-
-        return source_policy
-
-    def _random_history_sample(self, lookback_length: int) -> Dict:
-        history_buffer = self._history_saver.get_history(
-            lookback_length=lookback_length
-        )
-
-        source_policy_idx = np.random.randint(0, len(history_buffer))
-
-        param_history = self._extract_dict_history(history_buffer, self.postmap_key)
-        source_policy = param_history[source_policy_idx]
-
-        return source_policy
+    def checkpoint_state(self) -> Dict:
+        state = super().checkpoint_state()
+        # History is persisted as checkpoint-local chunks, not in the explorer.
+        state.pop("history", None)
+        return state
 
 
 @expose

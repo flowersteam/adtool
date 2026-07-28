@@ -11,6 +11,7 @@ from typing import Callable, Dict, List
 import numpy as np
 #from adtool.ExperimentPipelineVariance import ExperimentPipeline
 from adtool.ExperimentPipeline import ExperimentPipeline
+from adtool.checkpoints import FileCheckpointStore
 
 from adtool.utils.logger import AutoDiscLogger
 from adtool.utils.factory import instantiate_object
@@ -86,24 +87,25 @@ def create(
 
 
 
-    # short circuit if "resume_from_uid" is set
-    resume_ckpt = parameters["experiment"]["config"].get("resume_from_uid", None)
-    if resume_ckpt is not None:
-        resource_uri = parameters["experiment"]["config"]["save_location"]
-        experiment = ExperimentPipeline().load_leaf(
-            uid=resume_ckpt, resource_uri=resource_uri
+    # Checkpoints restore Leaf state explicitly. Starting without one creates
+    # fresh runtime and history state.
+    experiment_config = parameters["experiment"]["config"]
+    if experiment_config.get("resume_from_uid") is not None:
+        raise ValueError(
+            "resume_from_uid is no longer supported; set resume_checkpoint "
+            "to a checkpoint folder name instead."
         )
 
-        # set attributes pruned by save_leaf
-        experiment.logger = logger
-        experiment._on_discovery_callbacks = callbacks['on_discovery']
-        experiment._on_save_finished_callbacks = callbacks['on_save_finished']
-        experiment._on_finished_callbacks = callbacks['on_finished']
-        experiment._on_cancelled_callbacks = callbacks['on_cancelled']
-        experiment._on_save_callbacks = callbacks['on_saved']
-        experiment._on_error_callbacks = callbacks['on_error']
-        # experiment._interact_callbacks = callbacks['interact']
-
+    resume_ckpt = experiment_config.get("resume_checkpoint")
+    if resume_ckpt is not None:
+        resource_uri = parameters["experiment"]["config"]["save_location"]
+        experiment = FileCheckpointStore(resource_uri).load(resume_ckpt)
+        experiment.configure_runtime(
+            config=parameters,
+            resource_uri=resource_uri,
+            logger=logger,
+            callbacks=callbacks,
+        )
         return experiment
     
     system = instantiate_object(parameters["system"], object_name="system")

@@ -57,7 +57,7 @@ Example snippets:
   "explorer": {
     "config": {
       "behavior_map": {
-        "path": "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap",
+        "path": "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap.InterferenceBehaviorMap",
         "config": {
           "goal_sampler": {
             "path": "examples.program_based_systems.behavior_map.goal_sampler.MyGoalSampler",
@@ -70,7 +70,7 @@ Example snippets:
         }
       },
       "parameter_map": {
-        "path": "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap",
+        "path": "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap.InterferenceParameterMap",
         "config": {
           "mixer": {
             "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.MyNewMixer",

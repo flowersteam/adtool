@@ -79,3 +79,28 @@ class BaseBehaviorMap(Map):
             max_=max_,
             **kwargs,
         )
+
+    def sample_from_bounds(
+        self,
+        bounds: tuple[np.ndarray, np.ndarray] | None,
+        **kwargs: Any,
+    ) -> np.ndarray:
+        """Sample a goal from streamed history bounds.
+
+        The bundled goal samplers depend on historical features only through
+        their minimum and maximum values.  Passing these bounds avoids
+        materializing the full discovery history in the explorer.
+        """
+        if bounds is None:
+            return self.sample(**kwargs)
+        min_, max_ = (np.asarray(value, dtype=float) for value in bounds)
+        feature_size = len(min_)
+        if self.goal_sampler is None:
+            return np.zeros(feature_size, dtype=float)
+        return self.goal_sampler.sample(
+            [min_],
+            feature_size,
+            min_=min_,
+            max_=max_,
+            **kwargs,
+        )

@@ -178,6 +178,8 @@ Use your own package name in config paths. Example:
     "config": {
       "save_location": "./runs/",
       "save_frequency": 1,
+      "discoveries_buffer_size": 100,
+      "lookback_length": -1,
       "bootstrap_size": 1,
       "render_every": 1
     }
@@ -317,6 +319,12 @@ The easiest way is to use the runner already provided by the library:
 ```bash
 python -m adtool.runners.run_experimentations --config_file config.json --nb_iterations 40
 ```
+
+For chunked history, pickle checkpoints, and checkpoint branching, see
+[History and Checkpoints](HISTORY_AND_CHECKPOINTS.md). In particular,
+`resume_checkpoint` accepts a checkpoint folder name relative to the config's
+`save_location`.
+
 or helper
 ```bash
 python -m adtool.runners.run_experimentations -h

@@ -4,8 +4,7 @@
       "save_location": "./discoveries/grayscott_hist_test",
       "save_frequency": 2,
       "bootstrap_size": 1,
-      "render_every": 0,
-      "resume_from_checkpoint": "./discoveries/grayscott_hist_test/checkpoints/GrayScott/step-00000003-cfg-748ce7349361-branch-7607104a"
+      "render_every": 0
     }
   },
   "system": {

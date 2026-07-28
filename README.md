@@ -95,15 +95,15 @@ chmod +x examples/docking/systems/gnina
 ```
 And also move replacements02_sa2.db downloaded here http://www.qsar4u.com/pages/crem.php to the examples/docking/maps/ directory.
 
-### Reloading
-To reload a previous exploration, simply run the same previous commands but from an existing discoveries directory. Previous discoveries must be generated with the same system and maps.
+### History and checkpoint resume
 
-Saved run layout notes:
-
-- `save_location` contains the generated `discoveries/` directory.
-- The experiment config is saved once at `discoveries/config.json`.
-- Each discovery still gets its own folder with `discovery.json` and optional rendered media.
-- `experiment.config.render_every` controls rendering cadence: `1` renders every discovery, `N` renders every `N`th discovery, and `0` disables rendering entirely.
+Discoveries are exported under `<save_location>/discoveries/`. Full experiment
+state and chunked exploration history are saved below
+`<save_location>/checkpoints/` every `save_frequency` discoveries. To resume,
+set `experiment.config.resume_checkpoint` to a checkpoint **folder name**;
+the runner resolves it from `save_location`. See
+[History and checkpoints](docs/HISTORY_AND_CHECKPOINTS.md) for the storage
+layout, branching behavior, and complete setup instructions.
 
 
 ### Visualization
@@ -122,6 +122,7 @@ python3 -m adtool.user_tools.visu.server --discoveries PATH_TO_DISCOVERIES --con
 Documentation:
 
 - [Analysis Modules](docs/ANALYSIS_MODULES.md)
+- [History and Checkpoints](docs/HISTORY_AND_CHECKPOINTS.md)
 - [Visualization Guide](docs/VISUALIZATION.md)
 - [Visualization UI Guide](docs/VISUAL_UI_GUIDE.md)
 

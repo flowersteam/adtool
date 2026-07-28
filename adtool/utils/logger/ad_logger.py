@@ -7,7 +7,7 @@ from typing import List
 
 class AutoDiscLogger(logging.Logger):
     """
-    A logger to manage experiments logs and print them in the console or save them to the database or to disk according to the user's needs.
+    A logger to manage experiment logs and print them to configured handlers.
     """
 
     def __init__(
@@ -19,7 +19,7 @@ class AutoDiscLogger(logging.Logger):
         Args:
             experiment_id: current experiment id
             seed: current seed number
-            handlers: List of all handlers needed by the user to manage logs (e.g. save in database on disk)
+            handlers: handlers used to manage experiment logs.
         """
         self.__experiment_id = experiment_id
         self._seed = seed

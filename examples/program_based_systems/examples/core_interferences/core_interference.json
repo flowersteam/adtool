@@ -1,10 +1,13 @@
 {
   "experiment": {
     "config": {
-      "save_location": "./discoveries/interferences/",
-      "save_frequency": 1000,
-      "bootstrap_size": 500,
-      "render_every": 1
+      "save_location": "./discoveries/interferences_test_hist/",
+      "save_frequency": 5,
+      "discoveries_buffer_size": 5,
+      "lookback_length": -1,
+      "bootstrap_size": 3,
+      "render_every": 1,
+      "resume_checkpoint" : ""
     }
   },
   "system": {
