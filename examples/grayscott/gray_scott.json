@@ -1,9 +1,10 @@
 {
   "experiment": {
     "config": {
-      "save_location": "./",
-      "save_frequency": 1,
-      "bootstrap_size": 1
+      "save_location": "./discoveries/grayscott_hist_test",
+      "save_frequency": 2,
+      "bootstrap_size": 1,
+      "render_every": 0
     }
   },
   "system": {
@@ -18,10 +19,8 @@
     "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
     "config": {
       "mutator": {
-        "path": "adtool.wrappers.mutators.make_mutator",
-        "config": {
-          "method": "specific"
-        }
+        "path": "adtool.mutators.SpecificMutator",
+        "config": {}
       },
       "equil_time": 1,
       "behavior_map": {

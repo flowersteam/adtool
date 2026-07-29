@@ -14,10 +14,8 @@
     "path": "adtool.explorers.IMGEPExplorer.IMGEPExplorer",
     "config": {
       "mutator": {
-        "path": "adtool.wrappers.mutators.make_mutator",
-        "config": {
-          "method": "specific"
-        }
+        "path": "adtool.mutators.SpecificMutator",
+        "config": {}
       },
       "equil_time": 1,
       "behavior_map": {

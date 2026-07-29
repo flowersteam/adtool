@@ -1,20 +1,17 @@
-"""The simplest possible algorithm of Intrinsically Motivated Goal Exploration Processes
-"""
-import json
-import os
-from typing import Any, Dict, List
+"""IMGEP variant that interpolates the two nearest stored policies."""
 
-from adtool.systems import System
-from adtool.wrappers.IdentityWrapper import IdentityWrapper
-from adtool.wrappers.SaveWrapper import SaveWrapper
-from adtool.utils.expose_config.expose_config import expose
-from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
-from adtool.utils.leaf.Leaf import Leaf
-from pydantic import Field
-from typing import Dict
-from pydantic import BaseModel
+from __future__ import annotations
+
+from typing import Any, Dict
 
 import numpy as np
+from pydantic import BaseModel, Field
+
+from adtool.explorers.IMGEPExplorer import IMGEPExplorerInstance as BaseIMGEPExplorer
+from adtool.systems import System
+from adtool.utils.expose_config.expose_config import expose
+from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
+
 
 class IMGEPConfig(BaseModel):
     equil_time: int = Field(1, ge=1, le=1000)
@@ -25,279 +22,77 @@ class IMGEPConfig(BaseModel):
         object_spec("adtool.maps.UniformParameterMap.UniformParameterMap")
     )
     mutator: ObjectSpec = Field(
-        object_spec(
-            "adtool.wrappers.mutators.make_mutator",
-            {"method": "specific"},
-        )
+        object_spec("adtool.mutators.SpecificMutator")
     )
 
 
+class IMGEPExplorerInstance(BaseIMGEPExplorer):
+    """The standard explorer with two-neighbor policy interpolation."""
 
-class IMGEPExplorerInstance(Leaf):
-    """Basic IMGEP that diffuses in goalspace.
+    def _interpolate_policies_recursive(self, first: Any, second: Any, weight: float):
+        if isinstance(first, np.ndarray):
+            return (1 - weight) * first + weight * second
+        if isinstance(first, dict):
+            return {
+                key: self._interpolate_policies_recursive(first[key], second[key], weight)
+                for key in first
+            }
+        if isinstance(first, list):
+            return [
+                self._interpolate_policies_recursive(left, right, weight)
+                for left, right in zip(first, second)
+            ]
+        return (1 - weight) * first + weight * second
 
-    A class instance of `IMGEPExplorerInstance` has access to a provided
-    `parameter_map`, `behavior_map`, and `mutator` as attributes, whereas it
-    receives data from the system under study through the `.map` method.
-    """
-
-    def __init__(
-        self,
-        premap_key: str = "output",
-        postmap_key: str = "params",
-        parameter_map: Leaf = IdentityWrapper(),
-        behavior_map: Leaf = IdentityWrapper(),
-        mutator: Leaf = Leaf(),
-        equil_time: int = 0,
-    ) -> None:
-        super().__init__()
-
-        self.premap_key = premap_key
-        self.postmap_key = postmap_key
-        self.parameter_map = parameter_map
-        self.behavior_map = behavior_map
-        self.equil_time = equil_time
-        self.timestep = 0
-
-        self.mutator = mutator
-
-        self._history_saver = SaveWrapper()
-
-    def bootstrap(self) -> Dict:
-        """Return an initial sample needed to bootstrap the exploration loop."""
-        data_dict = {}
-        # initialize sample
-        params_init = self.parameter_map.sample()
-
-        data_dict[self.postmap_key] = params_init
-
-
-        # first timestep recorded
-        # NOTE: therefore, regardless of self.equil_time, 1 equil step
-        # will always happen
-        data_dict["equil"] = 1
-        self.timestep += 1
-
-
-        return data_dict
-
-    def map(self, system_output: Dict) -> Dict:
-        """Map the raw output of the system rollout to a subsequent parameter
-        configuration to try.
-
-        Args:
-            system_output:
-                A dictionary where the key `self.premap_key` indexes the raw
-                output given at the end of the previous system rollout.
-
-        Returns:
-            A dictionary where the key `self.postmap_key` indexes the parameters to try in the next trial.
-        """
-        # either do nothing, or update dict by changing "output" -> "raw_output"
-        # and adding new "output" key which is the result of the behavior map
-        new_trial_data = self.observe_results(system_output)
-
-        # save results
-        trial_data_reset = self._history_saver.map( new_trial_data )
-
-
-        # TODO: check gradients here
-        if self.timestep < self.equil_time:
-
-
-            # sets "params" key
-            trial_data_reset = self.parameter_map.map(
-                trial_data_reset, override_existing=True
+    def _interpolate_policies(self, first: Dict, second: Dict, weight: float) -> Dict:
+        return {
+            "dynamic_params": self._interpolate_policies_recursive(
+                first["dynamic_params"], second["dynamic_params"], weight
             )
+        }
 
-            # label which trials were from random initialization
-            trial_data_reset["equil"] = 1
-        else:
-            # suggest_trial reads history
-            params_trial = self.suggest_trial(
-                goal=system_output['target'] if 'target' in system_output else None
-            )
-
-            # assemble dict and update parameter_map state
-            # NOTE: that this pass through parameter_map should not modify
-            # the "params" data, but only so that parameter_map can update
-            # its own state from reading the new parameters
-            trial_data_reset[self.postmap_key] = params_trial
-            trial_data_reset = self.parameter_map.map(
-                trial_data_reset, override_existing=False
-            )
-
-            # label that trials are now from the usual IMGEP procedure
-            trial_data_reset["equil"] = 0
-
-        self.timestep += 1
-
-        return trial_data_reset
-
-    def suggest_trial(self, lookback_length: int = -1, goal: np.ndarray = None):
-        if goal is None:
-            goal = self.behavior_map.sample()
-
-        interpolated_policy = self._vector_search_for_goal(goal, lookback_length)
-
-        params_trial = self.mutator(interpolated_policy)
-
-        return params_trial
-
-    def observe_results(self, system_output: Dict) -> Dict:
-        """Read the raw output observed and process it into a discovered
-        behavior.
-
-        Args:
-            system_output: See arguments for `.map`.
-
-        Returns:
-            A dictionary of the observed behavior/feature vector associated with
-            the raw `system_output`
-        """
-        # check we are not in the initialization case
-        if system_output.get(self.premap_key, None) is not None:
-            # recall that behavior_maps will remove the dict entry of
-            # self.premap_key
-            system_output = self.behavior_map.map(system_output)
-        else:
-            pass
-
-        return system_output
-
-    def read_last_discovery(self) -> Dict:
-        """Return last observed discovery."""
-        return self._history_saver.buffer[-1]
-
-    def optimize(self):
-        """Run optimization step for online learning of the `Explorer` policy."""
-        pass
-
-    def _extract_dict_history(self, dict_history: List[Dict], key: str) -> List[Dict]:
-        """Extract history from an array of dicts with labelled data,
-        with the desired subdict being labelled by key.
-        """
-        key_history = []
-        for dict in dict_history:
-            key_history.append(dict[key])
-        return key_history
-
-    def _extract_tensor_history(
-        self, dict_history: List[Dict], key: str
-    ) :
-        """Extract tensor history from an array of dicts with labelled data,
-        with the tensor being labelled by key.
-        """
-        # append history of tensors along a new dimension at index 0
-        tensor_history = np.array([dict_history[0][key]])
-        for dict in dict_history[1:]:
-          #  tensor_history = torch.cat((tensor_history, dict[key].unsqueeze(0)), dim=0)
-            tensor_history = np.concatenate((tensor_history, [dict[key]]), axis=0)
-
-        return tensor_history
-
-    def _find_two_closest(self, goal: np.ndarray, goal_history: np.ndarray):
-        distances = np.linalg.norm(goal_history - goal, axis=1)
-        return np.argsort(distances)[:2]
-    
-
-
-    def _interpolate_policies_recursive(self, policy1, policy2, weight: float):
-        
-        if isinstance(policy1, np.ndarray):
-            # element-wise interpolation
-            return np.add((1 - weight) * policy1, weight * policy2)
-
-        if isinstance(policy1, dict):
-            interpolated_policy = {}
-            for key in policy1.keys():
-                interpolated_policy[key] = self._interpolate_policies_recursive(policy1[key], policy2[key], weight)
-            return interpolated_policy
-        elif isinstance(policy1, list):
-            interpolated_policy = []
-            for i in range(len(policy1)):
-                interpolated_policy.append(self._interpolate_policies_recursive(policy1[i], policy2[i], weight))
-
-            return interpolated_policy
-        else:
-            return (1 - weight) * policy1 + weight * policy2
-    
-    # same but also consider lists
-    def _interpolate_policies(self, policy1: Dict, policy2: Dict, weight: float):
-
-        dynamic_params= self._interpolate_policies_recursive(policy1['dynamic_params'], policy2['dynamic_params'], weight)
-        return {'dynamic_params': dynamic_params}
-                    
-
-    def _vector_search_for_goal(self, goal: np.ndarray, lookback_length: int) -> Dict:
-        history_buffer = self._history_saver.get_history(
-            lookback_length=lookback_length
+    def _vector_search_for_goal(
+        self, goal: np.ndarray, history_lookback_length: int
+    ) -> Dict:
+        matches = self.history.nearest(
+            np.asarray(goal, dtype=float),
+            k=2,
+            history_lookback_length=history_lookback_length,
+        )
+        if not matches:
+            return self.parameter_map.sample()
+        if len(matches) == 1:
+            return matches[0].payload
+        first, second = matches
+        total_distance = first.distance**0.5 + second.distance**0.5
+        if total_distance == 0:
+            return first.payload
+        return self._interpolate_policies(
+            first.payload,
+            second.payload,
+            first.distance**0.5 / total_distance,
         )
 
-        goal_history = self._extract_tensor_history(history_buffer, self.premap_key)
 
-        closest_indices = self._find_two_closest(goal, goal_history)
-
-        param_history = self._extract_dict_history(history_buffer, self.postmap_key)
-        policy1 = param_history[closest_indices[0]]
-        if len(closest_indices) == 1:
-            return policy1
-        policy2 = param_history[closest_indices[1]]
-
-        # Calculate the weights based on the distances
-        distances = np.linalg.norm(goal_history[closest_indices] - goal, axis=1)
-        total_distance = np.sum(distances)
-        weight = distances[0] / total_distance
-
-
-        interpolated_policy = self._interpolate_policies(policy1, policy2, weight)
-
-        return interpolated_policy
 @expose
-class IMGEPExplorer():
-    config=IMGEPConfig
-
-    # create specification for discovery attributes
-    # TODO: kind of hard-coded for now, based on constructor defaults
+class IMGEPExplorer:
+    config = IMGEPConfig
     discovery_spec = ["params", "output", "raw_output", "rendered_outputs"]
 
     def __init__(self, *args, **kwargs):
         pass
 
-
-        
-    def __call__(self,system) -> "IMGEPExplorerInstance":
-        behavior_map = self.make_behavior_map(system)
-        param_map = self.make_parameter_map(system)
-        mutator = self.make_mutator(param_map)
-        equil_time = self.config.equil_time
-        explorer = IMGEPExplorerInstance(
-            parameter_map=param_map,
+    def __call__(self, system: System) -> IMGEPExplorerInstance:
+        parameter_map = instantiate_object(
+            self.config.parameter_map, system, object_name="parameter map"
+        )
+        behavior_map = instantiate_object(
+            self.config.behavior_map, system, object_name="behavior map"
+        )
+        mutator = instantiate_object(self.config.mutator, object_name="mutator")
+        return IMGEPExplorerInstance(
+            parameter_map=parameter_map,
             behavior_map=behavior_map,
-            equil_time=equil_time,
             mutator=mutator,
+            equil_time=self.config.equil_time,
         )
-
-        return explorer
-
-    def make_behavior_map(self, system: System):
-        return instantiate_object(
-            self.config.behavior_map,
-            system,
-            object_name="behavior map",
-        )
-
-    def make_parameter_map(self, system: System):
-        return instantiate_object(
-            self.config.parameter_map,
-            system,
-            object_name="parameter map",
-        )
-
-    def make_mutator(self, param_map: Any = None):
-        return instantiate_object(
-            self.config.mutator,
-            object_name="mutator",
-            param_map=param_map,
-        )
-    

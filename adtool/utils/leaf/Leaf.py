@@ -100,6 +100,18 @@ class Leaf:
         super().__setattr__(name, value)
         return
 
+    def checkpoint_state(self) -> Dict[str, Any]:
+        """Return the locally owned state for ``FileCheckpointStore``.
+
+        Child leaves are stored in separate component files and container
+        pointers are rebuilt while loading.  Subclasses can override this
+        method to remove caches or resources that should be reconstructed.
+        """
+        state = dict(self.__dict__)
+        for name in ("_modules", "_container_ptr", "logger"):
+            state.pop(name, None)
+        return state
+
     def __delattr__(self, name: str) -> None:
         if name in self._modules:
             del self._modules[name]

@@ -1,14 +1,13 @@
 import dataclasses
 from copy import deepcopy
 from dataclasses import asdict, dataclass
-from functools import partial
 from typing import Dict, List
 
 import torch
 import numpy as np
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.maps.UniformParameterMap import UniformParameterMap
-from adtool.wrappers.mutators import add_gaussian_noise
+from adtool.mutators import GaussianMutator
 from examples.flashlenia.systems.FlashLenia import FlashLenia
 
 @dataclass
@@ -49,8 +48,7 @@ class FlashLeniaParameterMap(Leaf):
             tensor_high=torch.tensor([1.0] * 9, dtype=torch.float32).numpy(),
         )
 
-        self.uniform_mutator = partial(
-            add_gaussian_noise,
+        self.uniform_mutator = GaussianMutator(
             mean=param_obj.to_tensor().numpy(),
             std=torch.tensor([0.05] * 9, dtype=torch.float32).numpy(),
         )

@@ -1,12 +1,11 @@
 import dataclasses
 from copy import deepcopy
 from dataclasses import asdict
-from functools import partial
 from typing import Dict
 
 import numpy as np
 from adtool.maps.UniformParameterMap import UniformParameterMap
-from adtool.wrappers.mutators import add_gaussian_noise
+from adtool.mutators import GaussianMutator
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 from examples.reku.systems.ReKu import ReKu, ReKuParams  # Adjust the import according to your project structure
@@ -48,14 +47,12 @@ class ReKuParameterMap(Leaf):
             tensor_bound_high= np.ones(self.perturbators)
         )
 
-        self.uniform_mutator_omega = partial(
-            add_gaussian_noise,
+        self.uniform_mutator_omega = GaussianMutator(
             mean=np.zeros(self.perturbators),
             std=np.ones(self.perturbators) * 0.1
         )
 
-        self.uniform_mutator_phases = partial(
-            add_gaussian_noise,
+        self.uniform_mutator_phases = GaussianMutator(
             mean=np.zeros(self.perturbators),
             std=np.ones(self.perturbators) * 0.1
         )
@@ -68,8 +65,7 @@ class ReKuParameterMap(Leaf):
             tensor_bound_high=np.array([1])
         )
 
-        self.uniform_mutator_coupling_factor = partial(
-            add_gaussian_noise,
+        self.uniform_mutator_coupling_factor = GaussianMutator(
             mean=np.zeros(1),
             std=np.ones(1) * 0.1
         )

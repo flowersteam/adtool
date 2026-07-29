@@ -36,7 +36,7 @@ class SaveDiscoveryOnDisk(SaveDiscovery):
                 )
                 discovery["rendered_outputs"].append(rendered_output_name)
 
-        return super().__call__(resource_uri, experiment_id, run_idx, seed, discovery)
+        return super().__call__(resource_uri, experiment_id, run_idx, seed, discovery, dir_path=dir_path)
 
     @staticmethod
     def _write_shared_config(resource_uri: str, config: Dict[str, Any]) -> None:
@@ -61,12 +61,14 @@ class SaveDiscoveryOnDisk(SaveDiscovery):
         seed: int = None,
         **kwargs,
     ) -> None:
-        discovery["metadata"] = {
+        metadata = dict(discovery.get("metadata", {}))
+        metadata.update({
             "run_idx": run_idx,
             "experiment_id": experiment_id,
             "seed": seed,
             "created_at": datetime.now().isoformat(),
-        }
+        })
+        discovery["metadata"] = metadata
         # save dict_data to disk as JSON object
         file_path = os.path.join(dir_path, "discovery.json")
         with open(file_path, "w") as f:
@@ -77,7 +79,7 @@ class SaveDiscoveryOnDisk(SaveDiscovery):
         resource_uri: str, experiment_id: int, run_idx: int, seed: int
     ) -> str:
         dt = datetime.now()
-        date_str = dt.isoformat(timespec="minutes")
+        date_str = dt.isoformat(timespec="microseconds")
         disc_path = os.path.join(resource_uri, "discoveries")
         os.makedirs(disc_path, exist_ok=True)
         dir_str = f"{date_str}_exp_{experiment_id}_idx_{run_idx}_seed_{seed}"

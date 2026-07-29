@@ -4,7 +4,6 @@ from typing import Dict, List, Tuple, Union
 import torch
 from adtool.maps.Map import Map
 from adtool.wrappers.BoxProjector import BoxProjector
-from adtool.wrappers.SaveWrapper import SaveWrapper
 from adtool.utils.leaf.Leaf import Leaf
 from adtool.utils.leaf.locators.locators import BlobLocator
 
@@ -67,7 +66,6 @@ class UniformParameterMap(Map):
                 "tensor_bound_low and tensor_bound_high must be same shape."
             )
         self.postmap_shape = tensor_low.shape
-        # self.history_saver = SaveWrapper()
 
         self.projector = BoxProjector(
             premap_key=premap_key,
@@ -107,8 +105,6 @@ class UniformParameterMap(Map):
 
     # def get_tensor_history(self) -> torch.Tensor:
     #     tensor_history = \
-    #         self.history_saver.buffer[0][self.premap_key].unsqueeze(0)
-    #     for dict in self.history_saver.buffer[1:]:
     #         tensor_history = torch.cat(
     #             (tensor_history, dict[self.premap_key].unsqueeze(0)), dim=0)
     #     return tensor_history

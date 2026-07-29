@@ -1,3 +1,5 @@
+# Legacy, not used
+
 import traceback
 from copy import deepcopy
 from typing import Callable, List

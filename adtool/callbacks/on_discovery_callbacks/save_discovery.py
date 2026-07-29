@@ -1,6 +1,6 @@
 import json
 import pickle
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Dict, Optional, Type
 
 import numpy as np
 # import torch
@@ -67,10 +67,12 @@ class SaveDiscovery:
         run_idx: int,
         seed: int,
         discovery: Dict[str, Any],
+        dir_path: Optional[str] = None,
     ) -> None:
-        dir_path = self._initialize_save_path(
-            resource_uri, experiment_id, run_idx, seed
-        )
+        if dir_path is None:
+            dir_path = self._initialize_save_path(
+                resource_uri, experiment_id, run_idx, seed
+            )
 
      #   raise NotImplementedError
 

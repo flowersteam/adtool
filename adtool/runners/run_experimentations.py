@@ -11,6 +11,7 @@ from typing import Callable, Dict, List
 import numpy as np
 #from adtool.ExperimentPipelineVariance import ExperimentPipeline
 from adtool.ExperimentPipeline import ExperimentPipeline
+from adtool.utils.persistence.checkpoint import FileCheckpointStore
 
 from adtool.utils.logger import AutoDiscLogger
 from adtool.utils.factory import instantiate_object
@@ -58,7 +59,8 @@ def create(
     if additional_handlers is not None:
         handlers.extend(additional_handlers)
 
-    logger = AutoDiscLogger(experiment_id, seed, handlers)
+    log_level = parameters["experiment"]["config"].get("log_level", "INFO")
+    logger = AutoDiscLogger(experiment_id, seed, handlers, level=log_level)
 
 
 
@@ -86,24 +88,20 @@ def create(
 
 
 
-    # short circuit if "resume_from_uid" is set
-    resume_ckpt = parameters["experiment"]["config"].get("resume_from_uid", None)
+    # Checkpoints restore Leaf state explicitly. Starting without one creates
+    # fresh runtime and history state.
+    experiment_config = parameters["experiment"]["config"]
+
+    resume_ckpt = experiment_config.get("resume_checkpoint")
     if resume_ckpt is not None:
         resource_uri = parameters["experiment"]["config"]["save_location"]
-        experiment = ExperimentPipeline().load_leaf(
-            uid=resume_ckpt, resource_uri=resource_uri
+        experiment = FileCheckpointStore(resource_uri).load(resume_ckpt, logger=logger)
+        experiment.configure_runtime(
+            config=parameters,
+            resource_uri=resource_uri,
+            logger=logger,
+            callbacks=callbacks,
         )
-
-        # set attributes pruned by save_leaf
-        experiment.logger = logger
-        experiment._on_discovery_callbacks = callbacks['on_discovery']
-        experiment._on_save_finished_callbacks = callbacks['on_save_finished']
-        experiment._on_finished_callbacks = callbacks['on_finished']
-        experiment._on_cancelled_callbacks = callbacks['on_cancelled']
-        experiment._on_save_callbacks = callbacks['on_saved']
-        experiment._on_error_callbacks = callbacks['on_error']
-        # experiment._interact_callbacks = callbacks['interact']
-
         return experiment
     
     system = instantiate_object(parameters["system"], object_name="system")

@@ -178,6 +178,9 @@ Use your own package name in config paths. Example:
     "config": {
       "save_location": "./runs/",
       "save_frequency": 1,
+      "log_level": "INFO",
+      "discoveries_cache_size": 100,
+      "history_lookback_length": -1,
       "bootstrap_size": 1,
       "render_every": 1
     }
@@ -199,10 +202,8 @@ Use your own package name in config paths. Example:
         "config": {}
       },
       "mutator": {
-        "path": "adtool.wrappers.mutators.make_mutator",
-        "config": {
-          "method": "specific"
-        }
+        "path": "adtool.mutators.SpecificMutator",
+        "config": {}
       }
     }
   },
@@ -222,6 +223,12 @@ In the JSON file, most modules have two parts:
 
 - `"path"`: which Python class to load
 - `"config"`: the parameters given to this class when it is created
+
+`SpecificMutator` delegates mutation to the configured parameter map. It is
+an independent, importable object: the explorer supplies the parameter map at
+call time, so checkpoints do not serialize callable closures or their parent
+object tree. For flat numeric policies, use `adtool.mutators.GaussianMutator`
+with `mean` and `std` in its `config` object.
 
 So, for example:
 
@@ -313,6 +320,12 @@ The easiest way is to use the runner already provided by the library:
 ```bash
 python -m adtool.runners.run_experimentations --config_file config.json --nb_iterations 40
 ```
+
+For chunked history, pickle checkpoints, and checkpoint branching, see
+[History and Checkpoints](HISTORY_AND_CHECKPOINTS.md). In particular,
+`resume_checkpoint` accepts a checkpoint folder name relative to the config's
+`save_location`.
+
 or helper
 ```bash
 python -m adtool.runners.run_experimentations -h
