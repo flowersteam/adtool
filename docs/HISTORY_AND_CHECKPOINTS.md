@@ -5,6 +5,16 @@ keeps the data needed to continue an experiment separate from the optional
 files used to inspect or visualize discoveries. The current implementation
 uses local pickle and JSON files; it does not use a database.
 
+## Logging
+
+Set `experiment.config.log_level` to `DEBUG`, `INFO`, `WARNING`, `ERROR`, or
+`CRITICAL` (case-insensitive). It defaults to `INFO`.
+
+Use `DEBUG` when inspecting history and checkpoints. It logs cache updates,
+retrieval plans, loaded checkpoint chunks, nearest-neighbour selections, and
+checkpoint batches in a compact `key=value` format. `INFO` keeps only normal
+experiment progress and checkpoint messages.
+
 ## What is saved where?
 
 `save_location` contains two independent kinds of output:
@@ -125,6 +135,7 @@ To resume, set `resume_checkpoint` to a folder name directly under
     "config": {
       "save_location": "./runs/grayscott",
       "save_frequency": 10,
+      "log_level": "INFO",
       "discoveries_cache_size": 500,
       "history_lookback_length": 500,
       "bootstrap_size": 1,

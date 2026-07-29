@@ -59,7 +59,8 @@ def create(
     if additional_handlers is not None:
         handlers.extend(additional_handlers)
 
-    logger = AutoDiscLogger(experiment_id, seed, handlers)
+    log_level = parameters["experiment"]["config"].get("log_level", "INFO")
+    logger = AutoDiscLogger(experiment_id, seed, handlers, level=log_level)
 
 
 
@@ -99,7 +100,7 @@ def create(
     resume_ckpt = experiment_config.get("resume_checkpoint")
     if resume_ckpt is not None:
         resource_uri = parameters["experiment"]["config"]["save_location"]
-        experiment = FileCheckpointStore(resource_uri).load(resume_ckpt)
+        experiment = FileCheckpointStore(resource_uri).load(resume_ckpt, logger=logger)
         experiment.configure_runtime(
             config=parameters,
             resource_uri=resource_uri,

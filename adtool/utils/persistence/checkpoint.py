@@ -45,7 +45,7 @@ class CheckpointStore(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def load(self, checkpoint: str | Path) -> Leaf:
+    def load(self, checkpoint: str | Path, *, logger=None) -> Leaf:
         raise NotImplementedError
 
 
@@ -108,7 +108,7 @@ class FileCheckpointStore(CheckpointStore):
         )
         return CheckpointRef(path=destination, manifest=manifest)
 
-    def load(self, checkpoint: str | Path) -> Leaf:
+    def load(self, checkpoint: str | Path, *, logger=None) -> Leaf:
         checkpoint_dir = self._resolve_checkpoint_dir(checkpoint)
         manifest_path = checkpoint_dir / "manifest.json"
         with manifest_path.open() as file:
@@ -156,6 +156,7 @@ class FileCheckpointStore(CheckpointStore):
             feature_key=feature_key,
             payload_key=payload_key,
             cache_size=cache_size,
+            logger=logger,
         )
         explorer.history = history
         if hasattr(explorer, "restore_checkpoint_runtime"):

@@ -105,6 +105,7 @@ class ExperimentPipeline(Leaf):
         if self._explorer is None or self._checkpoint_store is None:
             return
         history = self._history()
+        history.set_logger(self.logger)
         experiment_config = self.config.get("experiment", {}).get("config", {})
         discoveries_cache_size = int(
             experiment_config.get("discoveries_cache_size", self.save_frequency)

@@ -10,8 +10,20 @@ class AutoDiscLogger(logging.Logger):
     A logger to manage experiment logs and print them to configured handlers.
     """
 
+    _LEVELS = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
+
     def __init__(
-        self, experiment_id: int, seed: int, handlers: List[AutoDiscLogger]
+        self,
+        experiment_id: int,
+        seed: int,
+        handlers: List[AutoDiscLogger],
+        level: str = "INFO",
     ) -> None:
         """
         Init the logger for an experiment.
@@ -24,6 +36,7 @@ class AutoDiscLogger(logging.Logger):
         self.__experiment_id = experiment_id
         self._seed = seed
         self._shared_logger = logging.getLogger("ad_tool_logger")
+        self.set_level(level)
         self.__index = 0
         # create handler
         # add handler
@@ -44,12 +57,21 @@ class AutoDiscLogger(logging.Logger):
                 self._shared_logger.addHandler(handler)
             self._shared_logger.addFilter(ContextFilter())
 
-    def debug(self, *args) -> None:
-        """
-        Call the logs method at the debug level and increment the log index to make an unique id for each log
-        """
+    def set_level(self, level: str) -> None:
+        """Set the minimum emitted level for this experiment process."""
+        normalized = str(level).upper()
+        if normalized not in self._LEVELS:
+            allowed = ", ".join(self._LEVELS)
+            raise ValueError(f"Unsupported log level {level!r}. Choose one of: {allowed}.")
+        self._shared_logger.setLevel(self._LEVELS[normalized])
+
+    def _emit(self, level: int, *args) -> None:
+        """Emit one contextualized record only when its level is enabled."""
+        if not self._shared_logger.isEnabledFor(level):
+            return
         self.__index += 1
-        self._shared_logger.debug(
+        self._shared_logger.log(
+            level,
             *args,
             {
                 "experiment_id": self.__experiment_id,
@@ -57,62 +79,36 @@ class AutoDiscLogger(logging.Logger):
                 "id": "{}_{}_{}".format(self.__experiment_id, self._seed, self.__index),
             },
         )
+
+    def debug(self, *args) -> None:
+        """
+        Call the logs method at the debug level and increment the log index to make an unique id for each log
+        """
+        self._emit(logging.DEBUG, *args)
 
     def info(self, *args) -> None:
         """
         Call the logs method at the info level and increment the log index to make an unique id for each log
         """
-        self.__index += 1
-        self._shared_logger.info(
-            *args,
-            {
-                "experiment_id": self.__experiment_id,
-                "seed": self._seed,
-                "id": "{}_{}_{}".format(self.__experiment_id, self._seed, self.__index),
-            },
-        )
+        self._emit(logging.INFO, *args)
 
     def warning(self, *args) -> None:
         """
         Call the logs method at the warning level and increment the log index to make an unique id for each log
         """
-        self.__index += 1
-        self._shared_logger.warning(
-            *args,
-            {
-                "experiment_id": self.__experiment_id,
-                "seed": self._seed,
-                "id": "{}_{}_{}".format(self.__experiment_id, self._seed, self.__index),
-            },
-        )
+        self._emit(logging.WARNING, *args)
 
     def error(self, *args) -> None:
         """
         Call the logs method at the error level and increment the log index to make an unique id for each log
         """
-        self.__index += 1
-        self._shared_logger.error(
-            *args,
-            {
-                "experiment_id": self.__experiment_id,
-                "seed": self._seed,
-                "id": "{}_{}_{}".format(self.__experiment_id, self._seed, self.__index),
-            },
-        )
+        self._emit(logging.ERROR, *args)
 
     def critical(self, *args) -> None:
         """
         Call the logs method at the critical level and increment the log index to make an unique id for each log
         """
-        self.__index += 1
-        self._shared_logger.critical(
-            *args,
-            {
-                "experiment_id": self.__experiment_id,
-                "seed": self._seed,
-                "id": "{}_{}_{}".format(self.__experiment_id, self._seed, self.__index),
-            },
-        )
+        self._emit(logging.CRITICAL, *args)
 
 
 class ContextFilter(logging.Filter):

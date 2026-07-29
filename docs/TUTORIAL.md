@@ -178,6 +178,7 @@ Use your own package name in config paths. Example:
     "config": {
       "save_location": "./runs/",
       "save_frequency": 1,
+      "log_level": "INFO",
       "discoveries_cache_size": 100,
       "history_lookback_length": -1,
       "bootstrap_size": 1,

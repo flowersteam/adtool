@@ -67,6 +67,19 @@ class HistoryStore:
             maxlen=None if self._cache_size == -1 else self._cache_size
         )
         self._last: dict[str, Any] | None = None
+        self._logger = None
+
+    def set_logger(self, logger) -> None:
+        """Attach the process-local logger used for history diagnostics."""
+        self._logger = logger
+
+    def _debug(self, event: str, **fields: Any) -> None:
+        """Emit one compact history diagnostic when DEBUG logging is enabled."""
+        if self._logger is None:
+            return
+        details = ", ".join(f"{name}={value}" for name, value in fields.items())
+        message = f"[HISTORY] {event}"
+        self._logger.debug(f"{message}: {details}" if details else message)
 
     @property
     def cache_size(self) -> int:
@@ -75,6 +88,7 @@ class HistoryStore:
 
     @cache_size.setter
     def cache_size(self, value: int) -> None:
+        previous_size = self._cache_size
         value = int(value)
         if value < -1:
             raise ValueError("history cache_size must be >= -1")
@@ -88,6 +102,12 @@ class HistoryStore:
             value == -1 or len(self._recent_cache) < value
         ):
             self._warm_recent_cache()
+        self._debug(
+            "cache configured",
+            previous=previous_size,
+            capacity=value,
+            cached=len(self._recent_cache),
+        )
 
     @property
     def head(self) -> Path | None:
@@ -107,16 +127,31 @@ class HistoryStore:
         if self._head is not None:
             self._checkpoint_chunk_refs()
             self._warm_recent_cache()
+        self._debug(
+            "checkpoint head selected",
+            checkpoint=self._head.name if self._head is not None else "none",
+            chunks=len(self._checkpoint_refs or []),
+            cached=len(self._recent_cache),
+        )
 
     def record(self, discovery: dict[str, Any]) -> dict[str, Any]:
         """Record one complete discovery and return an isolated working copy."""
         stored = deepcopy(discovery)
+        pending_before = len(self._pending)
+        cache_before = len(self._recent_cache)
+        evicted = self._cache_size > 0 and cache_before >= self._cache_size
         self._pending.append(stored)
         # The cache and persistence buffer are both private, read-only owners
         # of this history entry.  Sharing this isolated copy avoids duplicating
         # every discovery in RAM while external callers still receive copies.
         self._recent_cache.append(stored)
         self._last = stored
+        self._debug(
+            "discovery recorded",
+            pending=f"{pending_before}->{len(self._pending)}",
+            cache=f"{len(self._recent_cache)}/{self._cache_size}",
+            evicted_oldest=evicted,
+        )
         return deepcopy(stored)
 
     def last(self) -> dict[str, Any]:
@@ -179,7 +214,9 @@ class HistoryStore:
         """Return numeric feature bounds using one streaming pass."""
         lower, upper = self._feature_bounds(history_lookback_length)
         if lower is None or upper is None:
+            self._debug("feature bounds", features=0)
             return None
+        self._debug("feature bounds", dimensions=lower.size)
         return lower, upper
 
     def nearest(
@@ -200,13 +237,21 @@ class HistoryStore:
         if k <= 0:
             return []
         goal = np.asarray(goal, dtype=float).reshape(-1)
+        self._debug(
+            "nearest search started",
+            neighbors=k,
+            dimensions=goal.size,
+            normalized=normalized,
+        )
 
         lower: np.ndarray | None = None
         scale: np.ndarray | None = None
         if normalized:
             if normalization_bounds is None:
+                self._debug("normalization bounds", source="history scan")
                 lower, upper = self._feature_bounds(history_lookback_length)
             else:
+                self._debug("normalization bounds", source="provided by caller")
                 lower, upper = (
                     np.asarray(normalization_bounds[0], dtype=float).reshape(-1),
                     np.asarray(normalization_bounds[1], dtype=float).reshape(-1),
@@ -222,6 +267,7 @@ class HistoryStore:
                         "with the same shape as goal"
                     )
             if lower is None or upper is None:
+                self._debug("nearest search finished", matches=0, reason="no valid features")
                 return []
             scale = upper - lower
             scale[scale == 0] = 1.0
@@ -255,6 +301,14 @@ class HistoryStore:
                     position=-negative_position,
                 )
             )
+        self._debug(
+            "nearest search finished",
+            matches=len(matches),
+            positions=",".join(str(match.position) for match in matches) or "none",
+            distances=(
+                ",".join(f"{match.distance:.4g}" for match in matches) or "none"
+            ),
+        )
         return matches
 
     def random(self, history_lookback_length: int = -1) -> HistoryMatch | None:
@@ -268,6 +322,7 @@ class HistoryStore:
             if np.random.randint(count) == 0:
                 choice = (position, feature, record)
         if choice is None:
+            self._debug("random selection", candidates=0, position="none")
             return None
         position, feature, record = choice
         match = HistoryMatch(
@@ -277,6 +332,7 @@ class HistoryStore:
             distance=0.0,
             position=position,
         )
+        self._debug("random selection", candidates=count, position=position)
         return match
 
     def write_checkpoint_history(
@@ -284,10 +340,21 @@ class HistoryStore:
     ) -> tuple[list[str], dict[str, int]]:
         """Write the pending batch directly into a temporary checkpoint directory."""
         if not self._pending:
+            self._debug("checkpoint batch skipped", pending=0)
             return [], {}
         filename = f"history-{checkpoint_name}.pickle"
+        self._debug(
+            "checkpoint batch write",
+            discoveries=len(self._pending),
+            file=filename,
+        )
         with (Path(directory) / filename).open("wb") as file:
             pickle.dump(self._pending, file, protocol=pickle.HIGHEST_PROTOCOL)
+        self._debug(
+            "checkpoint batch written",
+            discoveries=len(self._pending),
+            file=filename,
+        )
         return [filename], {filename: len(self._pending)}
 
     def commit_checkpoint(
@@ -311,6 +378,13 @@ class HistoryStore:
         self._head = checkpoint_path
         self._pending = []
         cached_refs.extend(new_refs)
+        self._debug(
+            "checkpoint committed",
+            checkpoint=checkpoint_path.name,
+            discoveries=sum(history_file_counts.values()),
+            chunks=len(cached_refs),
+            cached=len(self._recent_cache),
+        )
 
     @classmethod
     def from_checkpoint(
@@ -320,12 +394,14 @@ class HistoryStore:
         feature_key: str,
         payload_key: str,
         cache_size: int,
+        logger=None,
     ) -> "HistoryStore":
         store = cls(
             feature_key=feature_key,
             payload_key=payload_key,
             cache_size=cache_size,
         )
+        store.set_logger(logger)
         store.set_head(checkpoint_dir)
         return store
 
@@ -333,6 +409,8 @@ class HistoryStore:
         """Return cached chronological refs for the selected checkpoint chain."""
         if self._checkpoint_refs is None:
             self._checkpoint_refs = self._read_checkpoint_chunk_refs()
+        else:
+            self._debug("chunk index reused", chunks=len(self._checkpoint_refs))
         return self._checkpoint_refs
 
     def _read_checkpoint_chunk_refs(self) -> list[_ChunkRef]:
@@ -362,6 +440,12 @@ class HistoryStore:
                         count,
                     )
                 )
+        self._debug(
+            "chunk index built",
+            checkpoints=len(checkpoints),
+            chunks=len(refs),
+            discoveries=sum(ref.count for ref in refs),
+        )
         return refs
 
     def _sources(self) -> list[tuple[_ChunkRef | None, list[dict[str, Any]] | None]]:
@@ -388,9 +472,15 @@ class HistoryStore:
     ) -> list[dict[str, Any]]:
         ref, records = source
         if records is not None:
+            self._debug("pending discoveries used", discoveries=len(records))
             return records
         if ref is None:
             return []
+        self._debug(
+            "checkpoint chunk loaded",
+            chunk=f"{ref.path.parent.name}/{ref.path.name}",
+            discoveries=ref.count,
+        )
         return self._load_chunk(ref.path, reverse=False)
 
     def _iter_selected_chunks(
@@ -398,6 +488,7 @@ class HistoryStore:
     ) -> Iterator[list[dict[str, Any]]]:
         """Yield a chronological history tail, reading only records outside cache."""
         if history_lookback_length == 0:
+            self._debug("retrieval skipped", reason="lookback is zero")
             return
         if self._cache_size == -1:
             # Complete-buffer mode is intentionally independent from the
@@ -407,10 +498,15 @@ class HistoryStore:
             if history_lookback_length > 0:
                 cached = cached[-int(history_lookback_length):]
             if cached:
+                self._debug(
+                    "retrieval from complete cache",
+                    discoveries=len(cached),
+                )
                 yield cached
             return
         if 0 < history_lookback_length <= len(self._recent_cache):
             cached = list(self._recent_cache)[-int(history_lookback_length):]
+            self._debug("retrieval from cache", discoveries=len(cached))
             yield cached
             return
 
@@ -418,6 +514,7 @@ class HistoryStore:
         counts = [self._source_count(source) for source in sources]
         total = sum(counts)
         if total == 0:
+            self._debug("retrieval skipped", reason="history is empty")
             return
 
         limit = (
@@ -428,6 +525,15 @@ class HistoryStore:
         cache_count = min(len(self._recent_cache), total)
         requested_start = total - limit
         disk_end = total - cache_count
+        self._debug(
+            "retrieval planned",
+            available=total,
+            requested=limit,
+            from_cache=cache_count,
+            from_chunks=max(0, limit - cache_count),
+            chunks=len(self._checkpoint_refs or []),
+            pending=len(self._pending),
+        )
         offset = 0
         for source, count in zip(sources, counts):
             source_end = offset + count
@@ -444,13 +550,20 @@ class HistoryStore:
         cache_start = max(0, requested_start - disk_end)
         cached = list(self._recent_cache)[cache_start:]
         if cached:
+            self._debug("retrieval cache tail", discoveries=len(cached))
             yield cached
 
     def _warm_recent_cache(self) -> None:
         """Fill the recent window from newest persisted history sources."""
         if self._cache_size == 0:
             self._recent_cache.clear()
+            self._debug("cache warm skipped", capacity=0)
             return
+        self._debug(
+            "cache warm started",
+            capacity=self._cache_size,
+            chunks=len(self._checkpoint_refs or []),
+        )
         newest_first: list[dict[str, Any]] = []
         remaining: int | None = None if self._cache_size == -1 else self._cache_size
         for source in reversed(self._sources()):
@@ -467,6 +580,11 @@ class HistoryStore:
         )
         if self._recent_cache:
             self._last = deepcopy(self._recent_cache[-1])
+        self._debug(
+            "cache warm finished",
+            cached=len(self._recent_cache),
+            capacity=self._cache_size,
+        )
 
     @staticmethod
     def _load_chunk(file_path: Path, reverse: bool) -> list[dict[str, Any]]:
