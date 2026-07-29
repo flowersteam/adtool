@@ -15,6 +15,14 @@ retrieval plans, loaded checkpoint chunks, nearest-neighbour selections, and
 checkpoint batches in a compact `key=value` format. `INFO` keeps only normal
 experiment progress and checkpoint messages.
 
+## History configuration defaults
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `save_frequency` | Required in JSON config | Number of discoveries between checkpoints. `ExperimentPipeline` uses `100` only when constructed directly in Python without this argument. |
+| `discoveries_cache_size` | `save_frequency` | Number of newest discoveries retained in RAM. `0` disables the cache; `-1` retains complete history. |
+| `history_lookback_length` | `-1` | Number of newest discoveries available to an explorer. `-1` means all available history. |
+
 ## What is saved where?
 
 `save_location` contains two independent kinds of output:
