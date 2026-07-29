@@ -91,11 +91,6 @@ def create(
     # Checkpoints restore Leaf state explicitly. Starting without one creates
     # fresh runtime and history state.
     experiment_config = parameters["experiment"]["config"]
-    if experiment_config.get("resume_from_uid") is not None:
-        raise ValueError(
-            "resume_from_uid is no longer supported; set resume_checkpoint "
-            "to a checkpoint folder name instead."
-        )
 
     resume_ckpt = experiment_config.get("resume_checkpoint")
     if resume_ckpt is not None:
