@@ -178,8 +178,8 @@ Use your own package name in config paths. Example:
     "config": {
       "save_location": "./runs/",
       "save_frequency": 1,
-      "discoveries_buffer_size": 100,
-      "lookback_length": -1,
+      "discoveries_cache_size": 100,
+      "history_lookback_length": -1,
       "bootstrap_size": 1,
       "render_every": 1
     }

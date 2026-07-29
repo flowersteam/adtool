@@ -44,7 +44,7 @@ class HistoryStore:
 
     Newly discovered records are buffered in memory until the next checkpoint,
     which writes that checkpoint's batch onto disk. A
-    separate rolling cache keeps the newest ``buffer_size`` discoveries
+    separate rolling cache keeps the newest ``cache_size`` discoveries
     decoded in memory. A size of ``0`` disables the cache, while ``-1`` keeps
     complete history.
     """
@@ -53,33 +53,33 @@ class HistoryStore:
         self,
         feature_key: str = "output",
         payload_key: str = "params",
-        buffer_size: int = 100,
+        cache_size: int = 100,
     ) -> None:
-        if buffer_size < -1:
-            raise ValueError("history buffer_size must be >= -1")
+        if cache_size < -1:
+            raise ValueError("history cache_size must be >= -1")
         self.feature_key = feature_key
         self.payload_key = payload_key
-        self._buffer_size = int(buffer_size)
+        self._cache_size = int(cache_size)
         self._head: Path | None = None
         self._pending: list[dict[str, Any]] = []
         self._checkpoint_refs: list[_ChunkRef] | None = []
         self._recent_cache: deque[dict[str, Any]] = deque(
-            maxlen=None if self._buffer_size == -1 else self._buffer_size
+            maxlen=None if self._cache_size == -1 else self._cache_size
         )
         self._last: dict[str, Any] | None = None
 
     @property
-    def buffer_size(self) -> int:
+    def cache_size(self) -> int:
         """RAM cache capacity: ``0`` disables it and ``-1`` retains all history."""
-        return self._buffer_size
+        return self._cache_size
 
-    @buffer_size.setter
-    def buffer_size(self, value: int) -> None:
+    @cache_size.setter
+    def cache_size(self, value: int) -> None:
         value = int(value)
         if value < -1:
-            raise ValueError("history buffer_size must be >= -1")
+            raise ValueError("history cache_size must be >= -1")
         previous = list(getattr(self, "_recent_cache", ()))
-        self._buffer_size = value
+        self._cache_size = value
         maxlen = None if value == -1 else value
         self._recent_cache = deque(
             previous if value == -1 else previous[-value:], maxlen=maxlen
@@ -134,27 +134,31 @@ class HistoryStore:
                 return deepcopy(self._last)
         raise IndexError("HistoryStore is empty")
 
-    def iter_chunks(self, lookback_length: int = -1) -> Iterator[list[dict[str, Any]]]:
+    def iter_chunks(
+        self, history_lookback_length: int = -1
+    ) -> Iterator[list[dict[str, Any]]]:
         """Yield safe copied chunks for external consumers.
 
         Built-in explorers do not use this API; it is kept for custom export
         and inspection code. A positive lookback applies to discoveries.
         """
-        for chunk in self._iter_selected_chunks(lookback_length):
+        for chunk in self._iter_selected_chunks(history_lookback_length):
             if chunk:
                 yield deepcopy(chunk)
 
-    def iter_history(self, lookback_length: int = -1) -> Iterator[dict[str, Any]]:
+    def iter_history(
+        self, history_lookback_length: int = -1
+    ) -> Iterator[dict[str, Any]]:
         """Yield safe copied discoveries for external consumers.
 
         Built-in explorers use the private no-copy path; this API is retained
         for custom export and inspection code.
         """
-        for chunk in self.iter_chunks(lookback_length):
+        for chunk in self.iter_chunks(history_lookback_length):
             for record in chunk:
                 yield record
 
-    def features(self, lookback_length: int = -1) -> np.ndarray:
+    def features(self, history_lookback_length: int = -1) -> np.ndarray:
         """Materialize numeric features for callers that explicitly require it.
 
         Explorers should generally prefer :meth:`feature_bounds`,
@@ -163,17 +167,17 @@ class HistoryStore:
         available for external algorithms whose API requires a matrix.
         """
         features: list[np.ndarray] = []
-        for _, feature, _ in self._iter_retrieval_records(lookback_length):
+        for _, feature, _ in self._iter_retrieval_records(history_lookback_length):
             features.append(feature)
         if not features:
             return np.zeros((0, 0), dtype=float)
         return np.vstack(features)
 
     def feature_bounds(
-        self, lookback_length: int = -1
+        self, history_lookback_length: int = -1
     ) -> tuple[np.ndarray, np.ndarray] | None:
         """Return numeric feature bounds using one streaming pass."""
-        lower, upper = self._feature_bounds(lookback_length)
+        lower, upper = self._feature_bounds(history_lookback_length)
         if lower is None or upper is None:
             return None
         return lower, upper
@@ -183,7 +187,7 @@ class HistoryStore:
         goal: np.ndarray,
         *,
         k: int = 1,
-        lookback_length: int = -1,
+        history_lookback_length: int = -1,
         normalized: bool = False,
         normalization_bounds: tuple[np.ndarray, np.ndarray] | None = None,
     ) -> list[HistoryMatch]:
@@ -201,7 +205,7 @@ class HistoryStore:
         scale: np.ndarray | None = None
         if normalized:
             if normalization_bounds is None:
-                lower, upper = self._feature_bounds(lookback_length)
+                lower, upper = self._feature_bounds(history_lookback_length)
             else:
                 lower, upper = (
                     np.asarray(normalization_bounds[0], dtype=float).reshape(-1),
@@ -223,7 +227,9 @@ class HistoryStore:
             scale[scale == 0] = 1.0
 
         winners: list[tuple[float, int, dict[str, Any], np.ndarray]] = []
-        for position, feature, record in self._iter_retrieval_records(lookback_length):
+        for position, feature, record in self._iter_retrieval_records(
+            history_lookback_length
+        ):
             if feature.shape != goal.shape:
                 continue
             difference = goal - feature
@@ -251,11 +257,13 @@ class HistoryStore:
             )
         return matches
 
-    def random(self, lookback_length: int = -1) -> HistoryMatch | None:
+    def random(self, history_lookback_length: int = -1) -> HistoryMatch | None:
         """Choose one valid history item with reservoir sampling."""
         choice: tuple[int, np.ndarray, dict[str, Any]] | None = None
         count = 0
-        for position, feature, record in self._iter_retrieval_records(lookback_length):
+        for position, feature, record in self._iter_retrieval_records(
+            history_lookback_length
+        ):
             count += 1
             if np.random.randint(count) == 0:
                 choice = (position, feature, record)
@@ -311,12 +319,12 @@ class HistoryStore:
         *,
         feature_key: str,
         payload_key: str,
-        buffer_size: int,
+        cache_size: int,
     ) -> "HistoryStore":
         store = cls(
             feature_key=feature_key,
             payload_key=payload_key,
-            buffer_size=buffer_size,
+            cache_size=cache_size,
         )
         store.set_head(checkpoint_dir)
         return store
@@ -385,22 +393,24 @@ class HistoryStore:
             return []
         return self._load_chunk(ref.path, reverse=False)
 
-    def _iter_selected_chunks(self, lookback_length: int) -> Iterator[list[dict[str, Any]]]:
+    def _iter_selected_chunks(
+        self, history_lookback_length: int
+    ) -> Iterator[list[dict[str, Any]]]:
         """Yield a chronological history tail, reading only records outside cache."""
-        if lookback_length == 0:
+        if history_lookback_length == 0:
             return
-        if self._buffer_size == -1:
+        if self._cache_size == -1:
             # Complete-buffer mode is intentionally independent from the
             # checkpoint chain after initialization: do not even read its
             # manifests during normal retrieval.
             cached = list(self._recent_cache)
-            if lookback_length > 0:
-                cached = cached[-int(lookback_length):]
+            if history_lookback_length > 0:
+                cached = cached[-int(history_lookback_length):]
             if cached:
                 yield cached
             return
-        if 0 < lookback_length <= len(self._recent_cache):
-            cached = list(self._recent_cache)[-int(lookback_length):]
+        if 0 < history_lookback_length <= len(self._recent_cache):
+            cached = list(self._recent_cache)[-int(history_lookback_length):]
             yield cached
             return
 
@@ -410,7 +420,11 @@ class HistoryStore:
         if total == 0:
             return
 
-        limit = total if lookback_length < 0 else min(int(lookback_length), total)
+        limit = (
+            total
+            if history_lookback_length < 0
+            else min(int(history_lookback_length), total)
+        )
         cache_count = min(len(self._recent_cache), total)
         requested_start = total - limit
         disk_end = total - cache_count
@@ -434,11 +448,11 @@ class HistoryStore:
 
     def _warm_recent_cache(self) -> None:
         """Fill the recent window from newest persisted history sources."""
-        if self._buffer_size == 0:
+        if self._cache_size == 0:
             self._recent_cache.clear()
             return
         newest_first: list[dict[str, Any]] = []
-        remaining: int | None = None if self._buffer_size == -1 else self._buffer_size
+        remaining: int | None = None if self._cache_size == -1 else self._cache_size
         for source in reversed(self._sources()):
             if remaining is not None and remaining <= 0:
                 break
@@ -449,7 +463,7 @@ class HistoryStore:
                 remaining -= len(take)
         self._recent_cache = deque(
             reversed(newest_first),
-            maxlen=None if self._buffer_size == -1 else self._buffer_size,
+            maxlen=None if self._cache_size == -1 else self._cache_size,
         )
         if self._recent_cache:
             self._last = deepcopy(self._recent_cache[-1])
@@ -463,7 +477,7 @@ class HistoryStore:
         return list(reversed(chunk)) if reverse else chunk
 
     def _iter_retrieval_records(
-        self, lookback_length: int
+        self, history_lookback_length: int
     ) -> Iterator[tuple[int, np.ndarray, dict[str, Any]]]:
         """Iterate private history records without defensive copying.
 
@@ -472,17 +486,19 @@ class HistoryStore:
         output, so callers cannot mutate cached or persisted history.
         """
         position = 0
-        for chunk in self._iter_selected_chunks(lookback_length):
+        for chunk in self._iter_selected_chunks(history_lookback_length):
             for record in chunk:
                 feature = self._feature_for(record)
                 if feature is not None:
                     yield position, feature, record
                 position += 1
 
-    def _feature_bounds(self, lookback_length: int) -> tuple[np.ndarray | None, np.ndarray | None]:
+    def _feature_bounds(
+        self, history_lookback_length: int
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
         lower: np.ndarray | None = None
         upper: np.ndarray | None = None
-        for _, feature, _ in self._iter_retrieval_records(lookback_length):
+        for _, feature, _ in self._iter_retrieval_records(history_lookback_length):
             if lower is None:
                 lower = feature.copy()
                 upper = feature.copy()

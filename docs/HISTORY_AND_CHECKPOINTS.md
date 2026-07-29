@@ -61,7 +61,7 @@ The manifest records the component files, history files and their discovery
 counts, plus `parent_checkpoint`. On resume, the history store reads this
 parent chain once and keeps the small list of chunk references in RAM. It
 loads a chunk file only when a retrieval needs discoveries that are not in the
-RAM buffer.
+RAM cache.
 
 Saving is safe against an interrupted write: files are first written to a
 temporary checkpoint directory, then that complete directory is atomically
@@ -70,9 +70,9 @@ renamed into place. There is no separate staging directory.
 **Keep every parent checkpoint and its files while any child checkpoint may be
 resumed.** A child branch depends on its parent chain for older history.
 
-## RAM history buffer
+## RAM discovery cache
 
-`experiment.config.discoveries_buffer_size` controls a rolling cache of the
+`experiment.config.discoveries_cache_size` controls a rolling cache of the
 newest decoded discoveries. It is independent from the pending batch that will
 be written at the next checkpoint.
 
@@ -82,13 +82,13 @@ be written at the next checkpoint.
 | `0` | Disable the cache. Required completed chunks are read from disk. The pipeline emits a warning. |
 | `-1` | Keep complete history in RAM. Retrieval does not read checkpoint history files after initialization, but memory grows with every discovery. The pipeline emits a warning. |
 
-When a checkpoint is resumed, the buffer is rebuilt from the newest saved
-chunks. Complete-buffer mode (`-1`) therefore reads the saved history once at
+When a checkpoint is resumed, the cache is rebuilt from the newest saved
+chunks. Complete-cache mode (`-1`) therefore reads the saved history once at
 resume time; later retrievals use RAM.
 
-`experiment.config.lookback_length` limits an explorer to the newest N
+`experiment.config.history_lookback_length` limits an explorer to the newest N
 discoveries. `-1` means all available history. If the requested window is
-larger than the RAM buffer, older chunks are streamed in chronological order;
+larger than the RAM cache, older chunks are streamed in chronological order;
 the whole history is not retained in memory merely to perform the search.
 
 ## How explorers use history
@@ -96,7 +96,7 @@ the whole history is not retained in memory merely to perform the search.
 Explorers use `HistoryStore`, rather than accessing files or another explorer's
 memory directly:
 
-- `record()` adds a discovery to the pending checkpoint batch and RAM buffer.
+- `record()` adds a discovery to the pending checkpoint batch and RAM cache.
 - `last()` returns the latest discovery.
 - `nearest()` performs an exact chunk-by-chunk nearest-neighbour search; there
   is currently no nearest-neighbour index.
@@ -125,8 +125,8 @@ To resume, set `resume_checkpoint` to a folder name directly under
     "config": {
       "save_location": "./runs/grayscott",
       "save_frequency": 10,
-      "discoveries_buffer_size": 500,
-      "lookback_length": 500,
+      "discoveries_cache_size": 500,
+      "history_lookback_length": 500,
       "bootstrap_size": 1,
       "render_every": 0,
       "resume_checkpoint": "step-00000030-cfg-a1b2c3d4e5f6-branch-1234abcd"
@@ -145,7 +145,7 @@ new discoveries form a branch rather than overwriting it.
 ## Typical workflow
 
 1. Choose a local `save_location` and a positive `save_frequency`.
-2. Optionally set `discoveries_buffer_size` and `lookback_length`.
+2. Optionally set `discoveries_cache_size` and `history_lookback_length`.
 3. Run:
 
    ```bash

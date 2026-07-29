@@ -73,11 +73,11 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
 
     def suggest_trial(
         self,
-        lookback_length: int = -1,
+        history_lookback_length: int = -1,
         goal: Optional[np.ndarray] = None,
         goal_targeting: Optional[Dict[str, Any]] = None,
     ) -> Any:
-        bounds = self.history.feature_bounds(lookback_length)
+        bounds = self.history.feature_bounds(history_lookback_length)
         if bounds is None:
             return self.parameter_map.sample()
 
@@ -107,7 +107,7 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
         selected = self.history.nearest(
             np.asarray(goal, dtype=float),
             k=self.knn,
-            lookback_length=lookback_length,
+            history_lookback_length=history_lookback_length,
             normalized=True,
             normalization_bounds=bounds,
         )

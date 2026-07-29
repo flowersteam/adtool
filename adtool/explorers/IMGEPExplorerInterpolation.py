@@ -51,9 +51,13 @@ class IMGEPExplorerInstance(BaseIMGEPExplorer):
             )
         }
 
-    def _vector_search_for_goal(self, goal: np.ndarray, lookback_length: int) -> Dict:
+    def _vector_search_for_goal(
+        self, goal: np.ndarray, history_lookback_length: int
+    ) -> Dict:
         matches = self.history.nearest(
-            np.asarray(goal, dtype=float), k=2, lookback_length=lookback_length
+            np.asarray(goal, dtype=float),
+            k=2,
+            history_lookback_length=history_lookback_length,
         )
         if not matches:
             return self.parameter_map.sample()

@@ -21,7 +21,7 @@ import tempfile
 from typing import Any
 from uuid import uuid4
 
-from adtool.history import HistoryStore
+from adtool.utils.persistence.history import HistoryStore
 from adtool.utils.factory import class_path_of, resolve_dotted_object
 from adtool.utils.leaf.Leaf import Leaf
 
@@ -146,16 +146,16 @@ class FileCheckpointStore(CheckpointStore):
         experiment_config = getattr(pipeline, "config", {}).get("experiment", {}).get(
             "config", {}
         )
-        buffer_size = int(
+        cache_size = int(
             experiment_config.get(
-                "discoveries_buffer_size", getattr(pipeline, "save_frequency", 1)
+                "discoveries_cache_size", getattr(pipeline, "save_frequency", 1)
             )
         )
         history = HistoryStore.from_checkpoint(
             checkpoint_dir,
             feature_key=feature_key,
             payload_key=payload_key,
-            buffer_size=buffer_size,
+            cache_size=cache_size,
         )
         explorer.history = history
         if hasattr(explorer, "restore_checkpoint_runtime"):

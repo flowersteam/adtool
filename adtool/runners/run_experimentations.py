@@ -11,7 +11,7 @@ from typing import Callable, Dict, List
 import numpy as np
 #from adtool.ExperimentPipelineVariance import ExperimentPipeline
 from adtool.ExperimentPipeline import ExperimentPipeline
-from adtool.checkpoints import FileCheckpointStore
+from adtool.utils.persistence.checkpoint import FileCheckpointStore
 
 from adtool.utils.logger import AutoDiscLogger
 from adtool.utils.factory import instantiate_object

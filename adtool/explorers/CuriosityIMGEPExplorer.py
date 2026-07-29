@@ -31,29 +31,31 @@ class CuriosityDrivenIMGEP(BaseIMGEPExplorer):
         super().__init__(*args, **kwargs)
         self.novelty_weight = novelty_weight
 
-    def sample_curious_goal(self, lookback_length: int):
+    def sample_curious_goal(self, history_lookback_length: int):
         """Draw a historical behavior with streaming reservoir sampling.
 
         The old KD-tree cache loaded every history item.  We deliberately do
         not replace it with another nearest-neighbor index: retrieval remains
         chunked and exact where a nearest match is needed.
         """
-        match = self.history.random(lookback_length=lookback_length)
+        match = self.history.random(
+            history_lookback_length=history_lookback_length
+        )
         return match.feature if match is not None else self.behavior_map.sample()
 
     def suggest_trial(
         self,
-        lookback_length: int = -1,
+        history_lookback_length: int = -1,
         goal: np.ndarray | None = None,
         goal_targeting: Dict[str, Any] | None = None,
     ):
         if goal is None:
             if np.random.rand() < self.novelty_weight:
-                goal = self.sample_curious_goal(lookback_length)
+                goal = self.sample_curious_goal(history_lookback_length)
             else:
                 goal = self.behavior_map.sample(goal_targeting=goal_targeting)
         return self.mutator(
-            self._vector_search_for_goal(goal, lookback_length),
+            self._vector_search_for_goal(goal, history_lookback_length),
             parameter_map=self.parameter_map,
         )
 

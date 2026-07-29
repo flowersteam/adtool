@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Union
 
 from adtool.systems import System
 from adtool.wrappers.IdentityWrapper import IdentityWrapper
-from adtool.history import HistoryStore
+from adtool.utils.persistence.history import HistoryStore
 from adtool.utils.expose_config.expose_config import expose
 from adtool.mutators import SpecificMutator
 from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
@@ -44,7 +44,7 @@ class IMGEPExplorerInstance(Leaf):
         behavior_map: Leaf = IdentityWrapper(),
         mutator: Any = None,
         equil_time: int = 0,
-        lookback_length: int = -1,
+        history_lookback_length: int = -1,
     ) -> None:
         super().__init__()
 
@@ -53,7 +53,7 @@ class IMGEPExplorerInstance(Leaf):
         self.parameter_map = parameter_map
         self.behavior_map = behavior_map
         self.equil_time = equil_time
-        self.lookback_length = lookback_length
+        self.history_lookback_length = history_lookback_length
         self.timestep = 0
 
         self.mutator = mutator if mutator is not None else SpecificMutator()
@@ -147,7 +147,7 @@ class IMGEPExplorerInstance(Leaf):
         else:
             # suggest_trial reads history
             params_trial = self.suggest_trial(
-                lookback_length=self.lookback_length,
+                history_lookback_length=self.history_lookback_length,
                 goal=target,
                 goal_targeting=goal_targeting,
             )
@@ -170,7 +170,7 @@ class IMGEPExplorerInstance(Leaf):
 
     def suggest_trial(
         self,
-        lookback_length: int = -1,
+        history_lookback_length: int = -1,
         goal: np.ndarray = None,
         goal_targeting: Dict[str, Any] | None = None,
     ):
@@ -178,11 +178,11 @@ class IMGEPExplorerInstance(Leaf):
         system.
 
         Args:
-            lookback_length:
+            history_lookback_length:
                 number of previous trials to consider when choosing the next
                 trial, i.e., it is a batch size based on the save frequency.
 
-                Note that the default `lookback_length = -1` will retrieve the
+                Note that the default `history_lookback_length = -1` retrieves the
                 entire  history.
 
         Returns:
@@ -194,7 +194,7 @@ class IMGEPExplorerInstance(Leaf):
             else:
                 goal = self.behavior_map.sample(goal_targeting=goal_targeting)
 
-        source_policy = self._vector_search_for_goal(goal, lookback_length)
+        source_policy = self._vector_search_for_goal(goal, history_lookback_length)
 
         params_trial = self.mutator(source_policy, parameter_map=self.parameter_map)
 
@@ -243,15 +243,19 @@ class IMGEPExplorerInstance(Leaf):
         """Run optimization step for online learning of the `Explorer` policy."""
         pass
 
-    def _vector_search_for_goal(self, goal: np.ndarray, lookback_length: int) -> Dict:
+    def _vector_search_for_goal(
+        self, goal: np.ndarray, history_lookback_length: int
+    ) -> Dict:
         matches = self.history.nearest(
             np.asarray(goal, dtype=float),
             k=1,
-            lookback_length=lookback_length,
+            history_lookback_length=history_lookback_length,
         )
 
         if not matches:
-            matches = self.history.random(lookback_length=lookback_length)
+            matches = self.history.random(
+                history_lookback_length=history_lookback_length
+            )
 
         return matches[0].payload if matches else self.parameter_map.sample()
 

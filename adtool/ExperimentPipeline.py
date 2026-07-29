@@ -9,8 +9,8 @@ import traceback
 from typing import Callable, Iterable, List
 from uuid import uuid4
 
-from adtool.checkpoints import CheckpointRef, FileCheckpointStore
-from adtool.history import HistoryStore
+from adtool.utils.persistence.checkpoint import CheckpointRef, FileCheckpointStore
+from adtool.utils.persistence.history import HistoryStore
 from adtool.utils.interaction.experiment_control import (
     read_experiment_control,
     wait_if_experiment_paused,
@@ -106,28 +106,32 @@ class ExperimentPipeline(Leaf):
             return
         history = self._history()
         experiment_config = self.config.get("experiment", {}).get("config", {})
-        buffer_size = int(
-            experiment_config.get("discoveries_buffer_size", self.save_frequency)
+        discoveries_cache_size = int(
+            experiment_config.get("discoveries_cache_size", self.save_frequency)
         )
-        lookback_length = int(experiment_config.get("lookback_length", -1))
-        if buffer_size < -1:
-            raise ValueError("experiment.config.discoveries_buffer_size must be >= -1")
-        if lookback_length < -1:
-            raise ValueError("experiment.config.lookback_length must be >= -1")
-        history.buffer_size = buffer_size
-        if buffer_size == 0:
+        history_lookback_length = int(
+            experiment_config.get("history_lookback_length", -1)
+        )
+        if discoveries_cache_size < -1:
+            raise ValueError("experiment.config.discoveries_cache_size must be >= -1")
+        if history_lookback_length < -1:
+            raise ValueError(
+                "experiment.config.history_lookback_length must be >= -1"
+            )
+        history.cache_size = discoveries_cache_size
+        if discoveries_cache_size == 0:
             self._log(
                 "warning",
-                "[HISTORY] - discoveries_buffer_size=0 disables the RAM history cache; "
+                "[HISTORY] - discoveries_cache_size=0 disables the RAM history cache; "
                 "history retrieval may read checkpoint chunks from disk.",
             )
-        elif buffer_size == -1:
+        elif discoveries_cache_size == -1:
             self._log(
                 "warning",
-                "[HISTORY] - discoveries_buffer_size=-1 keeps complete history in RAM; "
+                "[HISTORY] - discoveries_cache_size=-1 keeps complete history in RAM; "
                 "memory usage grows with every discovery.",
             )
-        self._explorer.lookback_length = lookback_length
+        self._explorer.history_lookback_length = history_lookback_length
 
     def _bind_runtime(
         self,
