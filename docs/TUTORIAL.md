@@ -27,7 +27,7 @@ Then you can import the main modules like so:
 
 ```python
 from adtool.systems.System import System
-from adtool.maps.Map import Map
+from adtool.maps import BehaviorMap, ParameterMap
 from adtool.runners.run_experimentations import main
 ```
 
@@ -66,8 +66,8 @@ class MySystem(System):
   `map(input, override_existing=True)`: puts the parameters in the shared dict under `"params"`.
   Here's an example:
 ```python
-from adtool.maps.Map import Map
-class MyParameterMap(Map):
+from adtool.maps import ParameterMap
+class MyParameterMap(ParameterMap):
     def __init__(self, system, premap_key="params"):
         super().__init__()
         self.premap_key = premap_key
@@ -103,8 +103,8 @@ class MyParameterMap(Map):
   `sample()`: returns one target point in behavior space.
   Here's an example:
 ```python
-from adtool.maps.Map import Map
-class MyBehaviorMap(Map):
+from adtool.maps import BehaviorMap
+class MyBehaviorMap(BehaviorMap):
     def __init__(self, system, premap_key="output", postmap_key="output"):
         super().__init__()
         self.premap_key = premap_key
