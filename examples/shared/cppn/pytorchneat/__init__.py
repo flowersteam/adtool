@@ -1,4 +1,4 @@
-from adtool.maps.cppn.pytorchneat import (
+from examples.shared.cppn.pytorchneat import (
     activations,
     aggregations,
     rnn,

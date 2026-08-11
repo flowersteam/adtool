@@ -3,12 +3,11 @@ from tempfile import NamedTemporaryFile
 from typing import Any, Dict, Optional
 
 import neat
-from adtool.maps.Map import Map
-from adtool.maps.cppn import pytorchneat
-from adtool.utils.leaf.locators.locators import BlobLocator
+from adtool.maps.parameter import ParameterMap
+from examples.shared.cppn import pytorchneat
 
 
-class NEATParameterMap(Map):
+class NEATParameterMap(ParameterMap):
     def __init__(
         self,
         premap_key: str = "genome",
@@ -16,8 +15,8 @@ class NEATParameterMap(Map):
         config_str: Optional[str] = None,
     ) -> None:
         super().__init__()
-        self.locator = BlobLocator()
         self.premap_key = premap_key
+        self.postmap_key = premap_key
 
         # config argument overrides config_path
         if not config_str:
