@@ -27,7 +27,7 @@ class BaseOnDiscoveryCallback(BaseCallback):
         super().__init__(**kwargs)
         self.to_save_outputs = to_save_outputs
 
-    def __call__(self, experiment_id: int, seed: int, **kwargs) -> None:
+    def __call__(self, **kwargs) -> None:
         """
         The function to call to effectively raise on discovery callback.
         Inform the user that the experiment as made new discovery
@@ -37,5 +37,7 @@ class BaseOnDiscoveryCallback(BaseCallback):
             kwargs: somme usefull parameters
         """
         print(
-            "New discovery for experiment {} with seed {}".format(experiment_id, seed)
+            "New discovery for experiment {} with seed {}".format(
+                kwargs["experiment_id"], kwargs["seed"]
+            )
         )

@@ -1,6 +1,9 @@
 class BaseCallback:
-    """
-    Base class for callbacks used by the experiment pipelines when progress is made (e.g. new dicovery, explorer's optimization).
+    """Base class for lifecycle callbacks.
+
+    Every callback receives keyword-only event context.  All events include
+    ``experiment_id`` and ``seed``; each event-specific base class documents
+    its additional values.
     """
 
     def __init__(self, logger=None, **kwargs) -> None:
@@ -12,13 +15,6 @@ class BaseCallback:
         """
         self.logger = logger
 
-    def __call__(self, experiment_id: int, seed: int, **kwargs) -> None:
-        """
-        The function to call to effectively raise the callback
-
-        Args:
-            experiment_id: current experiment id
-            seed: current seed number
-            kwargs: somme usefull parameters
-        """
+    def __call__(self, **context) -> None:
+        """Handle one lifecycle event using its keyword context."""
         raise NotImplementedError

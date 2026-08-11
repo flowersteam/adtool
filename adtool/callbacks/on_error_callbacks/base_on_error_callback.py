@@ -12,7 +12,7 @@ class BaseOnErrorCallback(BaseCallback):
         """
         super().__init__(**kwargs)
 
-    def __call__(self, experiment_id: int, seed: int, **kwargs) -> None:
+    def __call__(self, **kwargs) -> None:
         """
         The function to call to effectively raise on error callback.
         Inform the user that the experiment are on error
@@ -21,4 +21,8 @@ class BaseOnErrorCallback(BaseCallback):
             seed: current seed number
             kwargs: somme usefull parameters
         """
-        print("Error for experiment {} with seed {}".format(experiment_id, seed))
+        print(
+            "Error for experiment {} with seed {}".format(
+                kwargs["experiment_id"], kwargs["seed"]
+            )
+        )

@@ -12,7 +12,7 @@ class BaseOnSaveCallback(BaseCallback):
         """
         super().__init__(**kwargs)
 
-    def __call__(self, experiment_id: int, seed: int, **kwargs) -> None:
+    def __call__(self, **kwargs) -> None:
         """
         The function to call to effectively raise on save callback.
         Inform the user that the experiment save are made
@@ -21,4 +21,8 @@ class BaseOnSaveCallback(BaseCallback):
             seed: current seed number
             kwargs: somme usefull parameters
         """
-        print("Saving experiment {} with seed {}".format(experiment_id, seed))
+        print(
+            "Saving experiment {} with seed {}".format(
+                kwargs["experiment_id"], kwargs["seed"]
+            )
+        )

@@ -12,7 +12,7 @@ class BaseOnSaveFinishedCallback(BaseCallback):
         """
         super().__init__(**kwargs)
 
-    def __call__(self, experiment_id: int, seed: int, **kwargs) -> None:
+    def __call__(self, **kwargs) -> None:
         """
         The function to call to effectively raise on save finished callback.
         Inform the user that the experiment save are over
@@ -21,4 +21,8 @@ class BaseOnSaveFinishedCallback(BaseCallback):
             seed: current seed number
             kwargs: somme usefull parameters
         """
-        print("Experiment {} with seed {} saved".format(experiment_id, seed))
+        print(
+            "Experiment {} with seed {} saved".format(
+                kwargs["experiment_id"], kwargs["seed"]
+            )
+        )
