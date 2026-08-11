@@ -169,23 +169,6 @@ def _set_seed(seed: int) -> None:
     np.random.seed(seed)  # Numpy module.
     random.seed(seed)  # Python random module.
 
-
-def tracefunc(frame, event, arg, indent=[0]):
-    # if funcitoin is an internal function, return None
- #   print(frame.f_code.co_filename)
-    if not frame.f_code.co_filename.startswith("/home/flowers-user/adtool"):
-        return
-    if event == "call":
-        indent[0] += 1
-        # if name starts with _, return None
-        if frame.f_code.co_name[0] in ( "<","_"):
-            return tracefunc
-        print("-" * indent[0] + "> call", frame.f_code.co_name, frame.f_code.co_filename)
-    elif event == "return":
-  #      print("<" + "-" * indent[0], "exit function", frame.f_code.co_name, frame.f_code.co_filename)
-        indent[0] -= 1
-    return tracefunc
-
 def main():
     # The main will call this method instead so it can be imported without running the experiment
     parser = argparse.ArgumentParser()
@@ -198,10 +181,6 @@ def main():
 
     with open(args.config_file) as json_file:
         config = json.load(json_file)
-
-
-    # only to plot the call stack
-    #sys.setprofile(tracefunc)
 
     experiment = create(config, args.experiment_id, args.seed)
     start(experiment, args.nb_iterations)

@@ -263,7 +263,9 @@ python -m adtool.runners.run_analysis \
 
 To compare against multiple datasets, pass multiple discovery directories and repeat `--comparison_label` as needed.
 
-The command writes a new run directory under
+The CLI writes a new run directory under `analysis_runs/` in the current
+working directory by default. Use `--output_dir` to choose a different
+destination. Analysis runs started from the visualization UI are written under
 `<save_location>/analysis_runs/`.
 
 When a broad parent directory is selected by mistake, nested
