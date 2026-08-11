@@ -9,7 +9,6 @@ import random
 from typing import Callable, Dict, List
 
 import numpy as np
-#from adtool.ExperimentPipelineVariance import ExperimentPipeline
 from adtool.ExperimentPipeline import ExperimentPipeline
 from adtool.utils.persistence.checkpoint import FileCheckpointStore
 
@@ -70,10 +69,19 @@ def create(
     # NOTE: stateful callbacks are deprecated, and new callbacks simply have a
     # dummy __init__ to obey this interface
 
-    if len(parameters["callbacks"]) > 0:
-        for cb_key in parameters["callbacks"].keys():
+    callback_specs = parameters.get("callbacks", {})
+    valid_callback_events = {
+        "on_discovery", "on_save", "on_save_finished", "on_finished", "on_error"
+    }
+    unsupported_events = set(callback_specs) - valid_callback_events
+    if unsupported_events:
+        raise ValueError(
+            "Unsupported callback event(s): " + ", ".join(sorted(unsupported_events))
+        )
+    if callback_specs:
+        for cb_key in callback_specs:
 
-            cb_requests = parameters["callbacks"][cb_key]
+            cb_requests = callback_specs[cb_key]
             for cb in cb_requests:
                 callbacks[cb_key].append(
                     instantiate_object(cb, object_name=f"{cb_key} callback")
@@ -82,6 +90,12 @@ def create(
 
     # add additional callbacks which are already initialized Callables
     if additional_callbacks:
+        unsupported_events = set(additional_callbacks) - valid_callback_events
+        if unsupported_events:
+            raise ValueError(
+                "Unsupported callback event(s): "
+                + ", ".join(sorted(unsupported_events))
+            )
         for cb_key, lst in additional_callbacks.items():
             callbacks[cb_key] += lst
 
@@ -112,9 +126,6 @@ def create(
         object_name="explorer factory",
     )
     explorer = explorer_factory(system)
-    
-
-
 
     # Create experiment pipeline
     experiment = ExperimentPipeline(
@@ -127,8 +138,7 @@ def create(
         on_discovery_callbacks=callbacks['on_discovery'],
         on_save_finished_callbacks=callbacks['on_save_finished'],
         on_finished_callbacks=callbacks['on_finished'],
-        on_cancelled_callbacks=callbacks['on_cancelled'],
-        on_save_callbacks=callbacks['on_saved'],
+        on_save_callbacks=callbacks['on_save'],
         on_error_callbacks=callbacks['on_error'],
         logger=logger,
         resource_uri=parameters["experiment"]["config"]["save_location"],
@@ -150,7 +160,7 @@ def start(experiment: ExperimentPipeline, nb_iterations: int) -> None:
 
 def _set_seed(seed: int) -> None:
     """
-    Set torch seed to make experiment repeatable.
+    Set NumPy and Python random seeds to make core experiments repeatable.
 
     #### Args:
     - seed: seed number
