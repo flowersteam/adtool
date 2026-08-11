@@ -35,13 +35,11 @@
             10,
             10
           ],
-          "neat_config_path": "adtool/maps/cppn/config.cfg"
+          "neat_config_path": "examples/shared/cppn/config.cfg"
         }
       }
     }
   },
-  "input_wrappers": [],
-  "output_representations": [],
   "logger_handlers": [],
   "callbacks": {
     "on_discovery": [

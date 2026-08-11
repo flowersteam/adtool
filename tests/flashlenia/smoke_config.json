@@ -12,7 +12,7 @@
     "config": {}
   },
   "explorer": {
-    "path": "adtool.explorers.CuriosityIMGEPExplorer.IMGEPExplorer",
+    "path": "examples.flashlenia.explorers.CuriosityIMGEPExplorer.CuriosityIMGEPExplorer",
     "config": {
       "mutator": {
         "path": "adtool.mutators.SpecificMutator",
@@ -29,8 +29,6 @@
       }
     }
   },
-  "input_wrappers": [],
-  "output_representations": [],
   "logger_handlers": [],
   "callbacks": {
     "on_discovery": [

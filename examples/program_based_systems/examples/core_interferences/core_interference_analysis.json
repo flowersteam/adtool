@@ -74,7 +74,7 @@
           "config": {}
         },
         "metric": {
-          "path": "examples.program_based_systems.examples.core_interferences.behavior_map.space_coverage.GridSpaceCoverageMetric",
+          "path": "examples.program_based_systems.examples.core_interferences.behavior_map.space_coverage.grid_space_coverage_metric.GridSpaceCoverageMetric",
           "config": {
             "dimensions": [
               0,
@@ -148,7 +148,7 @@
       }
     },
     {
-      "path": "examples.program_based_systems.examples.core_interferences.analysis_modules.MutualMissHeatmapModule",
+      "path": "examples.program_based_systems.examples.core_interferences.analysis_modules.mutual_miss_heatmap.MutualMissHeatmapModule",
       "config": {}
     }
   ]

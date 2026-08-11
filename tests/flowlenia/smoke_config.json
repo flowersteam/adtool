@@ -15,6 +15,7 @@
       "final_step": 12,
       "scale_init_state": 2,
       "C": 1,
+      "initial_condition_seed": 42,
       "nb_k": 2
     }
   },
@@ -36,8 +37,6 @@
       }
     }
   },
-  "input_wrappers": [],
-  "output_representations": [],
   "logger_handlers": [],
   "callbacks": {
     "on_discovery": [
