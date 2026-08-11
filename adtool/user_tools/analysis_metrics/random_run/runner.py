@@ -1,6 +1,7 @@
 import json
 import random
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -23,17 +24,35 @@ class RandomRunSummary:
 def _set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
-    try:
-        import torch
-    except ImportError:
-        return
-
-    torch.manual_seed(seed)
 
 
 def _load_json(path):
     with Path(path).open("r") as handle:
         return json.load(handle)
+
+
+def analysis_runs_directory(config: dict) -> Path:
+    """Return the analysis output root configured for an experiment."""
+    try:
+        save_location = config["experiment"]["config"]["save_location"]
+    except KeyError as exc:
+        raise ValueError(
+            "Random analysis requires experiment.config.save_location."
+        ) from exc
+
+    if not isinstance(save_location, str) or not save_location.strip():
+        raise ValueError("experiment.config.save_location must be a non-empty path.")
+
+    return (Path(save_location).expanduser().resolve() / "analysis_runs")
+
+
+def create_random_run_directory(config: dict) -> Path:
+    """Create an isolated random-analysis directory below ``analysis_runs``."""
+    runs_root = analysis_runs_directory(config)
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    run_directory = runs_root / f"random_run_{timestamp}"
+    run_directory.mkdir(parents=True, exist_ok=False)
+    return run_directory
 
 
 def _build_system_and_explorer(config):
@@ -65,7 +84,6 @@ def _observe_behavior(system, explorer, params):
 
 def run_random_baseline(
     config_file,
-    output_dir,
     nb_iterations,
     seed=42,
 ):
@@ -73,7 +91,7 @@ def run_random_baseline(
     config = _load_json(config_file)
     system, explorer = _build_system_and_explorer(config)
 
-    output_dir = Path(output_dir).resolve()
+    output_dir = create_random_run_directory(config)
     discoveries_dir = output_dir / "discoveries"
     discoveries_dir.mkdir(parents=True, exist_ok=True)
 

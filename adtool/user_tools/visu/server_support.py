@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+import traceback
 from typing import Any
 
 from fastapi import HTTPException
@@ -82,5 +83,15 @@ def timestamped_analysis_dir(discoveries_dir: Path, prefix: str) -> Path:
 
 
 def error_detail(prefix: str, exc: Exception) -> str:
+    """Return an actionable client-side error that includes the full traceback.
+
+    The visualisation server is a local development tool, so surfacing the
+    traceback to the browser is considerably more useful than replacing it
+    with an opaque HTTP 500 response.  Callers also log the same exception on
+    the server side.
+    """
     message = str(exc) or exc.__class__.__name__
-    return f"{prefix}: {message}"
+    formatted_traceback = "".join(
+        traceback.format_exception(type(exc), exc, exc.__traceback__)
+    ).rstrip()
+    return f"{prefix}: {message}\n\nServer traceback:\n{formatted_traceback}"

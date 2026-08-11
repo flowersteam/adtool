@@ -9,14 +9,12 @@ from . import run_random_baseline
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_file", type=Path, required=True)
-    parser.add_argument("--output_dir", type=Path, required=True)
     parser.add_argument("--nb_iterations", type=int, default=100)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
     summary = run_random_baseline(
         config_file=args.config_file,
-        output_dir=args.output_dir,
         nb_iterations=args.nb_iterations,
         seed=args.seed,
     )

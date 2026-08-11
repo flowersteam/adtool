@@ -1,5 +1,11 @@
 import { runAnalysis, runRandomRun } from "./api.js";
 
+function compactFailureMessage(error, fallback) {
+    const detail = error?.message || fallback;
+    const summary = detail.split("\n", 1)[0];
+    return `${summary} Full details were logged to the browser and server consoles.`;
+}
+
 function trimmedValue(element) {
     return element.value.trim();
 }
@@ -84,7 +90,7 @@ export function createAnalysisActions({
             elements.analysisTargetPath.value = payload.discoveries_dir;
             updateStatus(`Random run complete: ${payload.discoveries_dir}`);
         } catch (error) {
-            updateStatus(error.message || "Random run failed. Check server logs.");
+            updateStatus(compactFailureMessage(error, "Random run failed."));
         } finally {
             elements.randomRunButton.disabled = false;
         }
@@ -117,7 +123,7 @@ export function createAnalysisActions({
             updateStatus(`Analysis complete: ${payload.run_dir}`);
             showPage("analysis");
         } catch (error) {
-            updateStatus(error.message || "Analysis run failed. Check server logs.");
+            updateStatus(compactFailureMessage(error, "Analysis run failed."));
         } finally {
             elements.runAnalysisButton.disabled = false;
             elements.addAnalysisComparisonButton.disabled = false;
