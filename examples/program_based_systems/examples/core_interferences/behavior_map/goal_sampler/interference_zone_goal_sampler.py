@@ -12,7 +12,7 @@ class InterferenceZoneGoalSampler(GoalSampler):
     def __init__(
         self,
         base_sampler: Optional[dict[str, Any]] = object_spec(
-            "examples.program_based_systems.behavior_map.goal_sampler.RandomMinMaxGoalSampler"
+            "examples.program_based_systems.behavior_map.goal_sampler.random_minmax_goal_sampler.RandomMinMaxGoalSampler"
         ),
         inside_probability: float = 0.8,
         max_attempts: int = 256,

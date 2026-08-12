@@ -19,7 +19,7 @@ class InterferenceIMGEPConfig(BaseExplorerConfig):
             "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap.InterferenceParameterMap",
             {
                 "mixer": {
-                    "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.ChunkProgramMixer",
+                    "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.interference_chunk_mixer.ChunkProgramMixer",
                     "config": {
                         "num_parts": 2,
                     },
