@@ -1,5 +1,4 @@
 import torch
-from adtool.maps.IdentityBehaviorMap import IdentityBehaviorMap
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from examples.stable_diffusion.maps.TextToVectorMap import TextToVectorMap
 from examples.stable_diffusion.systems.StableDiffusionPropagator import StableDiffusionPropagator
@@ -79,7 +78,6 @@ def test():
     #DiffusionPipeline.from_pretrained(model_name)
     txt_embedder = TextToVectorMap(seed_prompt="a realistic purple cat",tokenizer=pipe.tokenizer,text_encoder=pipe.text_encoder)
     sd = StableDiffusionPropagator(height=512,width=512,num_inference_steps=2, guidance_scale=1,vae=pipe.vae,unet=pipe.unet, scheduler=pipe.scheduler)
-    id = IdentityBehaviorMap()
    # id=UniformParameterMap(tensor_low=[-1.0], tensor_high=[1.0], tensor_bound_low=[-1.0], tensor_bound_high=[1.0])
 
     # get initial seed image
@@ -90,7 +88,6 @@ def test():
     # with open('truetxtseed.pkl', 'rb') as f:
     #     data['params'] = pickle.load(f)
     data = sd.map(data)
-    data = id.map(data)
     #save as pickle
     # with open('output.pkl', 'wb+') as f:
     #     pickle.dump(data['output'], f)
