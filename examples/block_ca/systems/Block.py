@@ -71,6 +71,7 @@ class BlockSimulation:
 
     def _initialize_conditions(self):
         # Set the seed for reproducibility
+        torch.manual_seed(self.initial_condition_seed)
 
         self.frames = []
 
