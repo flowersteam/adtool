@@ -10,10 +10,10 @@ from examples.flowlenia.systems.FlowLenia import FlowLenia
 from examples.flowlenia.systems.FlowLeniaParameters import FlowLeniaDynamicalParameters, FlowLeniaHyperParameters, FlowLeniaKernelGrowthDynamicalParameters
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.mutators import GaussianMutator
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 from adtool.utils.leaf.locators.locators import BlobLocator
 import sys
-from adtool.utils.misc.torch_utils import replace_torch_with_numpy
+from examples.shared.torch_utils import replace_torch_with_numpy
 
 
 
@@ -23,7 +23,7 @@ from adtool.utils.misc.torch_utils import replace_torch_with_numpy
 
 
 
-class FlowLeniaParameterMap(Leaf):
+class FlowLeniaParameterMap(ParameterMap):
     """
     Due to the complexities of initializing Lenia parameters,
     it's easier to make this custom parameter map.

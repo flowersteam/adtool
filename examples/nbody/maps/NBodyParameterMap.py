@@ -7,11 +7,11 @@ import numpy as np
 from adtool.systems import System
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.mutators import GaussianMutator
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 
 from examples.nbody.systems.NBody import NBodyParams, NBodySimulation
 
-class NBodyParameterMap(Leaf):
+class NBodyParameterMap(ParameterMap):
     def __init__(
         self,
         system: NBodySimulation,

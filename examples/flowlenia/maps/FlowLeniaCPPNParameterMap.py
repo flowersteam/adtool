@@ -8,20 +8,19 @@ import torch
 from adtool.systems import System
 from examples.flowlenia.systems.FlowLenia import FlowLenia
 from examples.flowlenia.systems.FlowLeniaParameters import FlowLeniaDynamicalParameters, FlowLeniaHyperParameters, FlowLeniaKernelGrowthDynamicalParameters
-from adtool.maps .NEATParameterMap import NEATParameterMap
-from adtool.maps .UniformParameterMap import UniformParameterMap
-from adtool.wrappers.CPPNWrapper import CPPNWrapper
+from examples.shared.cppn.neat_parameter_map import NEATParameterMap
+from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.mutators import GaussianMutator
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 from adtool.utils.leaf.locators.locators import BlobLocator
 import sys
 
-from adtool.utils.misc.torch_utils import replace_torch_with_numpy
+from examples.shared.torch_utils import replace_torch_with_numpy
 
 
 
 
-class FlowLeniaCPPNParameterMap(Leaf):
+class FlowLeniaCPPNParameterMap(ParameterMap):
     """
     Due to the complexities of initializing Lenia parameters,
     it's easier to make this custom parameter map.
@@ -32,7 +31,7 @@ class FlowLeniaCPPNParameterMap(Leaf):
         system: FlowLenia,
         premap_key: str = "params",
         param_obj: FlowLeniaHyperParameters = None,
-        neat_config_path: str = "./adtool/maps/cppn/config.cfg",
+        neat_config_path: str = "./examples/shared/cppn/config.cfg",
         neat_config_str: Optional[str] = None,
         **config_decorator_kwargs,
     ):
@@ -169,14 +168,3 @@ class FlowLeniaCPPNParameterMap(Leaf):
         
 
         return intermed_dict
-
-    def _cppn_map_genome(self, genome, neat_config) -> torch.Tensor:
-        cppn_input = {}
-        cppn_input["genome"] = genome
-        cppn_input["neat_config"] = neat_config
-
-        cppn_out = CPPNWrapper(
-            postmap_shape=(self.SX, self.SY,self.C), n_passes=self.cppn_n_passes
-        ).map(cppn_input)
-        init_state = cppn_out["init_state"]
-        return init_state

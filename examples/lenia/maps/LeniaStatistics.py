@@ -3,10 +3,10 @@ from copy import deepcopy
 
 import torch
 from addict import Dict
-from adtool.wrappers.BoxProjector import BoxProjector
+from adtool.maps.box import BoxProjector
 
-from adtool.utils.misc.torch_utils import roll_n
-from adtool.utils.leaf.Leaf import Leaf
+from examples.shared.torch_utils import roll_n
+from adtool.maps.behavior import BehaviorMap
 from adtool.utils.leaf.locators.locators import BlobLocator
 from examples.lenia.systems.Lenia import Lenia
 
@@ -289,7 +289,7 @@ def calc_image_moments(image: torch.Tensor) -> typing.Dict[str, torch.Tensor]:
     return result
 
 
-class LeniaStatistics(Leaf):
+class LeniaStatistics(BehaviorMap):
     """
     Outputs 17-dimensional embedding.
     """
@@ -333,7 +333,7 @@ class LeniaStatistics(Leaf):
         # projector for behavior space
         self.projector = BoxProjector(premap_key=self.postmap_key)
 
-    def map(self, input: typing.Dict) -> typing.Dict:
+    def map(self, input: typing.Dict, override_existing: bool = True) -> typing.Dict:
         """
         Compute statistics on System output
         Args:
@@ -357,7 +357,7 @@ class LeniaStatistics(Leaf):
 
         return intermed_dict
 
-    def sample(self):
+    def sample(self, **kwargs):
         return self.projector.sample()
 
     def _calc_distance(

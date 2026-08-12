@@ -5,7 +5,7 @@ from typing import Dict, List
 
 import torch
 import numpy as np
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.mutators import GaussianMutator
 from examples.flashlenia.systems.FlashLenia import FlashLenia
@@ -24,7 +24,7 @@ class FlashLeniaParams:
     def from_tensor(cls, tensor):
         return cls(kernel=tensor.tolist())
 
-class FlashLeniaParameterMap(Leaf):
+class FlashLeniaParameterMap(ParameterMap):
     def __init__(
         self,
         system: FlashLenia,

@@ -5,13 +5,12 @@ from io import StringIO
 from typing import Dict, Optional, Tuple
 
 import torch
-from adtool.utils.misc.torch_utils import replace_torch_with_numpy
+from examples.shared.torch_utils import replace_torch_with_numpy
 from examples.lenia.systems.Lenia import Lenia
 from examples.lenia.systems.LeniaParameters import LeniaDynamicalParameters, LeniaHyperParameters
 from adtool.maps.UniformParameterMap import UniformParameterMap
-from adtool.wrappers.CPPNWrapper import CPPNWrapper
 from adtool.mutators import GaussianMutator
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 from adtool.utils.leaf.locators.locators import BlobLocator
 import sys
 
@@ -19,7 +18,7 @@ import sys
 
 
 
-class LeniaParameterMap(Leaf):
+class LeniaParameterMap(ParameterMap):
     """
     Due to the complexities of initializing Lenia parameters,
     it's easier to make this custom parameter map.

@@ -8,7 +8,7 @@ import numpy as np
 from adtool.systems import System
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.mutators import GaussianMutator
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 from adtool.utils.leaf.locators.locators import BlobLocator
 
 from examples.block_ca.systems.Block import Block  
@@ -41,7 +41,7 @@ class BlockParams:
             r=tensor[6].item(), s=tensor[7].item()
         )
 
-class BlockParameterMap(Leaf):
+class BlockParameterMap(ParameterMap):
     def __init__(
         self,
         system: Block,

@@ -1,7 +1,7 @@
 from copy import deepcopy
 from examples.flowlenia.systems.FlowLenia import FlowLenia
 from adtool.systems.System import System
-from adtool.wrappers.CPPNWrapper import CPPNWrapper
+from examples.shared.cppn.cppn_map import CPPNMap
 
 from adtool.utils.leaf.locators.locators import BlobLocator
 
@@ -32,7 +32,7 @@ class FlowLeniaCPPN(FlowLenia):
     def __init__(self, *args, **kwargs):    
         super().__init__( *args, **kwargs)
 
-        self.cppn = CPPNWrapper(
+        self.cppn = CPPNMap(
             postmap_shape=(self.SY, self.SX  ,self.C),
             n_passes=self.config.cppn_n_passes,
         )
@@ -40,7 +40,7 @@ class FlowLeniaCPPN(FlowLenia):
     def map(self, input: Dict) -> Dict:
         intermed_dict = deepcopy(input)
         # turns genome into init_state
-        # as CPPNWrapper is a wrapper, it operates on the lowest level
+        # Map the genome payload to the CPPN-generated initial state.
         intermed_dict["params"] = self.cppn.map(intermed_dict["params"])
 
 

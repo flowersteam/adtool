@@ -5,14 +5,13 @@ from io import StringIO
 from typing import Dict, Optional, Tuple
 
 import torch
-from adtool.utils.misc.torch_utils import replace_torch_with_numpy
+from examples.shared.torch_utils import replace_torch_with_numpy
 from examples.lenia.systems.Lenia import Lenia
 from examples.lenia.systems.LeniaParameters import LeniaDynamicalParameters, LeniaHyperParameters
 from adtool.maps.UniformParameterMap import UniformParameterMap
-from adtool.maps.NEATParameterMap import NEATParameterMap
-from adtool.wrappers.CPPNWrapper import CPPNWrapper
+from examples.shared.cppn.neat_parameter_map import NEATParameterMap
 from adtool.mutators import GaussianMutator
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 from adtool.utils.leaf.locators.locators import BlobLocator
 import sys
 
@@ -20,7 +19,7 @@ import sys
 
 
 
-class LeniaParameterMap(Leaf):
+class LeniaParameterMap(ParameterMap):
     """
     Due to the complexities of initializing Lenia parameters,
     it's easier to make this custom parameter map.
@@ -31,7 +30,7 @@ class LeniaParameterMap(Leaf):
         system: Lenia,
         premap_key: str = "params",
         param_obj: LeniaHyperParameters = LeniaHyperParameters(),
-        neat_config_path: str = "./adtool/maps/cppn/config.cfg",
+        neat_config_path: str = "./examples/shared/cppn/config.cfg",
         neat_config_str: Optional[str] = None,
         **config_decorator_kwargs,
     ):
@@ -153,14 +152,3 @@ class LeniaParameterMap(Leaf):
         )
 
         return intermed_dict
-
-    def _cppn_map_genome(self, genome, neat_config) -> torch.Tensor:
-        cppn_input = {}
-        cppn_input["genome"] = genome
-        cppn_input["neat_config"] = neat_config
-
-        cppn_out = CPPNWrapper(
-            postmap_shape=(self.SX, self.SY,1), n_passes=self.cppn_n_passes
-        ).map(cppn_input)
-        init_state = cppn_out["init_state"]
-        return init_state

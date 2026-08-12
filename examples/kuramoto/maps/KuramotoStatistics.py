@@ -2,12 +2,12 @@
 from typing import Dict
 import numpy as np
 from copy import deepcopy
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.behavior import BehaviorMap
 from adtool.utils.leaf.locators.locators import BlobLocator
-from adtool.wrappers.BoxProjector import BoxProjector
+from adtool.maps.box import BoxProjector
 from examples.kuramoto.systems.Kuramoto import Kuramoto
 
-class KuramotoStatistics(Leaf):
+class KuramotoStatistics(BehaviorMap):
     """
     Compute statistics on Kuramoto's output.
     """
@@ -26,7 +26,7 @@ class KuramotoStatistics(Leaf):
         # projector for behavior space
         self.projector = BoxProjector(premap_key=self.postmap_key)
 
-    def map(self, input: Dict) -> Dict:
+    def map(self, input: Dict, override_existing: bool = True) -> Dict:
         """
         Compute statistics on Kuramoto's output.
         Args:
@@ -50,7 +50,7 @@ class KuramotoStatistics(Leaf):
 
         return intermed_dict
 
-    def sample(self):
+    def sample(self, **kwargs):
         return self.projector.sample()
     
     def _calc_static_statistics(self, array: np.ndarray) -> np.ndarray:

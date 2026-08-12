@@ -8,8 +8,8 @@ from copy import deepcopy
 
 import torch
 
-from adtool.utils.leaf.Leaf import Leaf
-from adtool.wrappers.BoxProjector import BoxProjector
+from adtool.maps.behavior import BehaviorMap
+from adtool.maps.box import BoxProjector
 from examples.grayscott.systems.GrayScott import GrayScott
 
 from openai import OpenAI
@@ -21,7 +21,7 @@ openai.api_key = 'YOUR_API_KEY'
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-class VLLMStatistics(Leaf):
+class VLLMStatistics(BehaviorMap):
     """
     Outputs embedding based on OpenAI's embedding service.
     """
@@ -43,7 +43,7 @@ class VLLMStatistics(Leaf):
         # projector for behavior space
         self.projector = BoxProjector(premap_key=self.postmap_key)
 
-    def map(self, input: typing.Dict) -> typing.Dict:
+    def map(self, input: typing.Dict, override_existing: bool = True) -> typing.Dict:
         """
         Compute statistics on System output
         Args:
@@ -80,7 +80,7 @@ class VLLMStatistics(Leaf):
 
         return intermed_dict
 
-    def sample(self):
+    def sample(self, **kwargs):
         return self.projector.sample()
 
     def _calc_distance(

@@ -3,10 +3,10 @@ from copy import deepcopy
 import numpy as np
 import networkx as nx
 from addict import Dict
-from adtool.wrappers.BoxProjector import BoxProjector
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.box import BoxProjector
+from adtool.maps.behavior import BehaviorMap
 
-class WPhysicsStatistics(Leaf):
+class WPhysicsStatistics(BehaviorMap):
     def __init__(
         self,
         system,
@@ -23,7 +23,7 @@ class WPhysicsStatistics(Leaf):
 
         self.projector = BoxProjector(premap_key=self.postmap_key)
 
-    def map(self, input: typing.Dict) -> typing.Dict:
+    def map(self, input: typing.Dict, override_existing: bool = True) -> typing.Dict:
         intermed_dict = deepcopy(input)
 
         raw_output_key = "raw_" + self.premap_key
@@ -37,7 +37,7 @@ class WPhysicsStatistics(Leaf):
 
         return intermed_dict
 
-    def sample(self):
+    def sample(self, **kwargs):
         goal= self.projector.sample()
         # optimize for long flights
         goal[0]=1

@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from adtool.utils.misc.torch_utils import (
+from examples.shared.torch_utils import (
     SphericPad,
     complex_mult_torch,
     roll_n,
@@ -391,6 +391,3 @@ class LeniaStepFFT(torch.nn.Module):
         #     print("break")
 
         return output_img
-
-
-

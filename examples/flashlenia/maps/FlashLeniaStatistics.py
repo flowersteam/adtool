@@ -1,11 +1,11 @@
 from typing import Dict
 import numpy as np
 from copy import deepcopy
-from adtool.utils.leaf.Leaf import Leaf
-from adtool.wrappers.BoxProjector import BoxProjector
+from adtool.maps.behavior import BehaviorMap
+from adtool.maps.box import BoxProjector
 from examples.flashlenia.systems.FlashLenia import FlashLenia
 
-class FlashLeniaStatistics(Leaf):
+class FlashLeniaStatistics(BehaviorMap):
     def __init__(
         self,
         system: FlashLenia,
@@ -25,7 +25,7 @@ class FlashLeniaStatistics(Leaf):
             init_high=np.array([10, 10])
         )
 
-    def map(self, input: Dict) -> Dict:
+    def map(self, input: Dict, override_existing: bool = True) -> Dict:
         intermed_dict = deepcopy(input)
         print(intermed_dict,self.premap_key)
         output = intermed_dict[self.premap_key]
@@ -40,5 +40,5 @@ class FlashLeniaStatistics(Leaf):
 
         return intermed_dict
 
-    def sample(self):
+    def sample(self, **kwargs):
         return self.projector.sample()

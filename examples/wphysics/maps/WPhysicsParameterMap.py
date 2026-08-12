@@ -3,7 +3,7 @@ from copy import deepcopy
 from typing import Dict
 import random
 
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 
 import random
 
@@ -110,7 +110,7 @@ def mutate_ruleset(ruleset, min_signature=1, max_signature=4):
 
 
 
-class WPhysicsParameterMap(Leaf):
+class WPhysicsParameterMap(ParameterMap):
     def __init__(
         self,
         system,
