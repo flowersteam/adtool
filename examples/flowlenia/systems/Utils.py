@@ -70,14 +70,14 @@ ky = torch.transpose(kx, 2, 3)
 
 def sobel_x(A):
     A_bat = A[None, None, ...]
-    return torch.stack([F.conv2d(A_bat[..., c], kx, padding='same')[...,None]
+    kernel = kx.to(device=A_bat.device, dtype=A_bat.dtype)
+    return torch.stack([F.conv2d(A_bat[..., c], kernel, padding='same')[...,None]
                     for c in range(A.shape[-1])], dim=-1)[0, 0, ...]
 
 def sobel_y(A):
     A_bat = A[None, None, ...]
-    #get type of A_bat[..., c]
-
-    return torch.stack([F.conv2d(A_bat[..., c], ky, padding='same')[...,None]
+    kernel = ky.to(device=A_bat.device, dtype=A_bat.dtype)
+    return torch.stack([F.conv2d(A_bat[..., c], kernel, padding='same')[...,None]
                     for c in range(A.shape[-1])], dim=-1)[0, 0, ...]
 
 def sobel(A):
