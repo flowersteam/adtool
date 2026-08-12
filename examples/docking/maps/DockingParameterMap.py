@@ -8,7 +8,7 @@ from crem.crem import mutate_mol, grow_mol, link_mols
 
 import numpy as np
 from adtool.maps.UniformParameterMap import UniformParameterMap
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 from adtool.utils.leaf.locators.locators import BlobLocator
 
 import selfies as sf
@@ -141,7 +141,7 @@ def lipinski_trial(smiles):
     return True
 
 
-class DockingParameterMap(Leaf):
+class DockingParameterMap(ParameterMap):
     def __init__(
         self,
         system,
@@ -258,11 +258,10 @@ class DockingParameterMap(Leaf):
         grow_generator=grow_mol(Chem.AddHs(mol), db_name=fragments_db)
         mutate_generator=mutate_mol(Chem.AddHs(mol), db_name=fragments_db)
 
-        candidates=[]
-        # add 10 candidates of each type
+        candidates = []
         for _ in range(10):
             try:
-                candidate=next(grow_generator)
+                candidate = next(grow_generator)
                 if self.minimal_checks(candidate):
                     candidates.append(candidate)
             except StopIteration:
@@ -270,19 +269,13 @@ class DockingParameterMap(Leaf):
         
         for _ in range(10):
             try:
-                candidate=next(mutate_generator)
+                candidate = next(mutate_generator)
                 if self.minimal_checks(candidate):
                     candidates.append(candidate)
             except StopIteration:
                 break
         
-        # pick a random candidate (to minimize the chance of getting a duplicate)
-        new_smiles=random.choice(candidates)
-
-
-
-        
-        # convert to canonical smiles
+        new_smiles = random.choice(candidates)
         new_smiles = Chem.MolToSmiles(Chem.MolFromSmiles(new_smiles))
 
         print(f"Mutated {current_smiles} to {new_smiles}")
