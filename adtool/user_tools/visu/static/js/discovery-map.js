@@ -15,6 +15,7 @@ import { createHighlightController } from "./highlights/controller.js";
 import { createHighlightMaterialCache } from "./highlights/materials.js";
 import { createMapScene } from "./map-scene.js";
 import { createSelectionController } from "./selection.js";
+import { createCheckpointTree } from "./checkpoint-tree.js";
 import {
     buildDiscoveryMatcher,
     fallbackPreviewImage,
@@ -27,6 +28,7 @@ import {
 const RENDER_MODES = new Set(["points", "images", "hybrid"]);
 const POINT_COLOR = "#2f3a35";
 const HOVER_COLOR = "#255f56";
+const CHECKPOINT_HOVER_COLOR = "#e53935";
 const SELECTED_COLOR = "#bc6c25";
 const SELECTION_LIST_HOVER_COLOR = "#e63946";
 const GOAL_ZONE_FILL_COLOR = "#f4a261";
@@ -46,6 +48,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
         ringHover: pointMaterial(HOVER_COLOR),
         ringSelected: pointMaterial(SELECTED_COLOR),
         ringSelectionListHover: pointMaterial(SELECTION_LIST_HOVER_COLOR),
+        ringCheckpointHover: pointMaterial(CHECKPOINT_HOVER_COLOR),
     };
     const highlightMaterials = createHighlightMaterialCache({
         THREE,
@@ -69,12 +72,28 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     let goalZonePlacementActive = false;
     let goalZonePlacementHandler = null;
     let focusedSelectionSource = null;
+    let hiddenCheckpoints = new Set();
+    let hoveredCheckpoint = null;
+    let hoveredCheckpointParents = new Set();
 
     function refreshHighlightStyles() {
         for (const entry of entries) {
             applyEntryStyle(entry);
         }
     }
+
+    const checkpointTree = createCheckpointTree({
+        elements,
+        onVisibilityChange: (nextHidden) => {
+            hiddenCheckpoints = nextHidden;
+            applyFilter();
+        },
+        onHoverChange: (checkpoint, parents) => {
+            hoveredCheckpoint = checkpoint;
+            hoveredCheckpointParents = parents;
+            applyFilter(false);
+        },
+    });
 
     const highlights = createHighlightController({
         elements,
@@ -114,6 +133,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
                 0,
             ),
             userData: {
+                checkpoint: point.checkpoint || null,
                 label: prettifyEntryLabel(sourcePath).toLowerCase(),
                 selected: selection.has(sourcePath),
                 sourcePath,
@@ -282,6 +302,10 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
     }
 
     function applyEntryStyle(entry) {
+        if (entry.checkpointDimMaterial) {
+            entry.checkpointDimMaterial.dispose();
+            entry.checkpointDimMaterial = null;
+        }
         const selected = entry.userData.selected;
         const hovered = entry === hoveredEntry;
         const selectionListHovered = entry.userData.sourcePath === focusedSelectionSource;
@@ -308,6 +332,32 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             entry.imageMesh.material.color.set(selected ? SELECTED_COLOR : hovered ? HOVER_COLOR : "#ffffff");
             entry.imageMesh.material.opacity = hovered ? HOVER_OPACITY : POINT_OPACITY;
             entry.imageMesh.userData.scaleBoost = selected ? 1.24 : hovered ? 1.16 : 1.0;
+        }
+    }
+
+    function refreshCheckpointStyles() {
+        for (const entry of entries) {
+            applyEntryStyle(entry);
+            if (!entry.visible || !hoveredCheckpoint) {
+                continue;
+            }
+            const checkpoint = entry.userData.checkpoint;
+            const isNode = checkpoint === hoveredCheckpoint;
+            const isParent = hoveredCheckpointParents.has(checkpoint);
+            if (isNode && entry.pointRingMesh) {
+                entry.pointRingMesh.visible = true;
+                entry.pointRingMesh.material = pointMaterials.ringCheckpointHover;
+            }
+            if (!isNode && !isParent) {
+                if (entry.pointMesh) {
+                    entry.checkpointDimMaterial = entry.pointMesh.material.clone();
+                    entry.checkpointDimMaterial.opacity = 0.18;
+                    entry.pointMesh.material = entry.checkpointDimMaterial;
+                }
+                if (entry.imageMesh) {
+                    entry.imageMesh.material.opacity = 0.18;
+                }
+            }
         }
     }
 
@@ -588,6 +638,11 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             entry.visible = (
                 search.matcher(entry.userData.label)
                 && highlights.isVisible(entry.filters)
+                && (
+                    !hiddenCheckpoints.has(entry.userData.checkpoint)
+                    || entry.userData.checkpoint === hoveredCheckpoint
+                    || hoveredCheckpointParents.has(entry.userData.checkpoint)
+                )
             );
             if (entry.pointMesh) {
                 entry.pointMesh.visible = entry.visible;
@@ -607,6 +662,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             preview.hide();
         }
         setTotals();
+        refreshCheckpointStyles();
         if (rebuildHybrid) {
             queueHybridPreviewRebuild();
         }
@@ -648,6 +704,7 @@ export function createDiscoveryMap({ elements, preview, updateStatus }) {
             }),
             highlights.refreshSchema(),
         ]);
+        await checkpointTree.refresh();
 
         if (pointsData.length === 0) {
             clearRenderedMeshes();

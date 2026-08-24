@@ -46,7 +46,7 @@ def run_analysis(
         for label, path in zip(comparison_labels[:len(comparison_paths)], comparison_paths)
     )
 
-    datasets = [load_discovery_set(primary_path)]
+    datasets = [load_discovery_set(primary_path, checkpoint_name=config.checkpoint_name)]
     datasets.extend(load_discovery_set(path) for path in comparison_paths)
     run_dir = create_run_dir(output_dir)
 

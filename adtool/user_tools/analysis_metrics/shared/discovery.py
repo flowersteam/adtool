@@ -3,11 +3,36 @@ from pathlib import Path
 
 import numpy as np
 
+from adtool.utils.persistence.checkpoint_history import load_branch_records
+
 from .summary import DiscoverySet
 
 
-def load_discovery_set(discovery_path):
+def load_discovery_set(discovery_path, checkpoint_name=None):
     discovery_path = Path(discovery_path).resolve()
+    if (discovery_path / "checkpoints").is_dir():
+        selected_checkpoint, payloads = load_branch_records(
+            discovery_path, checkpoint_name=checkpoint_name
+        )
+        if not payloads:
+            raise ValueError(f"No discoveries found in checkpoint {selected_checkpoint.name}")
+        files = [
+            selected_checkpoint.path / f"history-record-{index:08d}"
+            for index in range(len(payloads))
+        ]
+        try:
+            outputs = [np.asarray(payload["output"], dtype=float).reshape(-1) for payload in payloads]
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError(
+                f"Checkpoint {selected_checkpoint.name} contains a discovery without a numeric output"
+            ) from error
+        return DiscoverySet(
+            path=discovery_path,
+            files=files,
+            payloads=payloads,
+            outputs=np.vstack(outputs),
+        )
+
     files = sorted(
         (
             path

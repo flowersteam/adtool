@@ -11,7 +11,8 @@ from .server_support import is_relative_to
 
 
 def analysis_runs_dir(config: ServerConfig) -> Path:
-    return (config.discoveries.parent / "analysis_runs").resolve()
+    """Keep analysis artifacts scoped to the displayed experiment."""
+    return (config.discoveries / "analysis_runs").resolve()
 
 
 def analysis_summary_paths(runs_dir: Path) -> list[Path]:

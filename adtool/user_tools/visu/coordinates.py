@@ -18,6 +18,11 @@ from .highlights import (
     empty_highlight_schema,
     load_highlight_export_context,
 )
+from adtool.utils.persistence.checkpoint_history import (
+    checkpoint_tree_payload,
+    discovery_checkpoint_index,
+    output_fingerprint,
+)
 
 
 DEFAULT_MAX_RENDERED_DISCOVERIES = 500
@@ -169,6 +174,9 @@ def process_discovery(
         "embedding": embedding,
         "filters": payload.get("filters", {}),
         "discovery_file": os.fspath(discovery_path),
+        "checkpoint": None,
+        "output_fingerprint": output_fingerprint(payload),
+        "metadata": payload.get("metadata", {}),
     }
     _store_cached_discovery(discovery_path, cache_mtime, discovery)
     return discovery
@@ -196,6 +204,15 @@ def _scan_discoveries(
         result = process_discovery(discovery_path, cache_mtime=cache_mtime)
         if result:
             discoveries.append(result)
+
+    checkpoint_index = discovery_checkpoint_index(root_path)
+    for discovery in discoveries:
+        fingerprint = discovery.get("output_fingerprint")
+        checkpoint = checkpoint_index.get(fingerprint) if fingerprint else None
+        if checkpoint is None:
+            parent = discovery.get("metadata", {}).get("parent_checkpoint")
+            checkpoint = Path(parent).name if parent else None
+        discovery["checkpoint"] = checkpoint
 
     discoveries.sort(key=lambda discovery: discovery["visual"])
     return discoveries, tuple(dataset_signature)
@@ -575,6 +592,7 @@ def _saved_coordinates(
             "y": float(point[1]),
             "visual": visual_path.replace(os.sep, "/"),
             "filters": discovery.get("filters", {}),
+            "checkpoint": discovery.get("checkpoint"),
         }
 
         saved_coordinates.append(saved_point)
@@ -631,6 +649,7 @@ def compute_coordinates(
     static_dir = Path(static_dir)
     static_dir.mkdir(parents=True, exist_ok=True)
     discoveries_path = static_dir / "discoveries.json"
+    _write_json_atomic(static_dir / "checkpoints.json", checkpoint_tree_payload(root_path))
     concatenated_path = static_dir / "concatenated.webm"
     highlight_context = load_highlight_export_context(config_path)
 

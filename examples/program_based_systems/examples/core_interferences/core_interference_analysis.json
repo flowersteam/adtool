@@ -1,4 +1,5 @@
 {
+  "checkpoint_name": "step-00000250-cfg-dee0cab652c2-branch-afad0fd8",
   "goal_oriented_sampler": true,
   "discovery_highlights": {
     "path": "examples.program_based_systems.examples.core_interferences.helpers.discovery_highlights.CoreInterferenceDiscoveryHighlights",

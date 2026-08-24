@@ -1,13 +1,14 @@
 {
   "experiment": {
     "config": {
-      "save_location": "./discoveries/interferences_test_leg/",
-      "save_frequency": 100,
+      "save_location": "./discoveries/interferences_test_new_ui/",
+      "save_frequency": 50,
       "log_level": "INFO",
       "discoveries_cache_size": -1,
       "history_lookback_length": -1,
       "bootstrap_size": 3,
-      "render_every": 1
+      "render_every": 1,
+      "resume_checkpoint": "step-00000200-cfg-dee0cab652c2-branch-383ad649"
     }
   },
   "system": {

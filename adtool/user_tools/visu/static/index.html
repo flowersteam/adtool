@@ -160,6 +160,7 @@
 
                 <div class="mapStage">
                     <div id="app" aria-label="Interactive discovery map"></div>
+                    <div class="filterDocks">
                     <aside id="highlightRulesSection" class="highlightDock" hidden>
                         <div class="highlightDockHeader">
                             <div>
@@ -177,6 +178,19 @@
                         </div>
                         <div id="highlightRulesList" class="highlightRulesList"></div>
                     </aside>
+                    <aside id="checkpointTreeSection" class="checkpointDock" hidden>
+                        <div class="highlightDockHeader">
+                            <div>
+                                <p class="eyebrow">Checkpoints</p>
+                                <h3>Checkpoint Branches</h3>
+                            </div>
+                            <button id="checkpointTreeToggleButton" class="highlightDockButton highlightDockButtonCompact" type="button">Hide</button>
+                        </div>
+                        <p class="fieldHint">Click a checkpoint to show or hide it and its descendants. Hover to inspect its discoveries.</p>
+                        <div id="checkpointTree" class="checkpointTree"></div>
+                        <p id="checkpointTreeHoverLabel" class="checkpointTreeHoverLabel"></p>
+                    </aside>
+                    </div>
                     <div id="emptyState" class="emptyState" hidden>
                         <h2>No discoveries available</h2>
                         <p>Start or refresh an experiment to populate this map.</p>

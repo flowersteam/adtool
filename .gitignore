@@ -12,6 +12,7 @@ discoveries/
 discovery_highlights.json
 discoveries.json
 layout_status.json
+checkpoints.json
 discovery_atlas_*.png
 
 frames/

@@ -79,7 +79,7 @@ def optional_payload_int(payload: dict[str, Any], field_name: str) -> int | None
 
 def timestamped_analysis_dir(discoveries_dir: Path, prefix: str) -> Path:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return (discoveries_dir.parent / "analysis_runs" / f"{prefix}_{timestamp}").resolve()
+    return (discoveries_dir / "analysis_runs" / f"{prefix}_{timestamp}").resolve()
 
 
 def error_detail(prefix: str, exc: Exception) -> str:
