@@ -12,9 +12,6 @@ from examples.program_based_systems.types import ProgramMixer
 class InterleavingProgramMixer(ProgramMixer):
     """Mixer that interleaves instructions from multiple parents."""
 
-    def __init__(self, seed: Optional[int] = None) -> None:
-        self.seed = seed
-
     def mix(
         self,
         sequences: List[InstructionProgram],
@@ -28,14 +25,11 @@ class InterleavingProgramMixer(ProgramMixer):
 
         Args:
             sequences (list[dict]): List of programs {cycle: (type, address)}
-            seed (int | None): Random seed
             max_cycle (int): Maximum cycle number in output
 
         Returns:
             dict: Mixed program {cycle: (type, address)}
         """
-
-        rng = random.Random(self.seed)
 
         # Step 0: normalize payloads and drop malformed programs with warnings.
         sequences = normalize_instruction_sequences(
@@ -72,7 +66,7 @@ class InterleavingProgramMixer(ProgramMixer):
         for prog_idx, program in enumerate(programs):
             if program:
                 # Generate random priority for the first instruction of each program
-                random_priority = rng.random()
+                random_priority = random.random()
                 heapq.heappush(heap, (random_priority, prog_idx, 0))
 
         # Step 3: interleave instructions while preserving timing offsets
@@ -135,7 +129,7 @@ class InterleavingProgramMixer(ProgramMixer):
 
             # Schedule the next instruction from this program if available
             if instr_idx + 1 < len(program):
-                random_priority = rng.random()
+                random_priority = random.random()
                 heapq.heappush(
                     heap, (random_priority, prog_idx, instr_idx + 1))
 

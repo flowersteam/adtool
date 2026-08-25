@@ -14,9 +14,8 @@ from examples.program_based_systems.types import ProgramMixer
 class ChunkProgramMixer(ProgramMixer):
     """Build a child program from contiguous chunks of nearest-parent programs."""
 
-    def __init__(self, num_parts: int, seed: Optional[int] = None) -> None:
+    def __init__(self, num_parts: int) -> None:
         self.num_parts = max(1, int(num_parts))
-        self.seed = seed
 
     def mix(
         self,
@@ -25,7 +24,6 @@ class ChunkProgramMixer(ProgramMixer):
         max_cycle: int,
         num_instructions: Optional[int] = None,
     ) -> InstructionProgram:
-        rng = random.Random(self.seed)
         parents = normalize_instruction_sequences(
             sequences,
             strict=False,
@@ -40,7 +38,7 @@ class ChunkProgramMixer(ProgramMixer):
             self._split_program(program, num_segments)
             for program in parents
         ]
-        source_order = self._source_order(len(parents), num_segments, rng)
+        source_order = self._source_order(len(parents), num_segments)
 
         mixed_items: List[Tuple[int, Instruction]] = []
         used_cycles = set()
@@ -90,12 +88,11 @@ class ChunkProgramMixer(ProgramMixer):
         self,
         num_parents: int,
         num_segments: int,
-        rng: random.Random,
     ) -> List[int]:
         source_order = list(range(num_parents))
         while len(source_order) < num_segments:
-            source_order.append(rng.randrange(num_parents))
-        rng.shuffle(source_order)
+            source_order.append(random.randrange(num_parents))
+        random.shuffle(source_order)
         return source_order[:num_segments]
 
     def _fallback_chunk(

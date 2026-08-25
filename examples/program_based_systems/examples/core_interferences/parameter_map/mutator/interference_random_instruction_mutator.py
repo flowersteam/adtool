@@ -1,6 +1,5 @@
 import copy
 import random
-from typing import Optional
 
 from examples.program_based_systems.examples.core_interferences.types import InstructionProgram
 from examples.program_based_systems.types import ProgramMutator
@@ -9,9 +8,7 @@ from examples.program_based_systems.types import ProgramMutator
 class RandomInstructionMutator(ProgramMutator):
     """Random add/delete/modify mutator for instruction programs."""
 
-    def __init__(self, seed: Optional[int] = None,
-                 num_mutations: int = 5) -> None:
-        self.seed = seed
+    def __init__(self, num_mutations: int = 5) -> None:
         self.num_mutations = num_mutations
 
     def mutate(
@@ -34,8 +31,6 @@ class RandomInstructionMutator(ProgramMutator):
         Returns:
             New mutated dictionary
         """
-        rng = random.Random(self.seed)
-
         # Create a deep copy to avoid modifying the original
         mutated = copy.deepcopy(instructions)
         instruction_types = ['read', 'write']
@@ -47,31 +42,31 @@ class RandomInstructionMutator(ProgramMutator):
 
         for _ in range(self.num_mutations):
             if len(mutated) > 1:
-                mutation_type = rng.choice(['add', 'delete', 'modify'])
+                mutation_type = random.choice(['add', 'delete', 'modify'])
             else:
-                mutation_type = rng.choice(['add', 'modify'])
+                mutation_type = random.choice(['add', 'modify'])
 
             if mutation_type == 'add' and available_cycles:
                 # Add a new instruction at an available cycle
-                new_cycle = rng.choice(available_cycles)
-                instr_type = rng.choice(instruction_types)
-                address = rng.randint(min_address, max_address)
+                new_cycle = random.choice(available_cycles)
+                instr_type = random.choice(instruction_types)
+                address = random.randint(min_address, max_address)
                 mutated[new_cycle] = (instr_type, address)
                 available_cycles.remove(new_cycle)
 
             elif mutation_type == 'delete' and mutated:
                 # Delete a random existing instruction
-                cycle_to_delete = rng.choice(list(mutated.keys()))
+                cycle_to_delete = random.choice(list(mutated.keys()))
                 del mutated[cycle_to_delete]
                 available_cycles.append(cycle_to_delete)
 
             elif mutation_type == 'modify' and mutated:
                 # Modify an existing instruction
-                cycle_to_modify = rng.choice(list(mutated.keys()))
+                cycle_to_modify = random.choice(list(mutated.keys()))
                 old_type, old_address = mutated[cycle_to_modify]
 
                 # Choose what to modify: type, address, or both
-                modify_choice = rng.choice(['type', 'address', 'both'])
+                modify_choice = random.choice(['type', 'address', 'both'])
 
                 if modify_choice == 'type':
                     # Change instruction type only
@@ -79,15 +74,15 @@ class RandomInstructionMutator(ProgramMutator):
                     mutated[cycle_to_modify] = (new_type, old_address)
                 elif modify_choice == 'address':
                     # Change address only
-                    new_address = rng.randint(min_address, max_address)
+                    new_address = random.randint(min_address, max_address)
                     mutated[cycle_to_modify] = (old_type, new_address)
                 else:
                     # Change both type and address
                     new_type = 'write' if old_type == 'read' else 'read'
-                    new_address = rng.randint(min_address, max_address)
+                    new_address = random.randint(min_address, max_address)
                     mutated[cycle_to_modify] = (new_type, new_address)
         if len(mutated) > num_instructions:
-            to_del = rng.sample(list(mutated.keys()),
+            to_del = random.sample(list(mutated.keys()),
                                 len(mutated) - num_instructions)
             for k in to_del:
                 del mutated[k]
