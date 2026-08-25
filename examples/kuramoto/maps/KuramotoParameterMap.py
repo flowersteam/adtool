@@ -7,13 +7,13 @@ import torch
 import numpy as np
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.mutators import GaussianMutator
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 from adtool.utils.leaf.locators.locators import BlobLocator
 from examples.kuramoto.systems.Kuramoto import Kuramoto, KuramotoParams
 
 
 
-class KuramotoParameterMap(Leaf):
+class KuramotoParameterMap(ParameterMap):
     def __init__(
         self,
         system: Kuramoto,

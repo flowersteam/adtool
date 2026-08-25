@@ -12,7 +12,7 @@ def load_discovery_set(discovery_path):
         (
             path
             for path in discovery_path.rglob("discovery.json")
-            if path.is_file()
+            if path.is_file() and "analysis_runs" not in path.relative_to(discovery_path).parts
         ),
         key=lambda path: path.stat().st_mtime,
     )

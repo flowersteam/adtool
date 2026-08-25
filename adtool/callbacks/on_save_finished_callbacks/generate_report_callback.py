@@ -9,7 +9,7 @@ from adtool.callbacks.on_save_finished_callbacks import (
 from adtool.utils.leaf.Leaf import LeafUID
 
 
-class GenerateReport:
+class GenerateReport(BaseOnSaveFinishedCallback):
     """
     Takes UID which identifies a saved object and annotates the saved data with
     human-readable identifying information

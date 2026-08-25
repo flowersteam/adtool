@@ -23,13 +23,13 @@ from examples.program_based_systems.examples.core_interferences.types import (
 class InterferenceConfig(BaseModel):
     simulator: ObjectSpec[InterferenceSimulatorConfig] = Field(
         object_spec(
-            "examples.program_based_systems.examples.core_interferences.systems.simulator.Sim3Backend",
+            "examples.program_based_systems.examples.core_interferences.systems.simulator.interference_sim3.Sim3Backend",
             InterferenceSimulatorConfig(cycles=80, num_banks=4, num_addr=41),
         )
     )
     simulator_runner: ObjectSpec[InterferenceSimulatorRunnerConfig] = Field(
         object_spec(
-            "examples.program_based_systems.examples.core_interferences.systems.runner.DefaultEnvSimulatorRunner",
+            "examples.program_based_systems.examples.core_interferences.systems.runner.interference_env_simulator_runner.DefaultEnvSimulatorRunner",
             InterferenceSimulatorRunnerConfig(),
         )
     )

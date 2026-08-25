@@ -5,7 +5,7 @@ from typing import Dict, Optional, Tuple, Union
 import torch
 from examples.lenia.systems.Lenia import Lenia
 from adtool.systems.System import System
-from adtool.wrappers.CPPNWrapper import CPPNWrapper
+from examples.shared.cppn.cppn_map import CPPNMap
 
 from adtool.utils.leaf.locators.locators import BlobLocator
 
@@ -47,7 +47,7 @@ class LeniaCPPN(Lenia):
         #     SY=self.config.SY,
         #     final_step=self.config.final_step,
         # )
-        self.cppn = CPPNWrapper(
+        self.cppn = CPPNMap(
             postmap_shape=(self.config.SY, self.config.SX,1),
             n_passes=self.config.cppn_n_passes,
         )
@@ -55,7 +55,7 @@ class LeniaCPPN(Lenia):
     def map(self, input: Dict) -> Dict:
         intermed_dict = deepcopy(input)
         # turns genome into init_state
-        # as CPPNWrapper is a wrapper, it operates on the lowest level
+        # Map the genome payload to the CPPN-generated initial state.
         intermed_dict["params"] = self.cppn.map(intermed_dict["params"])
         
         # pass params to Lenia
@@ -64,6 +64,4 @@ class LeniaCPPN(Lenia):
         return intermed_dict
     def render(self, data_dict, mode: str = "PIL_image") -> Tuple[bytes, str]:
         return super().render(data_dict, mode=mode)
-
-
 

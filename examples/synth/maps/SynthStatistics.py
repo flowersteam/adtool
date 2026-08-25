@@ -2,9 +2,9 @@
 from typing import Dict
 import numpy as np
 from copy import deepcopy
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.behavior import BehaviorMap
 from adtool.utils.leaf.locators.locators import BlobLocator
-from adtool.wrappers.BoxProjector import BoxProjector
+from adtool.maps.box import BoxProjector
 from examples.synth.systems.Synth import SynthSimulation
 
 
@@ -23,7 +23,7 @@ def preprocess_audio(audio_array):
     return feature_extractor(audio_array, sampling_rate=16000, return_tensors="pt", padding=True)
 
 
-class SynthStatistics(Leaf):
+class SynthStatistics(BehaviorMap):
     """
     Compute statistics on Synth's output.
     """
@@ -42,7 +42,7 @@ class SynthStatistics(Leaf):
         # projector for behavior space
         self.projector = BoxProjector(premap_key=self.postmap_key)
 
-    def map(self, input: Dict) -> Dict:
+    def map(self, input: Dict, override_existing: bool = True) -> Dict:
         """
         Compute statistics on Synth's output.
         Args:
@@ -66,7 +66,7 @@ class SynthStatistics(Leaf):
 
         return intermed_dict
 
-    def sample(self):
+    def sample(self, **kwargs):
         # projection= self.projector.sample()
         # # sum to 1
         # projection = projection / np.sum(projection)

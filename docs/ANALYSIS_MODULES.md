@@ -45,7 +45,7 @@ Analysis is driven by a config file with a top-level `analysis_modules` list:
       "config": {}
     },
     {
-      "path": "examples.program_based_systems.examples.core_interferences.analysis_modules.MutualMissHeatmapModule",
+      "path": "examples.program_based_systems.examples.core_interferences.analysis_modules.mutual_miss_heatmap.MutualMissHeatmapModule",
       "config": {}
     }
   ]
@@ -164,7 +164,7 @@ Minimal `SpaceCoverageModule` example:
           "config": {}
         },
         "metric": {
-          "path": "examples.program_based_systems.examples.core_interferences.behavior_map.space_coverage.GridSpaceCoverageMetric",
+          "path": "examples.program_based_systems.examples.core_interferences.behavior_map.space_coverage.grid_space_coverage_metric.GridSpaceCoverageMetric",
           "config": {
             "dimensions": [0, 1, 2],
             "boundaries": [[-25, 25], [-25, 25], [-25, 25]],
@@ -263,7 +263,15 @@ python -m adtool.runners.run_analysis \
 
 To compare against multiple datasets, pass multiple discovery directories and repeat `--comparison_label` as needed.
 
-The command writes a new run directory under `analysis_runs/` by default.
+The CLI writes a new run directory under `analysis_runs/` in the current
+working directory by default. Use `--output_dir` to choose a different
+destination. Analysis runs started from the visualization UI are written under
+`<save_location>/analysis_runs/`.
+
+When a broad parent directory is selected by mistake, nested
+`analysis_runs/` directories are excluded from dataset discovery. Random
+baseline discoveries remain usable by selecting their individual
+`random_run_*/discoveries` directory as a comparison path.
 
 ## Run Analysis From The UI
 

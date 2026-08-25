@@ -77,7 +77,6 @@ Available examples are:
 - `examples/flashlenia/flashlenia.json` - Cuda implementation of lenia to study initial condition sensitivity
 - `examples/stable_diffusion/stable_diffusion.json` - Discovering variations around a stable diffusion inference
 
-- `examples/draft/` - Empty skeleton if you want to start from scratch
 
 To execute examples, you need to install required dependencies:
 ```bash
@@ -175,7 +174,7 @@ Other modules for this are defined [here](https://github.com/flowersteam/adtool/
 
 ## How can I change the parametric space of the simulation?
 This is the 'parameter_map', introduced [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/gray_scott.json#L21) in the configuration file.
-For example, it's possible to copy the default file serving as parameter_map defined [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/maps/GrayScottParameterMap.py), then update the path to the new parameter_map in the used configuration file [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/gray_scott.json#L22).
+For example, copy a domain parameter map such as [GrayScottParameterMap](examples/grayscott/maps/GrayScottParameterMap.py), then update the parameter-map path in the matching [GrayScott config](examples/grayscott/gray_scott.json). Parameter maps and behavior maps should respectively implement the `ParameterMap` and `BehaviorMap` contracts from `adtool.maps`.
 
 ## How can I change the statistics used to characterize the final state of the simulation?
 Same logic as 'parameter_map' but with 'behavior_map' [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/gray_scott.json#L21), an example of which is provided [here](https://github.com/flowersteam/adtool/blob/2f03270c64f19f24d539f2e4f45936ef892b5fd8/examples/grayscott/maps/GrayScottStatistics.py). The current statistics are only calculated on the last state of the simulation, but nothing prevents considering all previous states.

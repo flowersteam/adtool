@@ -31,11 +31,10 @@ class ExperimentPipeline(Leaf):
 
     An experiment is at least constituted of a system and an explorer.
 
-    Additionally, output representations can be added and
-    composed.
+    Callbacks are dispatched for discovery, checkpoint save, save completion,
+    normal completion, and errors.
 
-    In order to monitor the experiment, you must provide **callbacks**, which
-    will be called every time a discovery has been made.
+    In order to monitor the experiment, you must provide **callbacks**.
     Please see: `callbacks.base_callback.BaseCallback`.
     """
 
@@ -50,7 +49,6 @@ class ExperimentPipeline(Leaf):
         on_discovery_callbacks: List[Callable] | None = None,
         on_save_finished_callbacks: List[Callable] | None = None,
         on_finished_callbacks: List[Callable] | None = None,
-        on_cancelled_callbacks: List[Callable] | None = None,
         on_save_callbacks: List[Callable] | None = None,
         on_error_callbacks: List[Callable] | None = None,
         logger=None,
@@ -77,8 +75,7 @@ class ExperimentPipeline(Leaf):
                 "on_discovery": on_discovery_callbacks or [],
                 "on_save_finished": on_save_finished_callbacks or [],
                 "on_finished": on_finished_callbacks or [],
-                "on_cancelled": on_cancelled_callbacks or [],
-                "on_saved": on_save_callbacks or [],
+                "on_save": on_save_callbacks or [],
                 "on_error": on_error_callbacks or [],
             },
             save_frequency=save_frequency,
@@ -155,8 +152,7 @@ class ExperimentPipeline(Leaf):
         self._on_discovery_callbacks = list(callbacks.get("on_discovery", []))
         self._on_save_finished_callbacks = list(callbacks.get("on_save_finished", []))
         self._on_finished_callbacks = list(callbacks.get("on_finished", []))
-        self._on_cancelled_callbacks = list(callbacks.get("on_cancelled", []))
-        self._on_save_callbacks = list(callbacks.get("on_saved", []))
+        self._on_save_callbacks = list(callbacks.get("on_save", []))
         self._on_error_callbacks = list(callbacks.get("on_error", []))
         self._checkpoint_store = FileCheckpointStore(resource_uri) if resource_uri else None
         self.branch_id = uuid4().hex
@@ -324,7 +320,6 @@ class ExperimentPipeline(Leaf):
             "_on_discovery_callbacks",
             "_on_save_finished_callbacks",
             "_on_finished_callbacks",
-            "_on_cancelled_callbacks",
             "_on_error_callbacks",
             "_on_save_callbacks",
             "_checkpoint_store",

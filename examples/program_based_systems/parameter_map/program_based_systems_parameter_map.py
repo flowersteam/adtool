@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Dict
 
-from adtool.maps.Map import Map
+from adtool.maps.parameter import ParameterMap
 
 
-class BaseParameterMap(Map, ABC):
+class BaseParameterMap(ParameterMap, ABC):
     """Base parameter map with sample/mutate hooks."""
 
     def __init__(self, premap_key: str = "params", postmap_key: str = "params") -> None:

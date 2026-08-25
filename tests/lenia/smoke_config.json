@@ -12,7 +12,8 @@
     "config": {
       "SX": 32,
       "SY": 32,
-      "final_step": 8
+      "final_step": 8,
+      "initial_condition_seed": 42
     }
   },
   "explorer": {
@@ -38,8 +39,6 @@
       }
     }
   },
-  "input_wrappers": [],
-  "output_representations": [],
   "logger_handlers": [],
   "callbacks": {
     "on_discovery": [

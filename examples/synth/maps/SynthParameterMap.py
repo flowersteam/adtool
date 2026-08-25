@@ -1,10 +1,10 @@
 from copy import deepcopy
 from typing import Dict
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 from examples.synth.systems.Synth import SynthSimulation
 import random
 
-class SynthParameterMap(Leaf):
+class SynthParameterMap(ParameterMap):
     def __init__(
         self,
         system: SynthSimulation,

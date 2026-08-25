@@ -37,8 +37,6 @@
       }
     }
   },
-  "input_wrappers": [],
-  "output_representations": [],
   "logger_handlers": [],
   "callbacks": {
     "on_discovery": [

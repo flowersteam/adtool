@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from ..analysis_metrics.analysis_run import run_analysis
@@ -18,8 +19,9 @@ from .server_support import (
     require_directory,
     require_file,
     resolve_input_path,
-    timestamped_analysis_dir,
 )
+
+LOGGER = logging.getLogger("uvicorn.error")
 
 
 def random_run_payload(
@@ -31,10 +33,6 @@ def random_run_payload(
     if config_file is None:
         raise HTTPException(status_code=422, detail="config_file is required.")
     require_file(config_file, "config_file")
-
-    output_dir = resolve_input_path(payload.get("output_dir"), "output_dir", required=False)
-    if output_dir is None:
-        output_dir = timestamped_analysis_dir(config.discoveries, "random_run")
 
     nb_iterations = payload_int(
         payload,
@@ -54,11 +52,11 @@ def random_run_payload(
         try:
             summary = run_random_baseline(
                 config_file=config_file,
-                output_dir=output_dir,
                 nb_iterations=nb_iterations,
                 seed=seed,
             )
         except Exception as exc:
+            LOGGER.exception("Random analysis run failed")
             raise HTTPException(
                 status_code=500,
                 detail=error_detail("Random run failed", exc),
@@ -111,6 +109,7 @@ def run_analysis_payload(
                 config_file=config_file,
             )
         except Exception as exc:
+            LOGGER.exception("Analysis run failed")
             raise HTTPException(
                 status_code=500,
                 detail=error_detail("Analysis run failed", exc),

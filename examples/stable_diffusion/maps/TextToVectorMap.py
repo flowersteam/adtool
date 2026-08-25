@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Tuple
 
 import torch
-from adtool.maps.Map import Map
+from adtool.maps.parameter import ParameterMap
 from adtool.utils.expose_config.expose_config import expose
 from adtool.utils.leaf.locators.locators import BlobLocator
 from transformers import CLIPTextModel, CLIPTokenizer
@@ -28,7 +28,7 @@ class PromptParams(BaseModel):
     perturbation_scale: float = Field(0.00001, ge=0.000001, le=0.1)
 
 
-class TextToVectorMap(Map):
+class TextToVectorMap(ParameterMap):
 
 
     def __init__(

@@ -77,7 +77,12 @@ async function postJson(url, payload, fallbackMessage) {
     const response = await fetch(url, request);
 
     if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, fallbackMessage));
+        const message = await responseErrorMessage(response, fallbackMessage);
+        console.error(
+            `[adtool] ${fallbackMessage} (${response.status} ${response.statusText})\n`
+            + `Request: ${url}\n\n${message}`,
+        );
+        throw new Error(message);
     }
 
     return response.json();

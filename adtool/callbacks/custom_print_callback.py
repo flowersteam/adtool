@@ -11,7 +11,7 @@ class CustomPrintCallback(BaseCallback):
         super().__init__(**kwargs)
         self._custom_message_to_print = custom_message_to_print
 
-    def __call__(self, experiment_id: int, seed: int, **kwargs) -> None:
+    def __call__(self, **kwargs) -> None:
         """
         Print the message with contextutal information
 

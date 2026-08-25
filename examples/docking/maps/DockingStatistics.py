@@ -1,9 +1,9 @@
 from typing import Dict
 import numpy as np
 from copy import deepcopy
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.behavior import BehaviorMap
 from adtool.utils.leaf.locators.locators import BlobLocator
-from adtool.wrappers.BoxProjector import BoxProjector
+from adtool.maps.box import BoxProjector
 
 from plip.basic import config
 from plip.structure.preparation import PDBComplex
@@ -78,7 +78,7 @@ def atoms_in_bounding_box(pdb_file, center, size):
     
     return atom_indices
 
-class DockingStatistics(Leaf):
+class DockingStatistics(BehaviorMap):
     """
     Compute statistics on docking output.
     """
@@ -113,7 +113,7 @@ class DockingStatistics(Leaf):
                                       )
 
 
-    def map(self, input: Dict) -> Dict:
+    def map(self, input: Dict, override_existing: bool = True) -> Dict:
         intermed_dict = deepcopy(input)
     #    print(intermed_dict)
         pdb_file = intermed_dict[self.premap_key]
@@ -128,7 +128,7 @@ class DockingStatistics(Leaf):
 
         return intermed_dict
 
-    def sample(self):
+    def sample(self, **kwargs):
         sampled= self.projector.sample()
         return sampled
 

@@ -1,15 +1,11 @@
 from copy import deepcopy
-from typing import Dict, List, Tuple, Union
-
-import torch
-from adtool.maps.Map import Map
-from adtool.wrappers.BoxProjector import BoxProjector
-from adtool.utils.leaf.Leaf import Leaf
-from adtool.utils.leaf.locators.locators import BlobLocator
+from typing import Dict
+from adtool.maps.box import BoxProjector
+from adtool.maps.parameter import ParameterMap
 
 import numpy as np
 
-class UniformParameterMap(Map):
+class UniformParameterMap(ParameterMap):
     """
     A simple `ParameterMap` which generates parameters according to a uniform
     distribution over a box.
@@ -30,22 +26,9 @@ class UniformParameterMap(Map):
 
         # TODO: put indication that tensor_low and high must be set
         super().__init__()
-        self.locator = BlobLocator()
         self.premap_key = premap_key
+        self.postmap_key = premap_key
         
-
-
-
-        # ensure no tensor is of size 0 by unsqueezing
-        # if tensor_low.size() == torch.Size([]):
-        #     tensor_low = tensor_low.unsqueeze(0)
-        # if tensor_high.size() == torch.Size([]):
-        #     tensor_high = tensor_high.unsqueeze(0)
-        # if tensor_bound_low.size() == torch.Size([]):
-        #     tensor_bound_low = tensor_bound_low.unsqueeze(0)
-        # if tensor_bound_high.size() == torch.Size([]):
-        #     tensor_bound_high = tensor_bound_high.unsqueeze(0)
-
         # same but now it's numpy
         if tensor_low.shape == ():
             tensor_low = tensor_low.reshape(1)
@@ -102,9 +85,3 @@ class UniformParameterMap(Map):
         dimensions_to_keep = data_shape[0]
         sample = self.projector.sample()
         return sample[:dimensions_to_keep]
-
-    # def get_tensor_history(self) -> torch.Tensor:
-    #     tensor_history = \
-    #         tensor_history = torch.cat(
-    #             (tensor_history, dict[self.premap_key].unsqueeze(0)), dim=0)
-    #     return tensor_history

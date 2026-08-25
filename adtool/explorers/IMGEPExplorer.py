@@ -3,11 +3,12 @@
 from typing import Any, Dict, List, Union
 
 from adtool.systems import System
-from adtool.wrappers.IdentityWrapper import IdentityWrapper
 from adtool.utils.persistence.history import HistoryStore
 from adtool.utils.expose_config.expose_config import expose
 from adtool.mutators import SpecificMutator
 from adtool.utils.factory import ObjectSpec, instantiate_object, object_spec
+from adtool.maps.behavior import BehaviorMap
+from adtool.maps.parameter import ParameterMap
 from adtool.utils.leaf.Leaf import Leaf
 from pydantic import Field
 from pydantic import BaseModel
@@ -16,12 +17,8 @@ import numpy as np
 
 class IMGEPConfig(BaseModel):
     equil_time: int = Field(1, ge=1, le=1000)
-    behavior_map: ObjectSpec = Field(
-        object_spec("adtool.maps.MeanBehaviorMap.MeanBehaviorMap")
-    )
-    parameter_map: ObjectSpec = Field(
-        object_spec("adtool.maps.UniformParameterMap.UniformParameterMap")
-    )
+    behavior_map: ObjectSpec
+    parameter_map: ObjectSpec
     mutator: ObjectSpec = Field(
         object_spec("adtool.mutators.SpecificMutator")
     )
@@ -38,10 +35,10 @@ class IMGEPExplorerInstance(Leaf):
 
     def __init__(
         self,
+        parameter_map: ParameterMap,
+        behavior_map: BehaviorMap,
         premap_key: str = "output",
         postmap_key: str = "params",
-        parameter_map: Leaf = IdentityWrapper(),
-        behavior_map: Leaf = IdentityWrapper(),
         mutator: Any = None,
         equil_time: int = 0,
         history_lookback_length: int = -1,
@@ -186,7 +183,7 @@ class IMGEPExplorerInstance(Leaf):
                 entire  history.
 
         Returns:
-            A `torch.Tensor` containing the parameters to try.
+            A parameter payload containing the candidate to try.
         """
         if goal is None:
             if goal_targeting is None:
@@ -282,6 +279,10 @@ class IMGEPExplorer():
     def __call__(self,system) -> "IMGEPExplorerInstance":
         behavior_map = self.make_behavior_map(system)
         param_map = self.make_parameter_map(system)
+        if not isinstance(behavior_map, BehaviorMap):
+            raise TypeError("behavior map must implement BehaviorMap")
+        if not isinstance(param_map, ParameterMap):
+            raise TypeError("parameter map must implement ParameterMap")
         mutator = self.make_mutator()
         equil_time = self.config.equil_time
         explorer = IMGEPExplorerInstance(

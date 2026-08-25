@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass
 from typing import Dict, Optional
 
 import torch
-from adtool.utils.misc.torch_utils import replace_torch_with_numpy
+from examples.shared.torch_utils import replace_torch_with_numpy
 from examples.particlelenia.systems.ParticleLenia import ParticleLenia
 from examples.particlelenia.systems.ParticleLeniaParameters import (
     ParticleLeniaDynamicalParameters,
@@ -12,11 +12,11 @@ from examples.particlelenia.systems.ParticleLeniaParameters import (
 )
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.mutators import GaussianMutator
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 from adtool.utils.leaf.locators.locators import BlobLocator
 
 
-class ParticleLeniaParameterMap(Leaf):
+class ParticleLeniaParameterMap(ParameterMap):
     """
     Due to the complexities of initializing ParticleLenia parameters,
     it's easier to make this custom parameter map.

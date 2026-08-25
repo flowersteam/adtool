@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 
-from adtool.maps.Map import Map
+from adtool.maps.behavior import BehaviorMap
 from examples.program_based_systems.behavior_map.encoder.program_based_systems_behavior_encoder import (
     BaseBehaviorEncoder,
 )
@@ -12,7 +12,7 @@ from examples.program_based_systems.behavior_map.goal_sampler.program_based_syst
 )
 
 
-class BaseBehaviorMap(Map):
+class BaseBehaviorMap(BehaviorMap):
     """Base behavior map with goal sampling."""
 
     def __init__(

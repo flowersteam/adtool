@@ -1,18 +1,18 @@
 {
   "name": "lenia",
-  "generated_at_utc": "2026-04-27T13:39:40.105695+00:00",
+  "generated_at_utc": "2026-08-11T12:48:00.706449+00:00",
   "reference": {
     "discovery_count": 5.0,
     "output_dim": 17.0,
-    "output_mean": 0.05454545454545454,
-    "output_std": 0.22709083630539628,
+    "output_mean": 0.05714285714285714,
+    "output_std": 0.2321153829895989,
     "output_last_l2": 1.0,
-    "output_finite_ratio": 0.6470588235294118,
+    "output_finite_ratio": 0.8235294117647058,
     "output_first_mean": 0.0,
-    "runtime_seconds": 2.189971069998137,
-    "seconds_per_iteration": 0.4379942139996274,
-    "param_numeric_mean": 0.16605524585068507,
-    "param_numeric_std": 0.41046739657985315
+    "runtime_seconds": 2.2423174449995713,
+    "seconds_per_iteration": 0.4484634889999143,
+    "param_numeric_mean": 0.2170101238559056,
+    "param_numeric_std": 0.40208077412981913
   },
   "ranges": {
     "discovery_count": {
@@ -24,20 +24,20 @@
       "max": 17.0
     },
     "output_mean": {
-      "min": -0.9454545454545454,
-      "max": 1.0545454545454545
+      "min": -0.9428571428571428,
+      "max": 1.0571428571428572
     },
     "output_std": {
       "min": 0.0,
-      "max": 1.2270908363053963
+      "max": 1.232115382989599
     },
     "output_last_l2": {
       "min": 0.0,
       "max": 3.0
     },
     "output_finite_ratio": {
-      "min": 0.55,
-      "max": 0.7441176470588236
+      "min": 0.7,
+      "max": 0.9470588235294117
     },
     "output_first_mean": {
       "min": -1.0,
@@ -45,15 +45,15 @@
     },
     "seconds_per_iteration": {
       "min": 0.0,
-      "max": 2.2519768559985094
+      "max": 2.293853955999657
     },
     "param_numeric_mean": {
-      "min": 0.06642209834027403,
-      "max": 0.2656883933610961
+      "min": 0.08680404954236223,
+      "max": 0.34721619816944893
     },
     "param_numeric_std": {
-      "min": 0.16418695863194127,
-      "max": 0.6567478345277651
+      "min": 0.16083230965192766,
+      "max": 0.6433292386077106
     }
   },
   "notes": "Loose acceptance ranges for smoke testing. Regenerate when intentionally changing behavior."

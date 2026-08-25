@@ -6,12 +6,12 @@ from typing import Dict
 import numpy as np
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.mutators import GaussianMutator
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 from adtool.utils.leaf.locators.locators import BlobLocator
 from examples.reku.systems.ReKu import ReKu, ReKuParams  # Adjust the import according to your project structure
 
 
-class ReKuParameterMap(Leaf):
+class ReKuParameterMap(ParameterMap):
     def __init__(
         self,
         system: ReKu,

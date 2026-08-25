@@ -8,7 +8,7 @@ import numpy as np
 from adtool.systems import System
 from adtool.maps.UniformParameterMap import UniformParameterMap
 from adtool.mutators import GaussianMutator
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.parameter import ParameterMap
 from adtool.utils.leaf.locators.locators import BlobLocator
 
 from examples.grayscott.systems.GrayScott import GrayScott  
@@ -46,7 +46,7 @@ class GrayScottParams:
     def from_numpy(cls, np_array):
         return cls(F=np_array[0], k=np_array[1])
 
-class GrayScottParameterMap(Leaf):
+class GrayScottParameterMap(ParameterMap):
     def __init__(
         self,
         system: GrayScott,

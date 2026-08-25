@@ -3,9 +3,9 @@ from copy import deepcopy
 
 import numpy as np
 from addict import Dict
-from adtool.wrappers.BoxProjector import BoxProjector
+from adtool.maps.box import BoxProjector
 
-from adtool.utils.leaf.Leaf import Leaf
+from adtool.maps.behavior import BehaviorMap
 from examples.nbody.systems.NBody import NBodySimulation
 
 DT = 0.001  # Time step for the simulation (global constant)
@@ -13,7 +13,7 @@ SAVE_INTERVAL = 10  # Save interval for the simulation (global constant)
 
 STABILITY_WEIGHT = 10
 
-class NBodyStatistics(Leaf):
+class NBodyStatistics(BehaviorMap):
     def __init__(
         self,
         system: NBodySimulation,
@@ -34,7 +34,7 @@ class NBodyStatistics(Leaf):
 
         self.projector = BoxProjector(premap_key=self.postmap_key)
 
-    def map(self, input: typing.Dict) -> typing.Dict:
+    def map(self, input: typing.Dict, override_existing: bool = True) -> typing.Dict:
         intermed_dict = deepcopy(input)
 
         raw_output_key = "raw_" + self.premap_key
@@ -49,7 +49,7 @@ class NBodyStatistics(Leaf):
 
         return intermed_dict
 
-    def sample(self):
+    def sample(self, **kwargs):
         sampled = self.projector.sample()
         # Allow to optimize for stability and diversity
         sampled[0] = STABILITY_WEIGHT
