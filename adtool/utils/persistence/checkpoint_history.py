@@ -4,13 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-import hashlib
 import json
 import pickle
 from pathlib import Path
 from typing import Any
-
-import numpy as np
 
 
 @dataclass(frozen=True)
@@ -132,29 +129,21 @@ def load_branch_records(root: str | Path, checkpoint_name: str | None = None) ->
     return selected, records
 
 
-def output_fingerprint(payload: dict[str, Any]) -> str | None:
-    """Stable numeric output key shared by JSON discoveries and history records."""
-    try:
-        output = np.asarray(payload["output"], dtype=np.float64).reshape(-1)
-    except (KeyError, TypeError, ValueError):
-        return None
-    if output.size == 0 or not np.isfinite(output).all():
-        return None
-    return hashlib.sha256(output.tobytes()).hexdigest()
+def checkpoint_branch_index(root: str | Path) -> dict[str, list[tuple[int, str]]]:
+    """Map a pipeline branch ID to its checkpoints, ordered by saved step.
 
-
-def discovery_checkpoint_index(root: str | Path) -> dict[str, str]:
-    """Map persisted discovery output fingerprints to their owning checkpoint."""
-    index: dict[str, str] = {}
+    Discoveries carry the full ``metadata.branch_id`` set by the pipeline.  It
+    is the stable identity that distinguishes identical results from separate
+    runs; the checkpoint folder name contains the same branch ID prefix.
+    """
+    index: dict[str, list[tuple[int, str]]] = {}
     for checkpoint in checkpoints_for(root).values():
-        try:
-            records = load_checkpoint_records(checkpoint)
-        except ValueError:
-            # The viewer can still render the remaining checkpoints and legacy
-            # discoveries when an interrupted checkpoint is incomplete.
+        branch_id = checkpoint.manifest.get("branch_id")
+        if not isinstance(branch_id, str) or not branch_id:
             continue
-        for record in records:
-            fingerprint = output_fingerprint(record)
-            if fingerprint is not None:
-                index.setdefault(fingerprint, checkpoint.name)
+        step = int(checkpoint.manifest.get("step", 0))
+        index.setdefault(branch_id, []).append((step, checkpoint.name))
+
+    for checkpoints in index.values():
+        checkpoints.sort()
     return index
