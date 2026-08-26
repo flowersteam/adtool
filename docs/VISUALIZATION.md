@@ -18,6 +18,7 @@ The visualization layer is useful for:
 - running offline analysis from the UI,
 - refreshing the view while an experiment is still running,
 - pausing and resuming a live experiment,
+- inspecting checkpoint branches and their discoveries,
 - highlighting discoveries from system-defined rules,
 - steering a compatible goal sampler toward specific 2D regions.
 
@@ -119,6 +120,18 @@ Pause does not:
 - stop offline analysis jobs that are already running.
 
 Pause only affects live experimentation that is reading the same experiment-control state.
+
+## Checkpoint View
+
+When the experiment save location contains checkpoints, the viewer exposes a checkpoint tree beside the discovery map.
+
+Each node represents a saved checkpoint and its branch relationship. The node label shows the branch suffix and the saved step count.
+
+- Hover a node to outline discoveries from that checkpoint in red. Its ancestor discoveries remain visible; unrelated discoveries are dimmed.
+- Click a node to hide that checkpoint and all of its descendants from the map. Click it again to restore the branch.
+- Identical discoveries from separate branches remain separate discovery entries. They can occupy the same map coordinate, but each stays associated with its own checkpoint branch for tree filtering.
+
+The checkpoint tree is read from `<save_location>/checkpoints/*/manifest.json`. Start the viewer with the experiment's save location, not its nested `discoveries/` directory, so that both discovery files and checkpoints are available.
 
 ## Discovery Highlights
 
