@@ -22,6 +22,7 @@ from adtool.utils.persistence.checkpoint_history import (
     checkpoint_branch_index,
     checkpoint_tree_payload,
 )
+from adtool.utils.persistence.discovery import numeric_discovery_output
 
 
 DEFAULT_MAX_RENDERED_DISCOVERIES = 500
@@ -73,12 +74,9 @@ def _store_cached_discovery(
 
 
 def _valid_embedding(payload: dict[str, Any]) -> list[float] | None:
-    if "output" not in payload:
-        return None
-
     try:
-        embedding = np.asarray(payload["output"], dtype=float)
-    except (TypeError, ValueError):
+        embedding = numeric_discovery_output(payload)
+    except ValueError:
         return None
 
     if embedding.ndim != 1 or embedding.size == 0:

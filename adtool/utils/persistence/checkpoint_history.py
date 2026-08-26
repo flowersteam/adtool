@@ -20,6 +20,14 @@ class Checkpoint:
         return self.path.name
 
 
+@dataclass(frozen=True)
+class CheckpointDiscoveries:
+    """Discovery payloads reconstructed from one checkpoint branch."""
+
+    checkpoint: Checkpoint
+    payloads: list[dict[str, Any]]
+
+
 def checkpoints_for(root: str | Path) -> dict[str, Checkpoint]:
     """Return all complete checkpoints below an experiment save location."""
     container = Path(root).resolve() / "checkpoints"
@@ -127,6 +135,18 @@ def load_branch_records(root: str | Path, checkpoint_name: str | None = None) ->
             metadata.setdefault("branch_id", checkpoint.manifest.get("branch_id"))
             records.append({**record, "metadata": metadata})
     return selected, records
+
+
+def load_branch_discoveries(
+    root: str | Path,
+    checkpoint_name: str | None = None,
+) -> CheckpointDiscoveries:
+    """Load the discovery payloads represented by a checkpoint branch.
+    """
+    checkpoint, payloads = load_branch_records(root, checkpoint_name)
+    if not payloads:
+        raise ValueError(f"No discoveries found in checkpoint {checkpoint.name}")
+    return CheckpointDiscoveries(checkpoint=checkpoint, payloads=payloads)
 
 
 def checkpoint_branch_index(root: str | Path) -> dict[str, list[tuple[int, str]]]:
