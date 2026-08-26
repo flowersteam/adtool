@@ -96,7 +96,35 @@ Read more:
 
 - [Visualization Guide](./VISUALIZATION.md)
 
-## 3. Highlight Dock
+## 3. Checkpoint View
+
+Checkpoint branches dock:
+
+![Checkpoint branches dock](./images/visu/discovery_checkpoints_view.png)
+
+### What is displayed
+
+When saved checkpoints are available, the right side of the discovery view includes a checkpoint tree. Each node represents a checkpoint, labelled with its branch suffix and saved step count. Lines show parent-child checkpoint relationships.
+
+### What each interaction does
+
+- hover a node
+  - outlines discoveries belonging to that checkpoint in red,
+  - keeps ancestor discoveries at normal emphasis,
+  - dims discoveries outside the hovered lineage.
+- click a node
+  - hides that checkpoint and all of its descendant checkpoints from the map,
+  - clicking the hidden node restores it and its ancestor path.
+- `Hide` / `Show`
+  - collapses or expands the checkpoint-tree dock.
+
+The tree is shown only when the viewer finds checkpoint manifests under the selected experiment save location. Identical discoveries can remain exactly superposed on the map while still being independently associated with their own checkpoint branches.
+
+Read more:
+
+- [Visualization Guide](./VISUALIZATION.md#checkpoint-view)
+
+## 4. Highlight Dock
 
 Highlight dock and rule editing:
 
@@ -151,7 +179,7 @@ Read more:
 
 - [Visualization Guide](./VISUALIZATION.md#discovery-highlights)
 
-## 4. Discovery Left Menu
+## 5. Discovery Left Menu
 
 Left-side discovery controls:
 
@@ -335,7 +363,7 @@ Selection behavior:
 - axis inputs are hidden unless the method is `2 axis id`.
 - action buttons can be temporarily disabled while a backend operation is running.
 
-## 5. Hover Preview
+## 6. Hover Preview
 
 Hover preview and selected-point emphasis:
 
@@ -359,7 +387,7 @@ It can display:
 
 ## Analysis View
 
-## 6. Analysis Page Controls
+## 7. Analysis Page Controls
 
 Analysis page header and reload control:
 
@@ -376,7 +404,7 @@ Visible controls:
 - `Reload Analysis`
   - reloads existing analysis summaries from disk.
 
-## 7. Analyze Discoveries
+## 8. Analyze Discoveries
 
 Run-operations panel:
 
@@ -440,7 +468,7 @@ Read more:
 - [Analysis Modules](./ANALYSIS_MODULES.md)
 
 
-## 8. Analysis Results Grid
+## 9. Analysis Results Grid
 
 Rendered analysis results:
 
@@ -465,7 +493,7 @@ Visible regions:
 
 If no analysis run exists yet, the page shows a message explaining that a dataset path or random baseline is needed first.
 
-## 9. Lightbox
+## 10. Lightbox
 
 ### What is displayed
 

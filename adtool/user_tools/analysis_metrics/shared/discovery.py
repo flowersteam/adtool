@@ -1,37 +1,23 @@
-import json
-from pathlib import Path
-
 import numpy as np
+
+from adtool.utils.persistence.discovery import (
+    load_discoveries,
+    numeric_discovery_output_matrix,
+)
 
 from .summary import DiscoverySet
 
 
-def load_discovery_set(discovery_path):
-    discovery_path = Path(discovery_path).resolve()
-    files = sorted(
-        (
-            path
-            for path in discovery_path.rglob("discovery.json")
-            if path.is_file() and "analysis_runs" not in path.relative_to(discovery_path).parts
-        ),
-        key=lambda path: path.stat().st_mtime,
+def load_discovery_set(discovery_path, checkpoint_name=None):
+    discoveries = load_discoveries(
+        discovery_path,
+        checkpoint_name=checkpoint_name,
     )
-    if not files:
-        raise ValueError(f"No discoveries found in {discovery_path}")
-
-    payloads = []
-    outputs = []
-    for file_path in files:
-        with file_path.open("r") as handle:
-            payload = json.load(handle)
-        payloads.append(payload)
-        outputs.append(np.asarray(payload["output"], dtype=float).reshape(-1))
-
     return DiscoverySet(
-        path=discovery_path,
-        files=files,
-        payloads=payloads,
-        outputs=np.vstack(outputs),
+        path=discoveries.path,
+        files=discoveries.sources,
+        payloads=discoveries.payloads,
+        outputs=numeric_discovery_output_matrix(discoveries),
     )
 
 

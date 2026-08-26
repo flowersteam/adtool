@@ -182,7 +182,8 @@ class ExperimentPipeline(Leaf):
             self._checkpoint_store = FileCheckpointStore(self.resource_uri)
             self._configure_history_store()
 
-        discoveries_dir = Path(self.resource_uri) / "discoveries"
+        control_dir = Path(self.resource_uri)
+        discoveries_dir = control_dir / "discoveries"
         discoveries_dir.mkdir(parents=True, exist_ok=True)
         try:
             if self._pending_trial is not None:
@@ -195,8 +196,8 @@ class ExperimentPipeline(Leaf):
             final_run_idx = self.run_idx + n_exploration_runs
 
             while self.run_idx < final_run_idx:
-                wait_if_experiment_paused(str(discoveries_dir))
-                goal_targeting = read_experiment_control(str(discoveries_dir)).get(
+                wait_if_experiment_paused(str(control_dir))
+                goal_targeting = read_experiment_control(str(control_dir)).get(
                     "goal_targeting", {}
                 ).get("resolved")
                 target_path = discoveries_dir / "target.json"

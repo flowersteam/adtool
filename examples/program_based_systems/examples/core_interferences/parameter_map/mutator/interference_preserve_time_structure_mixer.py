@@ -11,9 +11,8 @@ from examples.program_based_systems.types import ProgramMixer
 class PreserveTimeStructureProgramMixer(ProgramMixer):
     """Mixer that keeps relative timing structure within chunks."""
 
-    def __init__(self, num_parts: int, seed: Optional[int] = None) -> None:
+    def __init__(self, num_parts: int) -> None:
         self.num_parts = max(1, int(num_parts))
-        self.seed = seed
 
     def mix(
         self,
@@ -28,14 +27,11 @@ class PreserveTimeStructureProgramMixer(ProgramMixer):
 
         Args:
             sequences (list[dict]): List of programs {cycle: (type, address)}
-            seed (int | None): Random seed
             max_cycle (int): Maximum cycle number in output
 
         Returns:
             dict: Mixed program {cycle: (type, address)}
         """
-
-        rng = random.Random(self.seed)
 
         # Step 0: normalize payloads and drop malformed programs with warnings.
         sequences = normalize_instruction_sequences(
@@ -62,7 +58,7 @@ class PreserveTimeStructureProgramMixer(ProgramMixer):
                 chunks.append(chunk)
 
         # Step 3: shuffle chunks
-        rng.shuffle(chunks)
+        random.shuffle(chunks)
 
         # Step 4: flatten chunks into a single instruction list
         mixed_instrs = []

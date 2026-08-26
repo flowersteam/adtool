@@ -25,9 +25,11 @@ from .coordinates import (
     _write_empty_layout,
     _write_highlight_schema,
     _write_layout_result,
+    _write_json_atomic,
     export_last_frame,
     process_discovery,
 )
+from adtool.utils.persistence.checkpoint_history import checkpoint_tree_payload
 from .goal_targeting import goal_targeting_enabled, sync_goal_targeting
 from .highlights import load_highlight_export_context
 from .highlights.materialize import materialize_discovery_file
@@ -201,6 +203,7 @@ def recompute_online_discoveries(
     static_dir = config.static_dir
     static_dir.mkdir(parents=True, exist_ok=True)
     discoveries_path = static_dir / "discoveries.json"
+    _write_json_atomic(static_dir / "checkpoints.json", checkpoint_tree_payload(root_path))
 
     highlight_provider, highlight_schema_base = _highlight_context(config.config_file)
     discovery_paths = _iter_discovery_paths(root_path)

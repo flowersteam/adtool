@@ -18,6 +18,11 @@ from .highlights import (
     empty_highlight_schema,
     load_highlight_export_context,
 )
+from adtool.utils.persistence.checkpoint_history import (
+    checkpoint_branch_index,
+    checkpoint_tree_payload,
+)
+from adtool.utils.persistence.discovery import numeric_discovery_output
 
 
 DEFAULT_MAX_RENDERED_DISCOVERIES = 500
@@ -69,12 +74,9 @@ def _store_cached_discovery(
 
 
 def _valid_embedding(payload: dict[str, Any]) -> list[float] | None:
-    if "output" not in payload:
-        return None
-
     try:
-        embedding = np.asarray(payload["output"], dtype=float)
-    except (TypeError, ValueError):
+        embedding = numeric_discovery_output(payload)
+    except ValueError:
         return None
 
     if embedding.ndim != 1 or embedding.size == 0:
@@ -169,6 +171,8 @@ def process_discovery(
         "embedding": embedding,
         "filters": payload.get("filters", {}),
         "discovery_file": os.fspath(discovery_path),
+        "checkpoint": None,
+        "metadata": payload.get("metadata", {}),
     }
     _store_cached_discovery(discovery_path, cache_mtime, discovery)
     return discovery
@@ -196,6 +200,32 @@ def _scan_discoveries(
         result = process_discovery(discovery_path, cache_mtime=cache_mtime)
         if result:
             discoveries.append(result)
+
+    checkpoint_index = checkpoint_branch_index(root_path)
+    for discovery in discoveries:
+        metadata = discovery.get("metadata", {})
+        branch_id = metadata.get("branch_id")
+        run_idx = metadata.get("run_idx")
+        branch_checkpoints = checkpoint_index.get(branch_id, [])
+        if branch_checkpoints:
+            try:
+                run_idx = int(run_idx)
+            except (TypeError, ValueError):
+                run_idx = None
+            if run_idx is None:
+                discovery["checkpoint"] = branch_checkpoints[-1][1]
+            else:
+                discovery["checkpoint"] = next(
+                    (
+                        checkpoint_name
+                        for step, checkpoint_name in branch_checkpoints
+                        if run_idx < step
+                    ),
+                    branch_checkpoints[-1][1],
+                )
+        else:
+            parent = metadata.get("parent_checkpoint")
+            discovery["checkpoint"] = Path(parent).name if parent else None
 
     discoveries.sort(key=lambda discovery: discovery["visual"])
     return discoveries, tuple(dataset_signature)
@@ -486,6 +516,28 @@ def _project_with_axes(x: np.ndarray, axes: tuple[int, int]) -> np.ndarray:
     return _normalized_projection(embedding)
 
 
+def _coalesce_duplicate_projection_rows(
+    inputs: np.ndarray,
+    embedding: np.ndarray,
+) -> np.ndarray:
+    """Give exact duplicate inputs one shared projected coordinate.
+
+    UMAP and t-SNE optimize one position per sample and do not constrain equal
+    high-dimensional rows to stay together.  Their coordinates are therefore
+    averaged after projection while keeping one entry per discovery for the
+    renderer and checkpoint tree.
+    """
+    if len(inputs) < 2:
+        return embedding
+
+    _, inverse = np.unique(inputs, axis=0, return_inverse=True)
+    for group_id in range(int(inverse.max()) + 1):
+        indices = np.flatnonzero(inverse == group_id)
+        if len(indices) > 1:
+            embedding[indices] = embedding[indices].mean(axis=0)
+    return embedding
+
+
 def _project_layout(
     x: np.ndarray,
     projection_method: str = DEFAULT_PROJECTION_METHOD,
@@ -496,16 +548,27 @@ def _project_layout(
         raise ValueError(f"Unknown projection method: {projection_method}")
 
     if method == "axis":
-        return _project_with_axes(x, projection_axes), (
-            f"axis_{projection_axes[0]}_{projection_axes[1]}"
-        ), len(x)
-    if method == "pca":
-        return _project_with_pca(x), "pca", len(x)
-    if method == "tsne":
-        return _project_with_tsne(x), "tsne", len(x)
-    if len(x) < 3:
-        return _bootstrap_layout(x), "umap_bootstrap_pca", 0
-    return _project_with_umap(x), "umap", len(x)
+        embedding = _project_with_axes(x, projection_axes)
+        layout_mode = f"axis_{projection_axes[0]}_{projection_axes[1]}"
+        fit_count = len(x)
+    elif method == "pca":
+        embedding = _project_with_pca(x)
+        layout_mode = "pca"
+        fit_count = len(x)
+    elif method == "tsne":
+        embedding = _project_with_tsne(x)
+        layout_mode = "tsne"
+        fit_count = len(x)
+    elif len(x) < 3:
+        embedding = _bootstrap_layout(x)
+        layout_mode = "umap_bootstrap_pca"
+        fit_count = 0
+    else:
+        embedding = _project_with_umap(x)
+        layout_mode = "umap"
+        fit_count = len(x)
+
+    return _coalesce_duplicate_projection_rows(x, embedding), layout_mode, fit_count
 
 
 def _downsample_for_display(
@@ -575,6 +638,7 @@ def _saved_coordinates(
             "y": float(point[1]),
             "visual": visual_path.replace(os.sep, "/"),
             "filters": discovery.get("filters", {}),
+            "checkpoint": discovery.get("checkpoint"),
         }
 
         saved_coordinates.append(saved_point)
@@ -631,6 +695,7 @@ def compute_coordinates(
     static_dir = Path(static_dir)
     static_dir.mkdir(parents=True, exist_ok=True)
     discoveries_path = static_dir / "discoveries.json"
+    _write_json_atomic(static_dir / "checkpoints.json", checkpoint_tree_payload(root_path))
     concatenated_path = static_dir / "concatenated.webm"
     highlight_context = load_highlight_export_context(config_path)
 

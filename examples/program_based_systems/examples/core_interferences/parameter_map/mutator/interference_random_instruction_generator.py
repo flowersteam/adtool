@@ -1,5 +1,4 @@
 import random
-from typing import Optional
 
 from examples.program_based_systems.examples.core_interferences.types import InstructionProgram
 from examples.program_based_systems.types import ProgramGenerator
@@ -7,9 +6,6 @@ from examples.program_based_systems.types import ProgramGenerator
 
 class RandomInstructionGenerator(ProgramGenerator):
     """Random instruction program generator."""
-
-    def __init__(self, seed: Optional[int] = None) -> None:
-        self.seed = seed
 
     def generate(
         self,
@@ -30,19 +26,17 @@ class RandomInstructionGenerator(ProgramGenerator):
         Returns:
             Dictionary with format {cycle: (type, address)}
         """
-        rng = random.Random(self.seed)
-
         bounded_num_instructions = min(max(0, num_instructions), max_cycle + 1)
         if bounded_num_instructions == 0:
             return {}
 
         instructions: InstructionProgram = {}
         instruction_types = ["read", "write"]
-        cycles = rng.sample(range(0, max_cycle + 1), bounded_num_instructions)
+        cycles = random.sample(range(0, max_cycle + 1), bounded_num_instructions)
 
         for cycle in cycles:
-            instr_type = rng.choice(instruction_types)
-            address = rng.randint(min_address, max_address)
+            instr_type = random.choice(instruction_types)
+            address = random.randint(min_address, max_address)
             instructions[cycle] = (instr_type, address)
 
         return dict(sorted(instructions.items()))

@@ -35,10 +35,11 @@ The entrypoint is `run_analysis`, exposed through:
 - [adtool/runners/run_analysis.py](../adtool/runners/run_analysis.py)
 - `adtool.user_tools.analysis_metrics.analysis_run.run_analysis`
 
-Analysis is driven by a config file with a top-level `analysis_modules` list:
+Analysis is driven by a config file with a top-level `checkpoint_name` and `analysis_modules` list:
 
 ```json
 {
+  "checkpoint_name": null,
   "analysis_modules": [
     {
       "path": "adtool.user_tools.analysis_metrics.comparison_1d.Comparison1DModule",
@@ -53,6 +54,12 @@ Analysis is driven by a config file with a top-level `analysis_modules` list:
 ```
 
 Each entry is loaded independently, in order. The module order in this list is also the display order on the analysis page.
+
+`checkpoint_name` selects the experiment branch to analyse. Leave it as `null`
+(or omit it) to use the most recent checkpoint. To select a specific branch,
+replace `null` with its checkpoint folder name, such as
+`"step-00000300-cfg-dee0cab652c2-branch-0a76edac"`. Analysis includes that
+checkpoint and its parents only; sibling and child branches are excluded.
 
 Each module receives:
 

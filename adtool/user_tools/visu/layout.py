@@ -17,6 +17,7 @@ from .runtime import (
 def cleanup_static_discoveries(config: ServerConfig) -> None:
     (config.static_dir / "discoveries.json").unlink(missing_ok=True)
     (config.static_dir / "discovery_highlights.json").unlink(missing_ok=True)
+    (config.static_dir / "checkpoints.json").unlink(missing_ok=True)
 
 
 def write_discovery_coordinates(

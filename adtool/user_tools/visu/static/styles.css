@@ -377,6 +377,96 @@ code {
     min-width: 62px;
 }
 
+.checkpointDock {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(8px);
+}
+
+.checkpointTree {
+    position: relative;
+    min-height: 0;
+    margin-top: 10px;
+    flex: 1 1 auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 1px solid rgba(80, 101, 90, 0.16);
+    border-radius: 9px;
+    background:
+        radial-gradient(circle at 1px 1px, rgba(80, 101, 90, 0.15) 1px, transparent 1.5px) 0 0 / 14px 14px,
+        rgba(247, 250, 247, 0.72);
+    scrollbar-color: #8fa096 transparent;
+    scrollbar-width: thin;
+}
+
+.checkpointTreeCanvas {
+    position: relative;
+    min-width: 100%;
+}
+
+.checkpointNode {
+    position: absolute;
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
+    min-height: 26px;
+    margin: -13px;
+    padding: 0;
+    box-sizing: border-box;
+    aspect-ratio: 1 / 1;
+    border: 2px solid #50655a;
+    border-radius: 50%;
+    background: #f7faf7;
+    box-shadow: 0 1px 4px rgba(20, 35, 28, 0.22);
+    cursor: pointer;
+    z-index: 1;
+    transition: transform 140ms ease, opacity 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+.checkpointNode:hover,
+.checkpointNode:focus-visible {
+    border-color: #255f56;
+    background: #9bd3c5;
+    outline: none;
+    transform: scale(1.25);
+}
+
+.checkpointTreeCanvas svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.checkpointBranch {
+    fill: none;
+    stroke: #8fa096;
+    stroke-linecap: round;
+    stroke-width: 3;
+}
+.checkpointNode.hiddenCheckpoint { opacity: 0.5; }
+
+.checkpointTreeHoverLabel {
+    min-height: 1.4em;
+    margin: 8px 0 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.checkpointDock.collapsed { display: block; }
+.checkpointDock.collapsed > :not(.highlightDockHeader) { display: none; }
+
 .highlightColorSwatch {
     flex: 0 0 auto;
     width: 18px;
@@ -863,15 +953,34 @@ code {
     background: #eef0ec;
 }
 
-.highlightDock {
+.filterDocks {
     position: absolute;
-    top: 14px;
     right: 14px;
+    bottom: 14px;
     z-index: 15;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    align-content: space-between;
+    gap: 10px;
     width: min(360px, calc(100% - 28px));
-    max-height: calc(100% - 28px);
+    height: calc(100% - 28px);
+    pointer-events: none;
+}
+
+.filterDocks > * { pointer-events: auto; }
+.filterDocks:has(.highlightDock.collapsed):not(:has(.checkpointDock.collapsed)) { grid-template-rows: auto minmax(0, 1fr); }
+.filterDocks:has(.checkpointDock.collapsed):not(:has(.highlightDock.collapsed)) { grid-template-rows: minmax(0, 1fr) auto; }
+.filterDocks:has(.highlightDock.collapsed):has(.checkpointDock.collapsed) { grid-template-rows: auto auto; }
+.filterDocks:has(#highlightRulesSection[hidden]),
+.filterDocks:has(#checkpointTreeSection[hidden]) { grid-template-rows: minmax(0, 1fr); }
+.filterDocks:has(#highlightRulesSection[hidden]):has(.checkpointDock.collapsed) {
+    grid-template-rows: auto;
+    align-content: end;
+}
+
+.highlightDock {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
     min-height: 0;
     overflow: hidden;
     padding: 12px;
@@ -1323,12 +1432,12 @@ code {
         min-height: 58vh;
     }
 
-    .highlightDock {
-        top: 12px;
+    .filterDocks {
         right: 12px;
+        bottom: 12px;
         left: 12px;
         width: auto;
-        max-height: min(50vh, calc(100% - 24px));
+        height: min(50vh, calc(100% - 24px));
     }
 
     .highlightClauseRow {
