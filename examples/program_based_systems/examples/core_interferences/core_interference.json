@@ -17,7 +17,7 @@
         "config": {
           "cycles": 256,
           "num_banks": 4,
-          "num_addr": 48
+          "num_addr": 64
         }
       },
       "simulator_runner": {
@@ -54,9 +54,9 @@
         "config": {
           "num_instructions": 25,
           "min_address_core0": 0,
-          "max_address_core0": 23,
-          "min_address_core1": 23,
-          "max_address_core1": 47,
+          "max_address_core0": 31,
+          "min_address_core1": 32,
+          "max_address_core1": 63,
           "max_cycle": 127,
           "generator": {
             "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_generator.RandomInstructionGenerator",
