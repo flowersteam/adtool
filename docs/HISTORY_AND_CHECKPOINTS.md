@@ -161,6 +161,15 @@ continued run receives a new branch ID. Its first new checkpoint points back
 to the selected checkpoint, so the original experiment is preserved and the
 new discoveries form a branch rather than overwriting it.
 
+## Resume-time component reconfiguration
+
+`configure_experiment_runtime(self, *, config, system)` is an optional explorer
+method called after a checkpoint is restored. Place it on an explorer class
+when a resumed run should update or replace submodules from the active config;
+the default implementation changes nothing. This provides a general way to
+compare whether changing strategy mid-execution is effective, and is not
+specific to program-based systems.
+
 ## Typical workflow
 
 1. Choose a local `save_location` and a positive `save_frequency`.
