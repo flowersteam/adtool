@@ -9,7 +9,12 @@ from typing import Any
 
 import numpy as np
 
-from .checkpoint_history import Checkpoint, load_branch_discoveries
+from .checkpoint_history import (
+    Checkpoint,
+    checkpoint_input_chain,
+    load_branch_discoveries,
+    load_checkpoint_records,
+)
 
 
 @dataclass(frozen=True)
@@ -45,11 +50,21 @@ def load_discoveries(
 ) -> LoadedDiscoveries:
     """Load discoveries from a checkpoint branch or JSON discovery folder.
 
-    A directory containing ``checkpoints/`` is loaded from the selected
-    checkpoint branch. Otherwise, recursively saved ``discovery.json`` files
-    are loaded in modification-time order.
+    An experiment root containing ``checkpoints/`` or an explicit checkpoint
+    directory is loaded cumulatively from the selected branch. Otherwise,
+    recursively saved ``discovery.json`` files are loaded in modification-time
+    order.
     """
     discovery_path = Path(discovery_path).resolve()
+    if (discovery_path / "manifest.json").is_file():
+        groups = load_discovery_groups(discovery_path)
+        return LoadedDiscoveries(
+            path=discovery_path,
+            sources=[source for group in groups for source in group.sources],
+            payloads=[payload for group in groups for payload in group.payloads],
+            checkpoint=groups[-1].checkpoint,
+        )
+
     if (discovery_path / "checkpoints").is_dir():
         checkpoint_discoveries = load_branch_discoveries(
             discovery_path,
@@ -87,6 +102,49 @@ def load_discoveries(
         sources=sources,
         payloads=payloads,
     )
+
+
+def load_discovery_groups(
+    discovery_path: str | Path,
+    checkpoint_name: str | None = None,
+) -> list[LoadedDiscoveries]:
+    """Load one discovery group or checkpoint-local groups for analysis.
+
+    Checkpoint groups are returned from the oldest ancestor to the selected
+    checkpoint. Each group contains only the history records owned by that
+    checkpoint, so callers can give every checkpoint a separate series.
+    """
+    discovery_path = Path(discovery_path).resolve()
+    chain = checkpoint_input_chain(discovery_path, checkpoint_name)
+    if chain is None:
+        return [load_discoveries(discovery_path)]
+
+    groups: list[LoadedDiscoveries] = []
+    for checkpoint in chain:
+        payloads = load_checkpoint_records(checkpoint)
+        if not payloads:
+            raise ValueError(f"No discoveries found in checkpoint {checkpoint.name}")
+        first_run_idx = int(checkpoint.manifest.get("step", 0)) - len(payloads)
+        branch_id = str(checkpoint.manifest.get("branch_id") or checkpoint.name)
+        normalized_payloads = []
+        for offset, payload in enumerate(payloads):
+            metadata = dict(payload.get("metadata") or {})
+            metadata.setdefault("run_idx", first_run_idx + offset)
+            if not metadata.get("branch_id"):
+                metadata["branch_id"] = branch_id
+            normalized_payloads.append({**payload, "metadata": metadata})
+        groups.append(
+            LoadedDiscoveries(
+                path=checkpoint.path,
+                sources=[
+                    checkpoint.path / f"history-record-{index:08d}"
+                    for index in range(len(normalized_payloads))
+                ],
+                payloads=normalized_payloads,
+                checkpoint=checkpoint,
+            )
+        )
+    return groups
 
 
 def numeric_discovery_output(

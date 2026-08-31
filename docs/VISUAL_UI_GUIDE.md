@@ -437,19 +437,18 @@ Analysis-run block:
 Visible controls:
 
 - `Config file`
-- `Primary label`
 - `Run analysis`
-- comparison dataset rows
+- dataset rows
 - `Add Dataset`
 
-Each comparison row contains:
+Each dataset row contains:
 
-- `Comparison discoveries path`
-- `Comparison label`
+- `Discoveries or checkpoint path`
+- `Dataset label`
 
 Behavior:
 
-- launches offline analysis modules on the current discoveries folder versus one or more comparison folders,
+- launches offline analysis modules across every entered dataset or checkpoint path,
 - uses the configured analysis file,
 - supports multiple datasets by adding rows.
 

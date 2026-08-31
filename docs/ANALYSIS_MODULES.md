@@ -61,6 +61,30 @@ replace `null` with its checkpoint folder name, such as
 `"step-00000300-cfg-dee0cab652c2-branch-0a76edac"`. Analysis includes that
 checkpoint and its parents only; sibling and child branches are excluded.
 
+Every discovery input accepts one of three directory forms:
+
+- a directory containing saved `discovery.json` files,
+- an experiment root containing `checkpoints/`, or
+- a checkpoint directory containing `manifest.json`.
+
+Checkpoint inputs are reconstructed cumulatively from the oldest ancestor to
+the selected checkpoint. Checkpoint chunks with the same `branch_id` form one
+plot series and use a stable color derived from that branch ID; saving another
+checkpoint on the same branch does not change color. Ancestor branches use
+`<label> ancestor N`, where ancestor 1 is closest to step 0, and shared
+checkpoint chunks are included only once in 1D and 2D comparisons.
+
+Coverage progression is computed over each complete selected path from step 0
+to its selected checkpoint. Its line changes color only where `branch_id`
+changes, and a colored point marks every checkpoint step along the path.
+
+Analysis accepts one or more equal discovery inputs. If multiple inputs resolve
+to the same selected checkpoint, that checkpoint is included only once, using
+the first input's source and label.
+
+The optional `checkpoint_name` setting applies to experiment-root inputs. An
+explicit checkpoint path always selects itself.
+
 Each module receives:
 
 - `datasets`: loaded discovery sets,
@@ -261,14 +285,15 @@ Example:
 
 ```bash
 python -m adtool.runners.run_analysis \
-  PATH_TO_PRIMARY_DISCOVERIES \
-  PATH_TO_COMPARISON_DISCOVERIES \
+  PATH_TO_DISCOVERIES_OR_CHECKPOINT_A \
+  PATH_TO_DISCOVERIES_OR_CHECKPOINT_B \
   --config_file PATH_TO_ANALYSIS_CONFIG \
-  --primary_label IMGEP \
-  --comparison_label baseline
+  --label IMGEP \
+  --label baseline
 ```
 
-To compare against multiple datasets, pass multiple discovery directories and repeat `--comparison_label` as needed.
+Pass one or more directories and repeat `--label` in the same order when custom
+labels are needed. Discovery and checkpoint inputs can be mixed in one run.
 
 The CLI writes a new run directory under `analysis_runs/` in the current
 working directory by default. Use `--output_dir` to choose a different
@@ -278,7 +303,7 @@ destination. Analysis runs started from the visualization UI are written under
 When a broad parent directory is selected by mistake, nested
 `analysis_runs/` directories are excluded from dataset discovery. Random
 baseline discoveries remain usable by selecting their individual
-`random_run_*/discoveries` directory as a comparison path.
+`random_run_*/discoveries` directory as an analysis input.
 
 ## Run Analysis From The UI
 
@@ -288,7 +313,7 @@ The `Analysis` page of the visualization server provides two actions:
   - runs a random baseline from a config file,
   - writes discoveries that can later be analyzed.
 - `Analyze Discoveries`
-  - runs the offline analysis stack on the current discoveries folder against one or more comparison folders,
+  - runs the offline analysis stack across all discovery or checkpoint paths entered in the dataset list,
   - uses the analysis config file entered in the page,
   - renders module images from the generated analysis summary.
 
@@ -304,7 +329,7 @@ Then:
 
 1. Open the `Analysis` page.
 2. Enter the analysis config file.
-3. Add one or more comparison discovery folders.
+3. Add one or more discovery or checkpoint directories.
 4. Click `Run analysis`.
 
 ## Design Rules

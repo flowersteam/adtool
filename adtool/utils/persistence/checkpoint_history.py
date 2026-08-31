@@ -28,6 +28,46 @@ class CheckpointDiscoveries:
     payloads: list[dict[str, Any]]
 
 
+def _validate_checkpoint_manifest(checkpoint: Checkpoint) -> None:
+    manifest = checkpoint.manifest
+    try:
+        int(manifest["step"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError(
+            f"Checkpoint {checkpoint.name} has an invalid or missing step"
+        ) from error
+
+    parent = manifest.get("parent_checkpoint")
+    if parent is not None and not isinstance(parent, str):
+        raise ValueError(
+            f"Checkpoint {checkpoint.name} has an invalid parent_checkpoint"
+        )
+
+    history_files = manifest.get("history_files")
+    if not isinstance(history_files, list) or not all(
+        isinstance(filename, str) and filename for filename in history_files
+    ):
+        raise ValueError(f"Checkpoint {checkpoint.name} has invalid history_files")
+
+
+def checkpoint_from_path(path: str | Path) -> Checkpoint:
+    """Load and validate the manifest in an explicit checkpoint directory."""
+    checkpoint_path = Path(path).resolve()
+    manifest_path = checkpoint_path / "manifest.json"
+    if not manifest_path.is_file():
+        raise ValueError(f"Checkpoint directory has no manifest.json: {checkpoint_path}")
+    try:
+        with manifest_path.open() as file:
+            manifest = json.load(file)
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"Could not load checkpoint manifest {manifest_path}") from error
+    if not isinstance(manifest, dict):
+        raise ValueError(f"Checkpoint manifest must contain a JSON object: {manifest_path}")
+    checkpoint = Checkpoint(checkpoint_path, manifest)
+    _validate_checkpoint_manifest(checkpoint)
+    return checkpoint
+
+
 def checkpoints_for(root: str | Path) -> dict[str, Checkpoint]:
     """Return all complete checkpoints below an experiment save location."""
     container = Path(root).resolve() / "checkpoints"
@@ -91,6 +131,45 @@ def ancestor_chain(
         if parent and current is None:
             raise ValueError(f"Checkpoint {chain[-1].name} has missing parent {parent!r}")
     return list(reversed(chain))
+
+
+def checkpoint_input_chain(
+    path: str | Path,
+    checkpoint_name: str | None = None,
+) -> list[Checkpoint] | None:
+    """Resolve an analysis input to an ordered checkpoint chain.
+
+    ``path`` may be an experiment root containing ``checkpoints/`` or an
+    explicit checkpoint directory. Non-checkpoint paths return ``None``.
+    An explicit checkpoint always selects itself, regardless of
+    ``checkpoint_name``.
+    """
+    input_path = Path(path).resolve()
+    if (input_path / "manifest.json").is_file():
+        selected = checkpoint_from_path(input_path)
+        container = input_path.parent
+        if container.name != "checkpoints":
+            raise ValueError(
+                "Checkpoint directory must be directly below a checkpoints directory: "
+                f"{input_path}"
+            )
+        root = container.parent
+        checkpoints = checkpoints_for(root)
+        checkpoints[selected.name] = selected
+        chain = ancestor_chain(selected, checkpoints)
+        for checkpoint in chain:
+            _validate_checkpoint_manifest(checkpoint)
+        return chain
+
+    if (input_path / "checkpoints").is_dir():
+        checkpoints = checkpoints_for(input_path)
+        selected = select_checkpoint(checkpoints, checkpoint_name)
+        chain = ancestor_chain(selected, checkpoints)
+        for checkpoint in chain:
+            _validate_checkpoint_manifest(checkpoint)
+        return chain
+
+    return None
 
 
 def checkpoint_tree_payload(root: str | Path) -> dict[str, list[dict[str, Any]]]:

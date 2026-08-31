@@ -33,6 +33,17 @@ export function createCheckpointTree({ elements, onVisibilityChange, onHoverChan
         return result;
     }
 
+    function syncUncheckpointedVisibility() {
+        const roots = [...nodes.values()].filter(
+            (node) => !node.parent || !nodes.has(node.parent),
+        );
+        if (roots.length > 0 && roots.every((node) => hidden.has(node.name))) {
+            hidden.add(null);
+        } else {
+            hidden.delete(null);
+        }
+    }
+
     function layoutTree(roots) {
         let leafIndex = 0;
         let maxDepth = 0;
@@ -51,11 +62,10 @@ export function createCheckpointTree({ elements, onVisibilityChange, onHoverChan
         };
         roots.forEach((root) => place(root, 0));
         const leaves = Math.max(leafIndex, 1);
-        // The SVG viewBox preserves branch geometry while the canvas itself
-        // always fits the dock width.
-        const width = Math.max(360, leaves * 84 + 72);
+        // Compact large trees while retaining a visible gap between 26 px nodes.
+        const width = Math.max(280, (leaves - 1) * 36 + 48);
         for (const position of layout.values()) {
-            position.x = leaves === 1 ? width / 2 : 36 + position.x * (width - 72) / (leaves - 1);
+            position.x = leaves === 1 ? width / 2 : 24 + position.x * (width - 48) / (leaves - 1);
         }
         return { layout, width, height: Math.max(140, (maxDepth + 1) * 76 + 28) };
     }
@@ -71,7 +81,7 @@ export function createCheckpointTree({ elements, onVisibilityChange, onHoverChan
         const { layout, width, height } = layoutTree(roots);
         const canvas = document.createElement("div");
         canvas.className = "checkpointTreeCanvas";
-        canvas.style.width = "100%";
+        canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
         const lines = svgElement("svg", {
             viewBox: `0 0 ${width} ${height}`,
@@ -99,11 +109,16 @@ export function createCheckpointTree({ elements, onVisibilityChange, onHoverChan
             button.addEventListener("click", () => {
                 const affected = descendants(node.name);
                 if (hidden.has(node.name)) {
-                    hidden.delete(node.name);
+                    affected.forEach((name) => hidden.delete(name));
                     ancestors(node.name).forEach((name) => hidden.delete(name));
                 } else {
                     affected.forEach((name) => hidden.add(name));
                 }
+                syncUncheckpointedVisibility();
+                // render() removes the hovered button, so mouseleave will not
+                // reliably clear the map's temporary checkpoint preview.
+                elements.checkpointTreeHoverLabel.textContent = "";
+                onHoverChange(null, new Set());
                 render();
                 onVisibilityChange(new Set(hidden));
             });
@@ -134,7 +149,8 @@ export function createCheckpointTree({ elements, onVisibilityChange, onHoverChan
                     children.set(node.parent, siblings);
                 }
             }
-            hidden = new Set([...hidden].filter((name) => nodes.has(name)));
+            hidden = new Set([...hidden].filter((name) => name !== null && nodes.has(name)));
+            syncUncheckpointedVisibility();
             render();
         } catch {
             nodes = new Map();

@@ -3,11 +3,22 @@ from pathlib import Path
 
 
 @dataclass(frozen=True)
+class CheckpointSlice:
+    path: Path
+    name: str
+    branch_id: str
+    step: int
+    start: int
+    stop: int
+
+
+@dataclass(frozen=True)
 class DiscoverySet:
     path: Path
     files: list
     payloads: list
     outputs: object
+    checkpoints: list[CheckpointSlice] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -15,14 +26,12 @@ class DatasetInfo:
     path: Path
     label: str
     count: int
-    role: str
 
     def to_payload(self) -> dict:
         return {
             "path": str(self.path),
             "label": self.label,
             "count": self.count,
-            "role": self.role,
         }
 
 

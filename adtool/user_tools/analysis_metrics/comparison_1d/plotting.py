@@ -5,7 +5,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
-from ..shared import series_colors
+from ..shared import series_color_map
 
 
 def density_curve(values, bounds, points, integer_values=False):
@@ -34,11 +34,20 @@ def plot_density_curves(
     labels,
     plot_config,
     integer_x=False,
+    branch_ids=None,
 ):
     fig, ax = plt.subplots(figsize=plot_config.figsize)
-    colors = series_colors(len(curves), [plot_config.color_a, plot_config.color_b])
+    branch_ids = list(branch_ids or [None] * len(curves))
+    color_keys = [
+        ("branch", branch_id) if branch_id is not None else ("series", index)
+        for index, branch_id in enumerate(branch_ids)
+    ]
+    colors = series_color_map(
+        color_keys,
+        [plot_config.color_a, plot_config.color_b],
+    )
     for index, ((xs, ys), label) in enumerate(zip(curves, labels)):
-        color = colors[index]
+        color = colors[color_keys[index]]
         ax.plot(
             xs,
             ys,
@@ -56,8 +65,12 @@ def plot_density_curves(
         min_value = min(float(np.min(xs)) for xs, _ in curves)
         max_value = max(float(np.max(xs)) for xs, _ in curves)
         ax.set_xlim(min_value - 0.5, max_value + 0.5)
-    ax.legend()
+    legend = ax.legend(
+        loc="upper left",
+        bbox_to_anchor=(1.02, 1.0),
+        borderaxespad=0.0,
+    )
 
     fig.tight_layout()
-    fig.savefig(out_path, dpi=140)
+    fig.savefig(out_path, dpi=140, bbox_inches="tight", bbox_extra_artists=(legend,))
     plt.close(fig)

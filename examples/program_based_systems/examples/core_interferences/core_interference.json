@@ -1,13 +1,15 @@
 {
   "experiment": {
     "config": {
-      "save_location": "./discoveries/interferences/",
-      "save_frequency": 50,
+      "save_location": "./discoveries/interferences_analysis_branch/",
+      "save_frequency": 100,
       "log_level": "INFO",
       "discoveries_cache_size": -1,
       "history_lookback_length": -1,
-      "bootstrap_size": 3,
-      "render_every": 1}
+      "bootstrap_size": 150,
+      "render_every": 1,
+      "resume_checkpoint" : "step-00000150-cfg-4db128cdf56a-branch-edbf3af1"
+    }
   },
   "system": {
     "path": "examples.program_based_systems.examples.core_interferences.systems.InterferenceSystem.InterferenceSystem",
@@ -30,7 +32,7 @@
     "path": "examples.program_based_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
     "config": {
       "periode": 5,
-      "knn": 1,
+      "knn": 2,
       "behavior_map": {
         "path": "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap.InterferenceBehaviorMap",
         "config": {
@@ -58,6 +60,12 @@
           "min_address_core1": 32,
           "max_address_core1": 63,
           "max_cycle": 127,
+          "mixer": {
+            "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.interference_chunk_mixer.ChunkProgramMixer",
+            "config": {
+              "num_parts": 3
+            }
+          },
           "generator": {
             "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.interference_random_instruction_generator.RandomInstructionGenerator",
             "config": {}

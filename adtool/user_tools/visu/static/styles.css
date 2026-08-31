@@ -395,7 +395,7 @@ code {
     min-height: 0;
     margin-top: 10px;
     flex: 1 1 auto;
-    overflow-x: hidden;
+    overflow-x: auto;
     overflow-y: auto;
     border: 1px solid rgba(80, 101, 90, 0.16);
     border-radius: 9px;
@@ -1128,7 +1128,7 @@ code {
 }
 
 .analysisFields.compareFields {
-    grid-template-columns: minmax(220px, 1fr) 140px 152px;
+    grid-template-columns: minmax(220px, 1fr) 152px;
 }
 
 .analysisFields button {
