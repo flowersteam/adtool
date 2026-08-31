@@ -9,7 +9,7 @@ from matplotlib.lines import Line2D
 from ..shared import series_color_map
 
 
-def aggregate_coordinate_opacities(x_values, y_values, max_opacity):
+def aggregate_coordinate_opacities(x_values, y_values, min_opacity, max_opacity):
     """Aggregate exact coordinates and scale opacity within one dataset."""
     if len(x_values) == 0:
         return np.array([]), np.array([]), np.array([])
@@ -18,8 +18,17 @@ def aggregate_coordinate_opacities(x_values, y_values, max_opacity):
         axis=0,
         return_counts=True,
     )
+    minimum_count = int(np.min(counts))
     maximum_count = int(np.max(counts))
-    opacities = float(max_opacity) * counts.astype(float) / maximum_count
+    if minimum_count == maximum_count:
+        opacities = np.full(len(counts), float(min_opacity))
+        return coordinates[:, 0], coordinates[:, 1], opacities
+    relative_counts = (counts.astype(float) - minimum_count) / (
+        maximum_count - minimum_count
+    )
+    opacities = float(min_opacity) + (
+        float(max_opacity) - float(min_opacity)
+    ) * relative_counts
     return coordinates[:, 0], coordinates[:, 1], opacities
 
 
@@ -44,6 +53,7 @@ def plot_dimension_pair_scatter(
         x_coordinates, y_coordinates, opacities = aggregate_coordinate_opacities(
             x_values,
             y_values,
+            plot_config.min_opacity,
             plot_config.max_opacity,
         )
         color = colors[color_keys[index]]
