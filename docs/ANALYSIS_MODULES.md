@@ -173,7 +173,7 @@ Minimal `Comparison2DModule` example:
           "format": "png",
           "color_a": "#4c78a8",
           "color_b": "#f58518",
-          "alpha": 0.35,
+          "max_opacity": 0.8,
           "figsize": [7.0, 4.0]
         }
       }
@@ -181,6 +181,11 @@ Minimal `Comparison2DModule` example:
   ]
 }
 ```
+
+For a 2D comparison, repeated coordinates within one dataset are aggregated
+into one marker. Its opacity is proportional to its occurrence count in that
+dataset and never exceeds `max_opacity` (at most `0.8`), so overlapping
+datasets remain visible.
 
 Minimal `SpaceCoverageModule` example:
 

@@ -14,12 +14,25 @@ def plot_progression_curves(
     plot_config,
 ):
     fig, ax = plt.subplots(figsize=plot_config.figsize)
+    ordered_segments = []
+    series_index = 0
+    for item in series:
+        # This is the same child-to-ancestor flattened order used by the 1D
+        # and 2D comparison series. Keep its index for non-checkpoint series
+        # so their palette assignments also match across plot types.
+        for segment in reversed(item["segments"]):
+            branch_id = segment[3]
+            color_key = (
+                ("branch", branch_id)
+                if branch_id is not None
+                else ("series", series_index)
+            )
+            ordered_segments.append((segment, color_key))
+            series_index += 1
+
     color_keys = []
-    for index, item in enumerate(series):
-        color_keys.extend(
-            ("branch", branch_id) if branch_id is not None else ("series", index)
-            for _, _, _, branch_id in item["segments"]
-        )
+    color_keys.extend(color_key for _, color_key in ordered_segments)
+    for item in series:
         color_keys.extend(
             ("branch", branch_id)
             for _, _, _, branch_id in item["checkpoints"]
@@ -29,23 +42,19 @@ def plot_progression_curves(
         [plot_config.color_a, plot_config.color_b],
     )
     used_labels = set()
-    for index, item in enumerate(series):
-        for steps, counts, label, branch_id in item["segments"]:
-            color_key = (
-                ("branch", branch_id)
-                if branch_id is not None
-                else ("series", index)
-            )
-            color = colors[color_key]
-            legend_label = label if label not in used_labels else "_nolegend_"
-            used_labels.add(label)
-            ax.plot(
-                steps,
-                counts,
-                color=color,
-                linewidth=plot_config.line_width,
-                label=legend_label,
-            )
+    for (steps, counts, label, _), color_key in ordered_segments:
+        color = colors[color_key]
+        legend_label = label if label not in used_labels else "_nolegend_"
+        used_labels.add(label)
+        ax.plot(
+            steps,
+            counts,
+            color=color,
+            linewidth=plot_config.line_width,
+            label=legend_label,
+        )
+
+    for item in series:
         for step, count, _, branch_id in item["checkpoints"]:
             color = colors[("branch", branch_id)]
             ax.scatter(

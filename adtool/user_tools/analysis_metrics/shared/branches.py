@@ -25,7 +25,7 @@ def branch_color(branch_id: str) -> str:
 
 
 def branch_labels(datasets, labels) -> dict[str, str]:
-    """Resolve stable labels, promoting explicitly selected branch labels."""
+    """Resolve stable labels while preserving the input dataset priority."""
     resolved: dict[str, str] = {}
     for dataset, input_label in zip(datasets, labels):
         branch_order = list(dict.fromkeys(
@@ -34,24 +34,21 @@ def branch_labels(datasets, labels) -> dict[str, str]:
         if not branch_order:
             continue
         selected_branch = branch_order[-1]
-        ancestor_index = 0
-        for branch_id in branch_order:
-            is_explicit = branch_id == selected_branch
-            if is_explicit:
+        for ancestor_index, branch_id in enumerate(branch_order, start=1):
+            if branch_id == selected_branch:
                 candidate = input_label
             else:
-                ancestor_index += 1
                 candidate = f"{input_label} ancestor {ancestor_index}"
-            if branch_id not in resolved or is_explicit:
+            # The first input that contains a shared branch owns its label.
+            if branch_id not in resolved:
                 resolved[branch_id] = candidate
     return resolved
 
 
 def projected_branch_series(datasets, labels, projected_values) -> list[ProjectedSeries]:
-    """Group projected discoveries by branch, not by checkpoint."""
+    """Group projected discoveries by branch in input/youngest-first order."""
     labels_by_branch = branch_labels(datasets, labels)
     entries = []
-    branch_entries = {}
     seen_checkpoints = set()
 
     for dataset, input_label, values in zip(datasets, labels, projected_values):
@@ -63,6 +60,8 @@ def projected_branch_series(datasets, labels, projected_values) -> list[Projecte
             })
             continue
 
+        branch_entries = {}
+        branch_order = []
         for checkpoint in dataset.checkpoints:
             checkpoint_key = checkpoint.path.resolve()
             if checkpoint_key in seen_checkpoints:
@@ -76,8 +75,12 @@ def projected_branch_series(datasets, labels, projected_values) -> list[Projecte
                     "branch_id": checkpoint.branch_id,
                 }
                 branch_entries[checkpoint.branch_id] = entry
-                entries.append(entry)
+                branch_order.append(checkpoint.branch_id)
             entry["parts"].append(values[checkpoint.start:checkpoint.stop])
+
+        # Checkpoint chains are stored oldest first. Plot children first so
+        # they appear above their ancestors in legends and curve order.
+        entries.extend(branch_entries[branch_id] for branch_id in reversed(branch_order))
 
     return [
         ProjectedSeries(
