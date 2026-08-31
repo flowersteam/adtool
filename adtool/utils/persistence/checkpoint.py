@@ -53,6 +53,7 @@ class FileCheckpointStore(CheckpointStore):
     """Write one pickle state file per Leaf component."""
 
     FORMAT_VERSION = "v0"
+    CONFIG_FILENAME = "config.json"
 
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root).resolve()
@@ -78,6 +79,10 @@ class FileCheckpointStore(CheckpointStore):
 
         temporary = Path(tempfile.mkdtemp(prefix=".checkpoint-", dir=container))
         try:
+            config_file = self._write_config_snapshot(
+                temporary,
+                getattr(pipeline, "config", {}),
+            )
             components = self._write_components(temporary, pipeline)
             history_files, history_file_counts = self._write_history(
                 temporary, history, checkpoint_name=checkpoint_name
@@ -87,6 +92,7 @@ class FileCheckpointStore(CheckpointStore):
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "system_name": system_name,
                 "config_hash": config_hash,
+                "config_file": config_file,
                 "step": step,
                 "branch_id": branch_id,
                 "parent_checkpoint": str(history.head) if history.head else None,
@@ -224,6 +230,15 @@ class FileCheckpointStore(CheckpointStore):
                 }
             )
         return components
+
+    @staticmethod
+    def _write_config_snapshot(directory: Path, config: Any) -> str:
+        """Persist the complete configuration that produced this checkpoint."""
+        filename = FileCheckpointStore.CONFIG_FILENAME
+        with (directory / filename).open("w") as file:
+            json.dump(config, file, indent=2, sort_keys=True, default=str)
+            file.write("\n")
+        return filename
 
     @staticmethod
     def _write_history(

@@ -43,6 +43,7 @@ experiment progress and checkpoint messages.
 └── checkpoints/
     └── step-00000042-cfg-<config-hash>-branch-<branch-id>/
         ├── manifest.json
+        ├── config.json                     # exact config used for this checkpoint
         ├── pipeline.pickle
         ├── pipeline__explorer.pickle
         ├── ... one pickle for each Leaf component
@@ -75,11 +76,12 @@ step 10 ── owns discoveries 6–10
 step 15 ── owns discoveries 11–15
 ```
 
-The manifest records the component files, history files and their discovery
-counts, plus `parent_checkpoint`. On resume, the history store reads this
-parent chain once and keeps the small list of chunk references in RAM. It
-loads a chunk file only when a retrieval needs discoveries that are not in the
-RAM cache.
+Each checkpoint's `config.json` is an immutable snapshot of the complete
+configuration used when it was written. The manifest records that file,
+component files, history files and their discovery counts, plus
+`parent_checkpoint`. On resume, the history store reads this parent chain once
+and keeps the small list of chunk references in RAM. It loads a chunk file
+only when a retrieval needs discoveries that are not in the RAM cache.
 
 Saving is safe against an interrupted write: files are first written to a
 temporary checkpoint directory, then that complete directory is atomically
