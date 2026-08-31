@@ -109,7 +109,7 @@ export function createCheckpointTree({ elements, onVisibilityChange, onHoverChan
             button.addEventListener("click", () => {
                 const affected = descendants(node.name);
                 if (hidden.has(node.name)) {
-                    affected.forEach((name) => hidden.delete(name));
+                    hidden.delete(node.name);
                     ancestors(node.name).forEach((name) => hidden.delete(name));
                 } else {
                     affected.forEach((name) => hidden.add(name));
