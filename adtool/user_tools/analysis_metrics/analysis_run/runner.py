@@ -1,3 +1,4 @@
+from dataclasses import replace
 from pathlib import Path
 
 from .config import (
@@ -31,7 +32,7 @@ def _deduplicate_dataset_entries(entries):
     resolved_entries = []
     seen_checkpoint_paths = set()
     for entry in entries:
-        checkpoint_path = _selected_checkpoint_path(entry[2])
+        checkpoint_path = _selected_checkpoint_path(entry[3])
         if checkpoint_path is not None:
             if checkpoint_path in seen_checkpoint_paths:
                 continue
@@ -44,7 +45,9 @@ def run_analysis(
     discovery_paths,
     output_dir=DEFAULT_OUTPUT_DIR,
     labels=None,
+    colors=None,
     config_file=None,
+    display_ancestors=True,
 ):
     config = load_analysis_run_config(config_file)
     if not config.analysis_modules:
@@ -61,16 +64,40 @@ def run_analysis(
         label or _default_label(path)
         for label, path in zip(labels[:len(discovery_paths)], discovery_paths)
     ]
+    colors = list(colors or [])
+    while len(colors) < len(discovery_paths):
+        colors.append(None)
+    colors = [color or None for color in colors[:len(discovery_paths)]]
 
     datasets = [
         load_discovery_set(path, checkpoint_name=config.checkpoint_name)
         for path in discovery_paths
     ]
     entries = _deduplicate_dataset_entries(
-        list(zip(discovery_paths, labels, datasets))
+        list(zip(discovery_paths, labels, colors, datasets))
     )
-    datasets = [entry[2] for entry in entries]
+    datasets = [entry[3] for entry in entries]
     labels = [entry[1] for entry in entries]
+    colors = [entry[2] for entry in entries]
+    selected_branch_ids = frozenset(
+        dataset.checkpoints[-1].branch_id
+        for dataset in datasets
+        if dataset.checkpoints
+    )
+    selected_branch_colors = {}
+    for dataset, color in zip(datasets, colors):
+        if dataset.checkpoints and color:
+            selected_branch_colors.setdefault(dataset.checkpoints[-1].branch_id, color)
+    datasets = [
+        replace(
+            dataset,
+            display_ancestors=display_ancestors,
+            selected_branch_ids=selected_branch_ids,
+            color=color,
+            selected_branch_colors=selected_branch_colors,
+        )
+        for dataset, color in zip(datasets, colors)
+    ]
     run_dir = create_run_dir(output_dir)
 
     module_order = []
@@ -89,7 +116,7 @@ def run_analysis(
                 label=label,
                 count=len(dataset.payloads),
             )
-            for path, label, dataset in entries
+            for path, label, _, dataset in entries
         ],
         module_order=module_order,
         modules=modules,

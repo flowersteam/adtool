@@ -35,15 +35,12 @@ def plot_progression_curves(
     for item in series:
         color_keys.extend(
             ("branch", branch_id)
-            for _, _, _, branch_id in item["checkpoints"]
+            for _, _, _, branch_id, _ in item["checkpoints"]
         )
-    colors = series_color_map(
-        color_keys,
-        [plot_config.color_a, plot_config.color_b],
-    )
+    colors = series_color_map(color_keys)
     used_labels = set()
-    for (steps, counts, label, _), color_key in ordered_segments:
-        color = colors[color_key]
+    for (steps, counts, label, _, selected_color), color_key in ordered_segments:
+        color = selected_color or colors[color_key]
         legend_label = label if label not in used_labels else "_nolegend_"
         used_labels.add(label)
         ax.plot(
@@ -55,8 +52,8 @@ def plot_progression_curves(
         )
 
     for item in series:
-        for step, count, _, branch_id in item["checkpoints"]:
-            color = colors[("branch", branch_id)]
+        for step, count, _, branch_id, selected_color in item["checkpoints"]:
+            color = selected_color or colors[("branch", branch_id)]
             ax.scatter(
                 [step],
                 [count],

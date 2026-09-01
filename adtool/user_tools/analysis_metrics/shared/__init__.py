@@ -1,6 +1,8 @@
 from .branches import (
     branch_color,
     branch_labels,
+    displayed_branch_color,
+    displayed_branch_id,
     projected_branch_series,
 )
 from .discovery import (
@@ -39,6 +41,8 @@ __all__ = [
     "apply_projection",
     "branch_color",
     "branch_labels",
+    "displayed_branch_color",
+    "displayed_branch_id",
     "create_run_dir",
     "load_discovery_set",
     "load_analysis_module",

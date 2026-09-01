@@ -42,29 +42,34 @@ def plot_dimension_pair_scatter(
     fig, ax = plt.subplots(figsize=plot_config.figsize)
     color_keys = [
         ("branch", branch_id) if branch_id is not None else ("series", index)
-        for index, (_, _, _, branch_id) in enumerate(series)
+        for index, (_, _, _, branch_id, _) in enumerate(series)
     ]
-    colors = series_color_map(
-        color_keys,
-        [plot_config.color_a, plot_config.color_b],
-    )
+    colors = series_color_map(color_keys)
     legend_handles = []
-    for index, (x_values, y_values, label, branch_id) in enumerate(series):
+    for index, (x_values, y_values, label, branch_id, selected_color) in enumerate(series):
         x_coordinates, y_coordinates, opacities = aggregate_coordinate_opacities(
             x_values,
             y_values,
             plot_config.min_opacity,
             plot_config.max_opacity,
         )
-        color = colors[color_keys[index]]
+        color = selected_color or colors[color_keys[index]]
         rgba = np.tile(to_rgba(color), (len(opacities), 1))
         rgba[:, 3] = opacities
-        ax.scatter(
-            x_coordinates,
-            y_coordinates,
-            color=rgba,
-            edgecolors="none",
-        )
+        if plot_config.edges:
+            ax.scatter(
+                x_coordinates,
+                y_coordinates,
+                facecolors="none",
+                edgecolors=rgba,
+            )
+        else:
+            ax.scatter(
+                x_coordinates,
+                y_coordinates,
+                color=rgba,
+                edgecolors="none",
+            )
         legend_handles.append(
             Line2D(
                 [],

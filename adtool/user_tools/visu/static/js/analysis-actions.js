@@ -2,6 +2,7 @@ import { runAnalysis, runRandomRun } from "./api.js";
 
 const ANALYSIS_INPUTS_STORAGE_KEY = "adtool.analysis.inputs.v2";
 const LEGACY_ANALYSIS_INPUTS_STORAGE_KEY = "adtool.analysis.inputs.v1";
+const DATASET_COLORS = ["#e13b3f", "#3488c5", "#3aae3f", "#ff7f0e", "#a06dcc"];
 
 function compactFailureMessage(error, fallback) {
     const detail = error?.message || fallback;
@@ -27,6 +28,7 @@ export function createAnalysisActions({
         return datasetRows().map((row) => ({
             path: trimmedValue(row.querySelector(".analysisComparisonPathInput")),
             label: trimmedValue(row.querySelector(".analysisComparisonLabelInput")),
+            color: row.querySelector(".analysisComparisonColorInput").value,
         }));
     }
 
@@ -34,6 +36,7 @@ export function createAnalysisActions({
         return datasetRows().map((row) => ({
             path: row.querySelector(".analysisComparisonPathInput").value,
             label: row.querySelector(".analysisComparisonLabelInput").value,
+            color: row.querySelector(".analysisComparisonColorInput").value,
         }));
     }
 
@@ -43,6 +46,7 @@ export function createAnalysisActions({
             randomIterations: elements.randomIterationsInput.value,
             randomSeed: elements.randomSeedInput.value,
             analysisConfigPath: elements.analysisConfigPath.value,
+            displayAncestors: elements.includeAncestorsInput.checked,
             datasets: datasetInputValues(),
         };
         try {
@@ -70,7 +74,7 @@ export function createAnalysisActions({
         }
     }
 
-    function createDatasetRow(path = "", label = "") {
+    function createDatasetRow(path = "", label = "", color = null) {
         const row = document.createElement("div");
         row.className = "analysisComparisonRow";
 
@@ -99,6 +103,30 @@ export function createAnalysisActions({
         labelField.appendChild(labelText);
         labelField.appendChild(labelInput);
 
+        const colorField = document.createElement("div");
+        colorField.className = "analysisComparisonColorField";
+        colorField.setAttribute("aria-label", "Dataset color");
+        const colorSwatch = document.createElement("button");
+        colorSwatch.type = "button";
+        colorSwatch.className = "highlightColorSwatch";
+        colorSwatch.title = "Choose dataset color";
+        const colorInput = document.createElement("input");
+        colorInput.type = "color";
+        colorInput.className = "analysisComparisonColorInput highlightColorInput";
+        colorInput.value = color || DATASET_COLORS[datasetRows().length % DATASET_COLORS.length];
+        colorSwatch.style.background = colorInput.value;
+        colorInput.addEventListener("input", () => {
+            colorSwatch.style.background = colorInput.value;
+        });
+        colorSwatch.addEventListener("click", () => {
+            const rect = colorSwatch.getBoundingClientRect();
+            colorInput.style.left = `${Math.max(12, rect.left)}px`;
+            colorInput.style.top = `${Math.min(window.innerHeight - 40, rect.bottom + 8)}px`;
+            colorInput.click();
+        });
+        colorField.appendChild(colorSwatch);
+        colorField.appendChild(colorInput);
+
         const removeButton = document.createElement("button");
         removeButton.type = "button";
         removeButton.className = "ghostButton analysisComparisonRemoveButton";
@@ -110,6 +138,7 @@ export function createAnalysisActions({
 
         row.appendChild(pathField);
         row.appendChild(labelField);
+        row.appendChild(colorField);
         row.appendChild(removeButton);
         elements.analysisDatasetList.appendChild(row);
         return row;
@@ -132,6 +161,9 @@ export function createAnalysisActions({
                 input.value = value;
             }
         }
+        if (typeof state.displayAncestors === "boolean") {
+            elements.includeAncestorsInput.checked = state.displayAncestors;
+        }
 
         const datasets = Array.isArray(state.datasets)
             ? state.datasets
@@ -148,6 +180,7 @@ export function createAnalysisActions({
             createDatasetRow(
                 typeof dataset.path === "string" ? dataset.path : "",
                 typeof dataset.label === "string" ? dataset.label : "",
+                typeof dataset.color === "string" ? dataset.color : null,
             );
         }
     }
@@ -159,6 +192,7 @@ export function createAnalysisActions({
             elements.randomIterationsInput,
             elements.randomSeedInput,
             elements.analysisConfigPath,
+            elements.includeAncestorsInput,
         ];
         scalarInputs.forEach((input) => input.addEventListener("input", saveInputs));
         elements.analysisDatasetList.addEventListener("input", saveInputs);
@@ -214,7 +248,9 @@ export function createAnalysisActions({
             const payload = await runAnalysis({
                 discovery_paths: datasets.map((entry) => entry.path),
                 labels: datasets.map((entry) => entry.label),
+                colors: datasets.map((entry) => entry.color),
                 config_file: resolvedConfigFile || null,
+                display_ancestors: elements.includeAncestorsInput.checked,
             });
             analysis.setEnabled(true);
             updateStatus(`Analysis complete: ${payload.run_dir}`);

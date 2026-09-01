@@ -19,6 +19,10 @@ class DiscoverySet:
     payloads: list
     outputs: object
     checkpoints: list[CheckpointSlice] = field(default_factory=list)
+    display_ancestors: bool = True
+    selected_branch_ids: frozenset[str] = field(default_factory=frozenset)
+    color: str | None = None
+    selected_branch_colors: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

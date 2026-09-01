@@ -35,6 +35,7 @@ def plot_density_curves(
     plot_config,
     integer_x=False,
     branch_ids=None,
+    colors=None,
 ):
     fig, ax = plt.subplots(figsize=plot_config.figsize)
     branch_ids = list(branch_ids or [None] * len(curves))
@@ -42,12 +43,10 @@ def plot_density_curves(
         ("branch", branch_id) if branch_id is not None else ("series", index)
         for index, branch_id in enumerate(branch_ids)
     ]
-    colors = series_color_map(
-        color_keys,
-        [plot_config.color_a, plot_config.color_b],
-    )
+    resolved_colors = series_color_map(color_keys)
+    colors = list(colors or [None] * len(curves))
     for index, ((xs, ys), label) in enumerate(zip(curves, labels)):
-        color = colors[color_keys[index]]
+        color = colors[index] or resolved_colors[color_keys[index]]
         ax.plot(
             xs,
             ys,

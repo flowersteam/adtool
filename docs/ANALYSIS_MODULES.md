@@ -68,11 +68,15 @@ Every discovery input accepts one of three directory forms:
 - a checkpoint directory containing `manifest.json`.
 
 Checkpoint inputs are reconstructed cumulatively from the oldest ancestor to
-the selected checkpoint. Checkpoint chunks with the same `branch_id` form one
-plot series and use a stable color derived from that branch ID; saving another
-checkpoint on the same branch does not change color. Ancestor branches use
-`<label> ancestor N`, where ancestor 1 is closest to step 0, and shared
-checkpoint chunks are included only once in 1D and 2D comparisons.
+the selected checkpoint. In the visualization UI, disable the **Display
+ancestor branches** switch to keep those records but draw them using the
+selected checkpoint's series and color. An ancestor explicitly supplied as an
+analysis input remains its own series.
+Checkpoint chunks with the same `branch_id` form one plot series and use a
+stable color derived from that branch ID; saving another checkpoint on the
+same branch does not change color. Ancestor branches use `<label> ancestor N`,
+where ancestor 1 is closest to step 0, and shared checkpoint chunks are
+included only once in 1D and 2D comparisons.
 
 Coverage progression is computed over each complete selected path from step 0
 to its selected checkpoint. Its line changes color only where `branch_id`
@@ -144,8 +148,6 @@ Minimal `Comparison1DModule` example:
         "plot": {
           "points": 512,
           "format": "png",
-          "color_a": "#4c78a8",
-          "color_b": "#f58518",
           "alpha": 0.35,
           "line_width": 2.0,
           "figsize": [7.0, 4.0]
@@ -171,10 +173,9 @@ Minimal `Comparison2DModule` example:
         "pairs": [[0, 12], [2, 12]],
         "plot": {
           "format": "png",
-          "color_a": "#4c78a8",
-          "color_b": "#f58518",
           "min_opacity": 0.3,
           "max_opacity": 0.8,
+          "edges": false,
           "figsize": [7.0, 4.0]
         }
       }
@@ -187,6 +188,7 @@ For a 2D comparison, repeated coordinates within one dataset are aggregated
 into one marker. Its opacity scales from `min_opacity` (`0.3`) to
 `max_opacity` (at most `0.8`) according to its occurrence count in that
 dataset, so rare and overlapping datasets remain visible.
+Set `edges` to `true` to draw hollow markers with colored outlines.
 
 Minimal `SpaceCoverageModule` example:
 
@@ -211,8 +213,6 @@ Minimal `SpaceCoverageModule` example:
         },
         "plot": {
           "format": "png",
-          "color_a": "#4c78a8",
-          "color_b": "#f58518",
           "line_width": 2.0,
           "figsize": [7.0, 4.0]
         }

@@ -55,6 +55,7 @@ const DOM_IDS = {
     analysisDatasetList: "analysisDatasetList",
     addAnalysisComparisonButton: "addAnalysisComparisonButton",
     analysisConfigPath: "analysisConfigPath",
+    includeAncestorsInput: "includeAncestorsInput",
     runAnalysisButton: "runAnalysisButton",
     fitViewButton: "fitViewButton",
     refreshButton: "refreshButton",

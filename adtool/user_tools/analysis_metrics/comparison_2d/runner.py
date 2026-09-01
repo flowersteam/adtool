@@ -42,7 +42,7 @@ def run_comparison_2d(config, datasets, labels, run_dir):
         plot_dimension_pair_scatter(
             run_dir / image_name,
             [
-                (x_values, y_values, series.label, series.branch_id)
+                (x_values, y_values, series.label, series.branch_id, series.color)
                 for x_values, y_values, series in zip(
                     x_series,
                     y_series,

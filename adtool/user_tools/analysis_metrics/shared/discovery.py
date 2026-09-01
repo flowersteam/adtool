@@ -10,7 +10,10 @@ from adtool.utils.persistence.discovery import (
 from .summary import CheckpointSlice, DiscoverySet
 
 
-def load_discovery_set(discovery_path, checkpoint_name=None):
+def load_discovery_set(
+    discovery_path,
+    checkpoint_name=None,
+):
     groups = load_discovery_groups(
         discovery_path,
         checkpoint_name=checkpoint_name,

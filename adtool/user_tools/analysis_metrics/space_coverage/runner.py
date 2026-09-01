@@ -4,6 +4,8 @@ from ..shared import (
     AnalysisImage,
     apply_projection,
     branch_labels,
+    displayed_branch_color,
+    displayed_branch_id,
     order_sequence_by_run_idx,
 )
 from .metric import (
@@ -78,23 +80,28 @@ def _colored_progression(steps, counts, ordered_branch_ids, dataset, input_label
         return {
             "steps": steps,
             "counts": counts,
-            "segments": [(steps, counts, input_label, None)],
+            "segments": [(steps, counts, input_label, None, dataset.color)],
             "checkpoints": [],
         }
 
+    displayed_branch_ids = [
+        displayed_branch_id(dataset, branch_id)
+        for branch_id in ordered_branch_ids
+    ]
     segments = []
     start = 0
-    for index in range(1, len(ordered_branch_ids) + 1):
-        if index < len(ordered_branch_ids) and ordered_branch_ids[index] == ordered_branch_ids[start]:
+    for index in range(1, len(displayed_branch_ids) + 1):
+        if index < len(displayed_branch_ids) and displayed_branch_ids[index] == displayed_branch_ids[start]:
             continue
         segment_start = max(0, start - 1)
-        branch_id = ordered_branch_ids[start]
+        branch_id = displayed_branch_ids[start]
         segments.append(
             (
                 steps[segment_start:index],
                 counts[segment_start:index],
                 labels_by_branch[branch_id],
                 branch_id,
+                displayed_branch_color(dataset, branch_id),
             )
         )
         start = index
@@ -104,8 +111,12 @@ def _colored_progression(steps, counts, ordered_branch_ids, dataset, input_label
         (
             checkpoint.step,
             count_by_step[checkpoint.step],
-            labels_by_branch[checkpoint.branch_id],
-            checkpoint.branch_id,
+            labels_by_branch[displayed_branch_id(dataset, checkpoint.branch_id)],
+            displayed_branch_id(dataset, checkpoint.branch_id),
+            displayed_branch_color(
+                dataset,
+                displayed_branch_id(dataset, checkpoint.branch_id),
+            ),
         )
         for checkpoint in dataset.checkpoints
         if checkpoint.step in count_by_step
@@ -113,12 +124,13 @@ def _colored_progression(steps, counts, ordered_branch_ids, dataset, input_label
     plot_steps = list(steps)
     plot_counts = list(counts)
     if segments and plot_steps and plot_steps[0] > 0:
-        first_steps, first_counts, first_label, first_branch_id = segments[0]
+        first_steps, first_counts, first_label, first_branch_id, first_color = segments[0]
         segments[0] = (
             [0, *first_steps],
             [0, *first_counts],
             first_label,
             first_branch_id,
+            first_color,
         )
         plot_steps.insert(0, 0)
         plot_counts.insert(0, 0)

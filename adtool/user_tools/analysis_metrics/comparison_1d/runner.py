@@ -44,6 +44,7 @@ def run_comparison_1d(config, datasets, labels, run_dir):
     projected_values = [series.values for series in plotted_series]
     labels = [series.label for series in plotted_series]
     branch_ids = [series.branch_id for series in plotted_series]
+    colors = [series.color for series in plotted_series]
     dim_count = projected_values[0].shape[1]
     raw_labels = raw_labels or [f"dim_{idx}" for idx in range(dim_count)]
     dimensions = _resolve_dimensions(config.dimensions, dim_count)
@@ -72,6 +73,7 @@ def run_comparison_1d(config, datasets, labels, run_dir):
             config.plot,
             integer_x=integer_values,
             branch_ids=branch_ids,
+            colors=colors,
         )
         images.append(
             AnalysisImage(

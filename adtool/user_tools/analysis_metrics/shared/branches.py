@@ -12,6 +12,7 @@ class ProjectedSeries:
     values: np.ndarray
     label: str
     branch_id: str | None = None
+    color: str | None = None
 
 
 def branch_color(branch_id: str) -> str:
@@ -45,6 +46,29 @@ def branch_labels(datasets, labels) -> dict[str, str]:
     return resolved
 
 
+def displayed_branch_id(dataset, branch_id: str) -> str:
+    """Collapse non-requested ancestor branches into the selected branch."""
+    if not dataset.checkpoints or dataset.display_ancestors:
+        return branch_id
+    selected_branch_id = dataset.checkpoints[-1].branch_id
+    if (
+        branch_id != selected_branch_id
+        and branch_id not in dataset.selected_branch_ids
+    ):
+        return selected_branch_id
+    return branch_id
+
+
+def displayed_branch_color(dataset, branch_id: str) -> str | None:
+    """Return an explicit dataset color for a displayed branch, if any."""
+    selected_color = dataset.selected_branch_colors.get(branch_id)
+    if selected_color is not None:
+        return selected_color
+    if not dataset.display_ancestors:
+        return dataset.color
+    return None
+
+
 def projected_branch_series(datasets, labels, projected_values) -> list[ProjectedSeries]:
     """Group projected discoveries by branch in input/youngest-first order."""
     labels_by_branch = branch_labels(datasets, labels)
@@ -57,6 +81,7 @@ def projected_branch_series(datasets, labels, projected_values) -> list[Projecte
                 "parts": [values],
                 "label": input_label,
                 "branch_id": None,
+                "color": dataset.color,
             })
             continue
 
@@ -67,15 +92,17 @@ def projected_branch_series(datasets, labels, projected_values) -> list[Projecte
             if checkpoint_key in seen_checkpoints:
                 continue
             seen_checkpoints.add(checkpoint_key)
-            entry = branch_entries.get(checkpoint.branch_id)
+            displayed_branch = displayed_branch_id(dataset, checkpoint.branch_id)
+            entry = branch_entries.get(displayed_branch)
             if entry is None:
                 entry = {
                     "parts": [],
-                    "label": labels_by_branch[checkpoint.branch_id],
-                    "branch_id": checkpoint.branch_id,
+                    "label": labels_by_branch[displayed_branch],
+                    "branch_id": displayed_branch,
+                    "color": displayed_branch_color(dataset, displayed_branch),
                 }
-                branch_entries[checkpoint.branch_id] = entry
-                branch_order.append(checkpoint.branch_id)
+                branch_entries[displayed_branch] = entry
+                branch_order.append(displayed_branch)
             entry["parts"].append(values[checkpoint.start:checkpoint.stop])
 
         # Checkpoint chains are stored oldest first. Plot children first so
@@ -91,6 +118,7 @@ def projected_branch_series(datasets, labels, projected_values) -> list[Projecte
                 else entry["label"]
             ),
             branch_id=entry["branch_id"],
+            color=entry["color"],
         )
         for entry in entries
     ]
