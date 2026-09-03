@@ -1,14 +1,14 @@
 {
   "experiment": {
     "config": {
-      "save_location": "./discoveries/interferences_analysis_branch/",
-      "save_frequency": 100,
+      "save_location": "./discoveries/interferences_/",
+      "save_frequency": 1000,
       "log_level": "INFO",
       "discoveries_cache_size": -1,
       "history_lookback_length": -1,
-      "bootstrap_size": 150,
-      "render_every": 1,
-      "resume_checkpoint" : "step-00000150-cfg-4db128cdf56a-branch-edbf3af1"
+      "bootstrap_size": 1000,
+      "render_every": 100,
+      "resume_checkpoint" : null
     }
   },
   "system": {
@@ -17,9 +17,9 @@
       "simulator": {
         "path": "examples.program_based_systems.examples.core_interferences.systems.simulator.interference_sim3.Sim3Backend",
         "config": {
-          "cycles": 256,
+          "cycles": 500,
           "num_banks": 4,
-          "num_addr": 64
+          "num_addr": 41
         }
       },
       "simulator_runner": {
@@ -31,7 +31,7 @@
   "explorer": {
     "path": "examples.program_based_systems.examples.core_interferences.explorers.InterferenceIMGEPExplorer.InterferenceIMGEPExplorer",
     "config": {
-      "periode": 5,
+      "periode": 1,
       "knn": 2,
       "behavior_map": {
         "path": "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap.InterferenceBehaviorMap",
@@ -54,16 +54,16 @@
       "parameter_map": {
         "path": "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap.InterferenceParameterMap",
         "config": {
-          "num_instructions": 25,
+          "num_instructions": 10,
           "min_address_core0": 0,
-          "max_address_core0": 31,
-          "min_address_core1": 32,
-          "max_address_core1": 63,
-          "max_cycle": 127,
+          "max_address_core0": 10,
+          "min_address_core1": 21,
+          "max_address_core1": 40,
+          "max_cycle": 60,
           "mixer": {
             "path": "examples.program_based_systems.examples.core_interferences.parameter_map.mutator.interference_chunk_mixer.ChunkProgramMixer",
             "config": {
-              "num_parts": 3
+              "num_parts": 2
             }
           },
           "generator": {
