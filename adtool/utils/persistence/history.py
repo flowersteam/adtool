@@ -11,6 +11,7 @@ from __future__ import annotations
 from copy import deepcopy
 from collections import deque
 from dataclasses import dataclass
+import heapq
 import json
 import pickle
 from pathlib import Path
@@ -65,21 +66,6 @@ class HistoryStore:
         self._recent_cache: deque[dict[str, Any]] = deque(
             maxlen=None if self._cache_size == -1 else self._cache_size
         )
-        # Features mirror ``_recent_cache`` and are flattened and validated
-        # once, when their records enter the cache
-        # avoids repeatedly coercing every historical output during bounds and nearest searches
-        self._recent_features: deque[np.ndarray | None] = deque(
-            maxlen=None if self._cache_size == -1 else self._cache_size
-        )
-        self._recent_feature_dimensions: set[int] = set()
-        self._recent_has_invalid_feature = False
-        self._recent_feature_matrix: np.ndarray | None = None
-        self._recent_feature_matrix_size = 0
-        # Bounds over the complete history are monotonic, so after an initial
-        # checkpoint load they can be maintained incrementally faster
-        self._bounds_lower: np.ndarray | None = None
-        self._bounds_upper: np.ndarray | None = None
-        self._bounds_complete = True
         self._last: dict[str, Any] | None = None
         self._logger = None
 
@@ -107,21 +93,13 @@ class HistoryStore:
         if value < -1:
             raise ValueError("history cache_size must be >= -1")
         previous = list(getattr(self, "_recent_cache", ()))
-        previous_features = list(getattr(self, "_recent_features", ()))
         self._cache_size = value
         maxlen = None if value == -1 else value
         self._recent_cache = deque(
             previous if value == -1 else previous[-value:], maxlen=maxlen
         )
-        self._recent_features = deque(
-            previous_features if value == -1 else previous_features[-value:],
-            maxlen=maxlen,
-        )
-        self._refresh_recent_feature_metadata()
-        self._rebuild_recent_feature_matrix()
         if self._head is not None and (
-            (value == -1 and previous_size != -1)
-            or (value > 0 and len(self._recent_cache) < value)
+            value == -1 or len(self._recent_cache) < value
         ):
             self._warm_recent_cache()
         self._debug(
@@ -146,10 +124,6 @@ class HistoryStore:
         self._checkpoint_refs = None if self._head is not None else []
         self._last = None
         self._recent_cache.clear()
-        self._recent_features.clear()
-        self._recent_feature_matrix = None
-        self._recent_feature_matrix_size = 0
-        self._reset_bounds(complete=self._head is None)
         if self._head is not None:
             self._checkpoint_chunk_refs()
             self._warm_recent_cache()
@@ -163,7 +137,6 @@ class HistoryStore:
     def record(self, discovery: dict[str, Any]) -> dict[str, Any]:
         """Record one complete discovery and return an isolated working copy."""
         stored = deepcopy(discovery)
-        feature = self._feature_for(stored)
         pending_before = len(self._pending)
         cache_before = len(self._recent_cache)
         evicted = self._cache_size > 0 and cache_before >= self._cache_size
@@ -172,22 +145,6 @@ class HistoryStore:
         # of this history entry.  Sharing this isolated copy avoids duplicating
         # every discovery in RAM while external callers still receive copies.
         self._recent_cache.append(stored)
-        self._recent_features.append(feature)
-        if feature is None:
-            self._recent_has_invalid_feature = True
-        else:
-            self._recent_feature_dimensions.add(feature.size)
-            if self._bounds_complete:
-                self._update_bounds(feature)
-        if evicted:
-            # Dimension metadata is only an optimization hint. Recompute it
-            # after eviction so the homogeneous-cache vectorized path remains
-            # available when the evicted record was exceptional.
-            self._refresh_recent_feature_metadata()
-            self._recent_feature_matrix = None
-            self._recent_feature_matrix_size = 0
-        elif self._cache_size == -1:
-            self._append_recent_feature(feature, previous_size=cache_before)
         self._last = stored
         self._debug(
             "discovery recorded",
@@ -254,12 +211,7 @@ class HistoryStore:
     def feature_bounds(
         self, history_lookback_length: int = -1
     ) -> tuple[np.ndarray, np.ndarray] | None:
-        """Return numeric feature bounds.
-
-        Complete-history bounds are cached and maintained incrementally.
-        Positive rolling lookbacks are recomputed because their bounds may
-        shrink as old discoveries leave the selected window.
-        """
+        """Return numeric feature bounds using one streaming pass."""
         lower, upper = self._feature_bounds(history_lookback_length)
         if lower is None or upper is None:
             self._debug("feature bounds", features=0)
@@ -321,35 +273,32 @@ class HistoryStore:
             scale[scale == 0] = 1.0
 
         winners: list[tuple[float, int, dict[str, Any], np.ndarray]] = []
-        for positions, features, records in self._iter_vectorized_feature_chunks(
-            history_lookback_length, expected_dimension=goal.size
+        for position, feature, record in self._iter_retrieval_records(
+            history_lookback_length
         ):
-            difference = goal - features
+            if feature.shape != goal.shape:
+                continue
+            difference = goal - feature
             if scale is not None:
                 difference = difference / scale
-            distances = np.einsum("ij,ij->i", difference, difference)
-            for index in self._top_k_indices(distances, positions, k):
-                winners.append(
-                    (
-                        float(distances[index]),
-                        int(positions[index]),
-                        records[index],
-                        features[index],
-                    )
-                )
-
-        winners.sort(key=lambda item: (item[0], item[1]))
-        winners = winners[:k]
+            distance = float(np.dot(difference, difference))
+            item = (-distance, -position, record, feature)
+            if len(winners) < k:
+                heapq.heappush(winners, item)
+            elif item[:2] > winners[0][:2]:
+                heapq.heapreplace(winners, item)
 
         matches: list[HistoryMatch] = []
-        for distance, position, record, feature in winners:
+        for negative_distance, negative_position, record, feature in sorted(
+            winners, key=lambda item: (-item[0], -item[1])
+        ):
             matches.append(
                 HistoryMatch(
                     record=deepcopy(record),
                     feature=feature.copy(),
                     payload=deepcopy(record[self.payload_key]),
-                    distance=distance,
-                    position=position,
+                    distance=-negative_distance,
+                    position=-negative_position,
                 )
             )
         self._debug(
@@ -608,10 +557,6 @@ class HistoryStore:
         """Fill the recent window from newest persisted history sources."""
         if self._cache_size == 0:
             self._recent_cache.clear()
-            self._recent_features.clear()
-            self._refresh_recent_feature_metadata()
-            self._recent_feature_matrix = None
-            self._recent_feature_matrix_size = 0
             self._debug("cache warm skipped", capacity=0)
             return
         self._debug(
@@ -633,14 +578,6 @@ class HistoryStore:
             reversed(newest_first),
             maxlen=None if self._cache_size == -1 else self._cache_size,
         )
-        self._recent_features = deque(
-            (self._feature_for(record) for record in self._recent_cache),
-            maxlen=None if self._cache_size == -1 else self._cache_size,
-        )
-        self._refresh_recent_feature_metadata()
-        self._rebuild_recent_feature_matrix()
-        if self._cache_size == -1:
-            self._rebuild_bounds(self._recent_features, complete=True)
         if self._recent_cache:
             self._last = deepcopy(self._recent_cache[-1])
         self._debug(
@@ -677,9 +614,6 @@ class HistoryStore:
     def _feature_bounds(
         self, history_lookback_length: int
     ) -> tuple[np.ndarray | None, np.ndarray | None]:
-        if history_lookback_length < 0 and self._bounds_complete:
-            return self._copy_bounds()
-
         lower: np.ndarray | None = None
         upper: np.ndarray | None = None
         for _, feature, _ in self._iter_retrieval_records(history_lookback_length):
@@ -689,182 +623,7 @@ class HistoryStore:
             elif feature.shape == lower.shape:
                 lower = np.minimum(lower, feature)
                 upper = np.maximum(upper, feature)
-        if history_lookback_length < 0:
-            self._bounds_lower = lower
-            self._bounds_upper = upper
-            self._bounds_complete = True
-            return self._copy_bounds()
         return lower, upper
-
-    def _iter_vectorized_feature_chunks(
-        self,
-        history_lookback_length: int,
-        *,
-        expected_dimension: int,
-    ) -> Iterator[tuple[np.ndarray, np.ndarray, list[dict[str, Any]]]]:
-        """Yield record positions and dense feature matrices for distance search."""
-        if history_lookback_length == 0:
-            return
-
-        # The common full-cache path avoids both feature coercion and a Python
-        # loop over records by searching the maintained dense matrix directly.
-        if self._cache_size == -1:
-            records = list(self._recent_cache)
-            features = list(self._recent_features)
-            if history_lookback_length > 0:
-                records = records[-history_lookback_length:]
-                features = features[-history_lookback_length:]
-            if (
-                records
-                and not self._recent_has_invalid_feature
-                and self._recent_feature_dimensions == {expected_dimension}
-                and self._recent_feature_matrix is not None
-            ):
-                matrix = self._recent_feature_matrix[:self._recent_feature_matrix_size]
-                if history_lookback_length > 0:
-                    matrix = matrix[-history_lookback_length:]
-                yield (
-                    np.arange(len(records), dtype=np.int64),
-                    matrix,
-                    records,
-                )
-                return
-            yield from self._vectorized_chunk_from_pairs(
-                records, features, expected_dimension, position_offset=0
-            )
-            return
-
-        position_offset = 0
-        for records in self._iter_selected_chunks(history_lookback_length):
-            features = [self._feature_for(record) for record in records]
-            yield from self._vectorized_chunk_from_pairs(
-                records,
-                features,
-                expected_dimension,
-                position_offset=position_offset,
-            )
-            position_offset += len(records)
-
-    @staticmethod
-    def _vectorized_chunk_from_pairs(
-        records: list[dict[str, Any]],
-        features: list[np.ndarray | None],
-        expected_dimension: int,
-        *,
-        position_offset: int,
-    ) -> Iterator[tuple[np.ndarray, np.ndarray, list[dict[str, Any]]]]:
-        valid = [
-            index
-            for index, feature in enumerate(features)
-            if feature is not None and feature.size == expected_dimension
-        ]
-        if not valid:
-            return
-        yield (
-            np.asarray(valid, dtype=np.int64) + position_offset,
-            np.vstack([features[index] for index in valid]),
-            [records[index] for index in valid],
-        )
-
-    @staticmethod
-    def _top_k_indices(
-        distances: np.ndarray, positions: np.ndarray, k: int
-    ) -> np.ndarray:
-        """Select exact top-k indices, preserving earliest-position tie breaks."""
-        count = distances.size
-        if count <= k:
-            return np.lexsort((positions, distances))
-
-        partition = np.argpartition(distances, k - 1)[:k]
-        threshold = distances[partition].max()
-        strictly_better = np.flatnonzero(distances < threshold)
-        remaining = k - strictly_better.size
-        tied = np.flatnonzero(distances == threshold)
-        tied = tied[np.argsort(positions[tied], kind="stable")[:remaining]]
-        selected = np.concatenate((strictly_better, tied))
-        return selected[np.lexsort((positions[selected], distances[selected]))]
-
-    def _reset_bounds(self, *, complete: bool) -> None:
-        self._bounds_lower = None
-        self._bounds_upper = None
-        self._bounds_complete = complete
-
-    def _copy_bounds(self) -> tuple[np.ndarray | None, np.ndarray | None]:
-        if self._bounds_lower is None or self._bounds_upper is None:
-            return None, None
-        return self._bounds_lower.copy(), self._bounds_upper.copy()
-
-    def _update_bounds(self, feature: np.ndarray) -> None:
-        if self._bounds_lower is None:
-            self._bounds_lower = feature.copy()
-            self._bounds_upper = feature.copy()
-        elif feature.shape == self._bounds_lower.shape:
-            self._bounds_lower = np.minimum(self._bounds_lower, feature)
-            self._bounds_upper = np.maximum(self._bounds_upper, feature)
-
-    def _rebuild_bounds(
-        self,
-        features: Iterator[np.ndarray | None] | deque[np.ndarray | None],
-        *,
-        complete: bool,
-    ) -> None:
-        self._reset_bounds(complete=complete)
-        for feature in features:
-            if feature is not None:
-                self._update_bounds(feature)
-
-    def _refresh_recent_feature_metadata(self) -> None:
-        self._recent_feature_dimensions = {
-            feature.size for feature in self._recent_features if feature is not None
-        }
-        self._recent_has_invalid_feature = any(
-            feature is None for feature in self._recent_features
-        )
-
-    def _rebuild_recent_feature_matrix(self) -> None:
-        """Build an over-allocated dense matrix for homogeneous cached features."""
-        count = len(self._recent_features)
-        if (
-            self._cache_size != -1
-            or count == 0
-            or self._recent_has_invalid_feature
-            or len(self._recent_feature_dimensions) != 1
-        ):
-            self._recent_feature_matrix = None
-            self._recent_feature_matrix_size = 0
-            return
-        dimension = next(iter(self._recent_feature_dimensions))
-        capacity = max(16, 1 << (count - 1).bit_length())
-        matrix = np.empty((capacity, dimension), dtype=float)
-        matrix[:count] = np.vstack(self._recent_features)
-        self._recent_feature_matrix = matrix
-        self._recent_feature_matrix_size = count
-
-    def _append_recent_feature(
-        self, feature: np.ndarray | None, *, previous_size: int
-    ) -> None:
-        """Append one feature to the dense full-history matrix in amortized O(d)."""
-        if feature is None:
-            self._recent_feature_matrix = None
-            self._recent_feature_matrix_size = 0
-            return
-        matrix = self._recent_feature_matrix
-        if matrix is None:
-            self._rebuild_recent_feature_matrix()
-            return
-        if (
-            self._recent_feature_matrix_size != previous_size
-            or matrix.shape[1] != feature.size
-        ):
-            self._rebuild_recent_feature_matrix()
-            return
-        if self._recent_feature_matrix_size == matrix.shape[0]:
-            expanded = np.empty((matrix.shape[0] * 2, matrix.shape[1]), dtype=float)
-            expanded[:self._recent_feature_matrix_size] = matrix
-            matrix = expanded
-            self._recent_feature_matrix = matrix
-        matrix[self._recent_feature_matrix_size] = feature
-        self._recent_feature_matrix_size += 1
 
     def _feature_for(self, record: dict[str, Any]) -> np.ndarray | None:
         if self.feature_key not in record or self.payload_key not in record:
