@@ -43,7 +43,7 @@ experiment progress and checkpoint messages.
 └── checkpoints/
     └── step-00000042-cfg-<config-hash>-branch-<branch-id>/
         ├── manifest.json
-        ├── config.json                     # exact config used for this checkpoint
+        ├── config.json
         ├── pipeline.pickle
         ├── pipeline__explorer.pickle
         ├── ... one pickle for each Leaf component
@@ -169,8 +169,7 @@ new discoveries form a branch rather than overwriting it.
 method called after a checkpoint is restored. Place it on an explorer class
 when a resumed run should update or replace submodules from the active config;
 the default implementation changes nothing. This provides a general way to
-compare whether changing strategy mid-execution is effective, and is not
-specific to program-based systems.
+compare whether changing strategy mid-execution is effective.
 
 ## Typical workflow
 

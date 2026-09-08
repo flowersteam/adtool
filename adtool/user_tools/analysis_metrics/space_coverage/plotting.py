@@ -17,9 +17,6 @@ def plot_progression_curves(
     ordered_segments = []
     series_index = 0
     for item in series:
-        # This is the same child-to-ancestor flattened order used by the 1D
-        # and 2D comparison series. Keep its index for non-checkpoint series
-        # so their palette assignments also match across plot types.
         for segment in reversed(item["segments"]):
             branch_id = segment[3]
             color_key = (
