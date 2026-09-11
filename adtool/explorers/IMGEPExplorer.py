@@ -22,6 +22,7 @@ class IMGEPConfig(BaseModel):
     mutator: ObjectSpec = Field(
         object_spec("adtool.mutators.SpecificMutator")
     )
+    history_optimization: ObjectSpec | None = None
 
 
 
@@ -42,6 +43,7 @@ class IMGEPExplorerInstance(Leaf):
         mutator: Any = None,
         equil_time: int = 0,
         history_lookback_length: int = -1,
+        history_optimization: Any = None,
     ) -> None:
         super().__init__()
 
@@ -59,6 +61,7 @@ class IMGEPExplorerInstance(Leaf):
             feature_key=self.premap_key,
             payload_key=self.postmap_key,
         )
+        self.history.set_history_optimization(history_optimization)
 
     def bootstrap(self) -> Dict:
         """Return an initial sample needed to bootstrap the exploration loop."""
@@ -248,8 +251,16 @@ class IMGEPExplorerInstance(Leaf):
         every checkpoint-restored component unchanged. Subclasses may replace
         or update submodules and return ``True`` when they do so.
         """
-        _ = config, system
-        return False
+        _ = system
+        explorer_config = config.get("explorer", {}).get("config", {})
+        optimization_spec = explorer_config.get("history_optimization")
+        optimization = (
+            instantiate_object(optimization_spec, object_name="history optimization")
+            if optimization_spec is not None
+            else None
+        )
+        self.history.set_history_optimization(optimization)
+        return optimization_spec is not None
 
     def _vector_search_for_goal(
         self, goal: np.ndarray, history_lookback_length: int
@@ -295,12 +306,14 @@ class IMGEPExplorer():
         if not isinstance(param_map, ParameterMap):
             raise TypeError("parameter map must implement ParameterMap")
         mutator = self.make_mutator()
+        history_optimization = self.make_history_optimization()
         equil_time = self.config.equil_time
         explorer = IMGEPExplorerInstance(
             parameter_map=param_map,
             behavior_map=behavior_map,
             equil_time=equil_time,
             mutator=mutator,
+            history_optimization=history_optimization,
         )
 
         return explorer
@@ -323,5 +336,13 @@ class IMGEPExplorer():
         return instantiate_object(
             self.config.mutator,
             object_name="mutator",
+        )
+
+    def make_history_optimization(self):
+        if self.config.history_optimization is None:
+            return None
+        return instantiate_object(
+            self.config.history_optimization,
+            object_name="history optimization",
         )
     

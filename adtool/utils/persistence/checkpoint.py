@@ -87,6 +87,11 @@ class FileCheckpointStore(CheckpointStore):
             history_files, history_file_counts = self._write_history(
                 temporary, history, checkpoint_name=checkpoint_name
             )
+            history_optimization = history.write_checkpoint_optimization(
+                temporary,
+                checkpoint_name=checkpoint_name,
+                history_files=history_files,
+            )
             manifest = {
                 "format_version": self.FORMAT_VERSION,
                 "created_at": datetime.now(timezone.utc).isoformat(),
@@ -100,6 +105,8 @@ class FileCheckpointStore(CheckpointStore):
                 "history_files": history_files,
                 "history_file_counts": history_file_counts,
             }
+            if history_optimization is not None:
+                manifest["history_optimization"] = history_optimization
             with (temporary / "manifest.json").open("w") as file:
                 json.dump(manifest, file, indent=2, sort_keys=True)
             os.replace(temporary, destination)

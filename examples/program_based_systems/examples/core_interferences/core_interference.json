@@ -6,7 +6,7 @@
       "log_level": "INFO",
       "discoveries_cache_size": -1,
       "history_lookback_length": -1,
-      "bootstrap_size": 1000,
+      "bootstrap_size": 100,
       "render_every": 100,
       "resume_checkpoint" : null
     }
@@ -33,6 +33,10 @@
     "config": {
       "periode": 1,
       "knn": 2,
+      "history_optimization": {
+        "path": "adtool.utils.persistence.history_optimizations.ExactNumpyHistoryOptimization",
+        "config": {}
+      },
       "behavior_map": {
         "path": "examples.program_based_systems.examples.core_interferences.behavior_map.InterferenceBehaviorMap.InterferenceBehaviorMap",
         "config": {

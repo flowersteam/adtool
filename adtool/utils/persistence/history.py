@@ -19,6 +19,8 @@ from typing import Any, Iterator
 
 import numpy as np
 
+from adtool.utils.persistence.history_optimizations.base import HistoryOptimization
+
 
 @dataclass(frozen=True)
 class HistoryMatch:
@@ -66,6 +68,7 @@ class HistoryStore:
         self._recent_cache: deque[dict[str, Any]] = deque(
             maxlen=None if self._cache_size == -1 else self._cache_size
         )
+        self._history_optimization: HistoryOptimization | None = None
         self._last: dict[str, Any] | None = None
         self._logger = None
 
@@ -117,6 +120,28 @@ class HistoryStore:
     def has_pending_records(self) -> bool:
         return bool(self._pending)
 
+    def set_history_optimization(
+        self, optimization: "HistoryOptimization | None"
+    ) -> None:
+        """Attach an optional query/persistence extension to this history.
+
+        History remains fully functional without an extension. Extensions are
+        deliberately configured by explorers rather than being part of the
+        default persistence format.
+        """
+        if optimization is not None:
+            from adtool.utils.persistence.history_optimizations.base import (
+                HistoryOptimization,
+            )
+
+            if not isinstance(optimization, HistoryOptimization):
+                raise TypeError("history optimization must implement HistoryOptimization")
+        self._history_optimization = optimization
+        if optimization is not None:
+            optimization.attach(self)
+            if self._head is not None:
+                optimization.set_head(self._head)
+
     def set_head(self, checkpoint_dir: str | Path | None) -> None:
         """Attach this store to a completed checkpoint chain."""
         self._head = Path(checkpoint_dir).resolve() if checkpoint_dir else None
@@ -127,6 +152,8 @@ class HistoryStore:
         if self._head is not None:
             self._checkpoint_chunk_refs()
             self._warm_recent_cache()
+            if self._history_optimization is not None:
+                self._history_optimization.set_head(self._head)
         self._debug(
             "checkpoint head selected",
             checkpoint=self._head.name if self._head is not None else "none",
@@ -145,6 +172,8 @@ class HistoryStore:
         # of this history entry.  Sharing this isolated copy avoids duplicating
         # every discovery in RAM while external callers still receive copies.
         self._recent_cache.append(stored)
+        if self._history_optimization is not None:
+            self._history_optimization.record(stored)
         self._last = stored
         self._debug(
             "discovery recorded",
@@ -212,6 +241,12 @@ class HistoryStore:
         self, history_lookback_length: int = -1
     ) -> tuple[np.ndarray, np.ndarray] | None:
         """Return numeric feature bounds using one streaming pass."""
+        if self._history_optimization is not None:
+            optimized = self._history_optimization.feature_bounds(
+                history_lookback_length
+            )
+            if optimized is not None:
+                return optimized
         lower, upper = self._feature_bounds(history_lookback_length)
         if lower is None or upper is None:
             self._debug("feature bounds", features=0)
@@ -236,6 +271,14 @@ class HistoryStore:
         """
         if k <= 0:
             return []
+        if self._history_optimization is not None:
+            return self._history_optimization.nearest(
+                goal,
+                k=k,
+                history_lookback_length=history_lookback_length,
+                normalized=normalized,
+                normalization_bounds=normalization_bounds,
+            )
         goal = np.asarray(goal, dtype=float).reshape(-1)
         self._debug(
             "nearest search started",
@@ -357,6 +400,22 @@ class HistoryStore:
         )
         return [filename], {filename: len(self._pending)}
 
+    def write_checkpoint_optimization(
+        self,
+        directory: str | Path,
+        *,
+        checkpoint_name: str,
+        history_files: list[str],
+    ) -> dict[str, Any] | None:
+        """Write optional extension data inside the checkpoint transaction."""
+        if self._history_optimization is None:
+            return None
+        return self._history_optimization.write_checkpoint(
+            directory,
+            checkpoint_name=checkpoint_name,
+            history_files=history_files,
+        )
+
     def commit_checkpoint(
         self,
         checkpoint_dir: str | Path,
@@ -378,6 +437,8 @@ class HistoryStore:
         self._head = checkpoint_path
         self._pending = []
         cached_refs.extend(new_refs)
+        if self._history_optimization is not None:
+            self._history_optimization.set_head(checkpoint_path)
         self._debug(
             "checkpoint committed",
             checkpoint=checkpoint_path.name,

@@ -114,7 +114,9 @@ the whole history is not retained in memory merely to perform the search.
 ## How explorers use history
 
 Explorers use `HistoryStore`, rather than accessing files or another explorer's
-memory directly:
+memory directly. Its chunked, file-backed retrieval is the **default history
+implementation**: every explorer uses it unless an optional optimization layer
+is configured.
 
 - `record()` adds a discovery to the pending checkpoint batch and RAM cache.
 - `last()` returns the latest discovery.
@@ -126,6 +128,42 @@ memory directly:
 For normalized nearest-neighbour selection, a caller may pass bounds already
 calculated for goal sampling. This avoids repeating the bounds pass. The
 nearest-neighbour search itself remains a separate streaming pass.
+
+## Optional disk-backed nearest-neighbour index
+
+`history_optimization` adds a layer to the default `HistoryStore` and does not
+replace the stored discoveries or the normal history API. Omitting this setting
+keeps the default chunked implementation. IMGEP explorers can add the provided
+exact NumPy layer when they need a finite RAM cache while searching the complete
+checkpoint branch:
+
+```json
+{
+  "experiment": {
+    "config": {
+      "discoveries_cache_size": 1000,
+      "history_lookback_length": -1
+    }
+  },
+  "explorer": {
+    "config": {
+      "history_optimization": {
+        "path": "adtool.utils.persistence.history_optimizations.ExactNumpyHistoryOptimization",
+        "config": {}
+      }
+    }
+  }
+}
+```
+
+The optimization writes compact `.npy` feature arrays beside each new history
+pickle. Bounds and nearest-neighbour searches those numeric sidecars, then load complete pickle records only for
+the selected matches.
+The setting is a regular component specification. You can point it to another
+class implementing
+`adtool.utils.persistence.history_optimizations.HistoryOptimization` to add a
+different query or persistence layer while keeping the same default history
+storage underneath.
 
 `iter_history()` and `iter_chunks()` are retained for custom export or
 inspection code. `features()` builds a full feature matrix and should only be

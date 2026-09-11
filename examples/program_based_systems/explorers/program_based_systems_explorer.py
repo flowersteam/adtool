@@ -43,6 +43,7 @@ class BaseExplorerConfig(BaseModel):
             "examples.program_based_systems.examples.core_interferences.parameter_map.InterferenceParameterMap.InterferenceParameterMap"
         )
     )
+    history_optimization: ObjectSpec | None = None
 
 class BaseIMGEPInstance(IMGEPExplorerInstance):
     """Program-based systems IMGEP policy with periodic goals and kNN retrieval."""
@@ -55,6 +56,7 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
         behavior_map: BaseBehaviorMap | None = None,
         periode: int = 1,
         knn: int = 1,
+        history_optimization: Any = None,
     ) -> None:
         if parameter_map is None or behavior_map is None:
             raise ValueError("BaseIMGEPInstance requires parameter_map and behavior_map.")
@@ -65,6 +67,7 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
             behavior_map=behavior_map,
             mutator=SpecificMutator(),
             equil_time=0,
+            history_optimization=history_optimization,
         )
         self.periode = max(1, int(periode))
         self.knn = max(1, int(knn))
@@ -97,7 +100,18 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
             )
         self.periode = max(1, int(explorer_config.get("periode", self.periode)))
         self.knn = max(1, int(explorer_config.get("knn", self.knn)))
-        return behavior_map_spec is not None or parameter_map_spec is not None
+        optimization_spec = explorer_config.get("history_optimization")
+        optimization = (
+            instantiate_object(optimization_spec, object_name="history optimization")
+            if optimization_spec is not None
+            else None
+        )
+        self.history.set_history_optimization(optimization)
+        return (
+            behavior_map_spec is not None
+            or parameter_map_spec is not None
+            or optimization_spec is not None
+        )
 
     def suggest_trial(
         self,
@@ -180,10 +194,19 @@ class BaseIMGEPExplorer(BaseExplorerFactory):
             system,
             object_name="parameter map",
         )
+        history_optimization = (
+            instantiate_object(
+                self.config.history_optimization,
+                object_name="history optimization",
+            )
+            if self.config.history_optimization is not None
+            else None
+        )
 
         return BaseIMGEPInstance(
             parameter_map=param_map,
             behavior_map=behavior_map,
             periode=self.config.periode,
-            knn=self.config.knn
+            knn=self.config.knn,
+            history_optimization=history_optimization,
         )
