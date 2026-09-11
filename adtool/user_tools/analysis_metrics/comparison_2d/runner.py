@@ -3,7 +3,7 @@ import numpy as np
 from .plotting import (
     plot_dimension_pair_scatter,
 )
-from ..shared import AnalysisImage, apply_projection
+from ..shared import AnalysisImage, apply_projection, projected_branch_series
 
 
 def _display_dimension_label(label, dim_index):
@@ -20,6 +20,9 @@ def _value_bounds(series_values):
 
 def run_comparison_2d(config, datasets, labels, run_dir):
     projected_values, raw_labels = apply_projection(config.projection, datasets)
+    plotted_series = projected_branch_series(datasets, labels, projected_values)
+    projected_values = [series.values for series in plotted_series]
+    labels = [series.label for series in plotted_series]
     dim_count = projected_values[0].shape[1]
     raw_labels = raw_labels or [f"dim_{idx}" for idx in range(dim_count)]
 
@@ -39,8 +42,12 @@ def run_comparison_2d(config, datasets, labels, run_dir):
         plot_dimension_pair_scatter(
             run_dir / image_name,
             [
-                (x_values, y_values, label)
-                for x_values, y_values, label in zip(x_series, y_series, labels)
+                (x_values, y_values, series.label, series.branch_id, series.color)
+                for x_values, y_values, series in zip(
+                    x_series,
+                    y_series,
+                    plotted_series,
+                )
             ],
             x_label,
             y_label,

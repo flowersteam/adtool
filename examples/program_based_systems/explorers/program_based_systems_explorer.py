@@ -71,6 +71,34 @@ class BaseIMGEPInstance(IMGEPExplorerInstance):
         self._current_goal: Optional[np.ndarray] = None
         self._current_goal_targeting_key = ""
 
+    def configure_experiment_runtime(self, *, config: Dict[str, Any], system: Any) -> bool:
+        """Apply active program-map settings after checkpoint restoration.
+
+        Checkpoints retain exploration history and runtime state, but the
+        active config remains authoritative for stateless parameter and
+        behavior policies.
+        """
+        explorer_config = config.get("explorer", {}).get("config", {})
+        behavior_map_spec = explorer_config.get("behavior_map")
+        if behavior_map_spec is not None:
+            self.behavior_map = instantiate_object(
+                behavior_map_spec,
+                system,
+                object_name="behavior map",
+            )
+            self._current_goal = None
+            self._current_goal_targeting_key = ""
+        parameter_map_spec = explorer_config.get("parameter_map")
+        if parameter_map_spec is not None:
+            self.parameter_map = instantiate_object(
+                parameter_map_spec,
+                system,
+                object_name="parameter map",
+            )
+        self.periode = max(1, int(explorer_config.get("periode", self.periode)))
+        self.knn = max(1, int(explorer_config.get("knn", self.knn)))
+        return behavior_map_spec is not None or parameter_map_spec is not None
+
     def suggest_trial(
         self,
         history_lookback_length: int = -1,

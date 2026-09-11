@@ -1,23 +1,58 @@
+from pathlib import Path
+
 import numpy as np
 
 from adtool.utils.persistence.discovery import (
-    load_discoveries,
+    load_discovery_groups,
     numeric_discovery_output_matrix,
 )
 
-from .summary import DiscoverySet
+from .summary import CheckpointSlice, DiscoverySet
 
 
-def load_discovery_set(discovery_path, checkpoint_name=None):
-    discoveries = load_discoveries(
+def load_discovery_set(
+    discovery_path,
+    checkpoint_name=None,
+):
+    groups = load_discovery_groups(
         discovery_path,
         checkpoint_name=checkpoint_name,
     )
+    if len(groups) == 1 and groups[0].checkpoint is None:
+        discoveries = groups[0]
+        return DiscoverySet(
+            path=discoveries.path,
+            files=discoveries.sources,
+            payloads=discoveries.payloads,
+            outputs=numeric_discovery_output_matrix(discoveries),
+        )
+
+    files = []
+    payloads = []
+    outputs = []
+    checkpoints = []
+    for discoveries in groups:
+        start = len(payloads)
+        files.extend(discoveries.sources)
+        payloads.extend(discoveries.payloads)
+        outputs.append(numeric_discovery_output_matrix(discoveries))
+        checkpoint = discoveries.checkpoint
+        checkpoints.append(
+            CheckpointSlice(
+                path=checkpoint.path,
+                name=checkpoint.name,
+                branch_id=str(checkpoint.manifest.get("branch_id") or checkpoint.name),
+                step=int(checkpoint.manifest["step"]),
+                start=start,
+                stop=len(payloads),
+            )
+        )
     return DiscoverySet(
-        path=discoveries.path,
-        files=discoveries.sources,
-        payloads=discoveries.payloads,
-        outputs=numeric_discovery_output_matrix(discoveries),
+        path=Path(discovery_path).resolve(),
+        files=files,
+        payloads=payloads,
+        outputs=np.vstack(outputs),
+        checkpoints=checkpoints,
     )
 
 

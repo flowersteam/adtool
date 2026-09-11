@@ -3,6 +3,7 @@
 from .checkpoint import CheckpointRef, CheckpointStore, FileCheckpointStore
 from .discovery import (
     LoadedDiscoveries,
+    load_discovery_groups,
     load_discoveries,
     numeric_discovery_output,
     numeric_discovery_output_matrix,
@@ -16,6 +17,7 @@ __all__ = [
     "HistoryMatch",
     "HistoryStore",
     "LoadedDiscoveries",
+    "load_discovery_groups",
     "load_discoveries",
     "numeric_discovery_output",
     "numeric_discovery_output_matrix",

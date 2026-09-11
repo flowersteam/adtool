@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 from ..analysis_metrics.analysis_run import run_analysis
@@ -22,6 +23,7 @@ from .server_support import (
 )
 
 LOGGER = logging.getLogger("uvicorn.error")
+HEX_COLOR_PATTERN = re.compile(r"#[0-9a-fA-F]{6}\Z")
 
 
 def random_run_payload(
@@ -76,17 +78,22 @@ def run_analysis_payload(
     state: RuntimeState,
     payload: dict[str, Any],
 ) -> dict[str, Any]:
-    raw_paths = payload.get("comparison_paths")
-    if not raw_paths:
-        raise HTTPException(status_code=422, detail="comparison_paths is required.")
+    raw_paths = payload.get("discovery_paths")
+    if not isinstance(raw_paths, list):
+        raise HTTPException(status_code=422, detail="discovery_paths must be a list.")
 
-    comparison_paths = []
+    discovery_paths = []
     for index, raw_path in enumerate(raw_paths):
-        resolved = resolve_input_path(raw_path, f"comparison_paths[{index}]")
+        resolved = resolve_input_path(raw_path, f"discovery_paths[{index}]")
         if resolved is None:
-            raise HTTPException(status_code=422, detail="comparison_paths is required.")
-        require_directory(resolved, f"comparison_paths[{index}]")
-        comparison_paths.append(resolved)
+            raise HTTPException(
+                status_code=422,
+                detail=f"discovery_paths[{index}] must be a directory path.",
+            )
+        require_directory(resolved, f"discovery_paths[{index}]")
+        discovery_paths.append(resolved)
+    if not discovery_paths:
+        raise HTTPException(status_code=422, detail="At least one discovery path is required.")
 
     raw_config_file = payload.get("config_file")
     if isinstance(raw_config_file, str) and raw_config_file.strip().lower() == "none":
@@ -95,18 +102,41 @@ def run_analysis_payload(
     if config_file is not None:
         require_file(config_file, "config_file")
 
-    primary_label = payload.get("primary_label") or "IMGEP"
-    comparison_labels = payload.get("comparison_labels") or []
+    raw_labels = payload.get("labels") or []
+    if not isinstance(raw_labels, list):
+        raise HTTPException(status_code=422, detail="labels must be a list.")
+
+    raw_colors = payload.get("colors") or []
+    if not isinstance(raw_colors, list):
+        raise HTTPException(status_code=422, detail="colors must be a list.")
+    colors = []
+    for index, color in enumerate(raw_colors):
+        if color in (None, ""):
+            colors.append(None)
+        elif isinstance(color, str) and HEX_COLOR_PATTERN.fullmatch(color):
+            colors.append(color)
+        else:
+            raise HTTPException(
+                status_code=422,
+                detail=f"colors[{index}] must be a #RRGGBB color.",
+            )
+
+    display_ancestors = payload.get("display_ancestors", True)
+    if not isinstance(display_ancestors, bool):
+        raise HTTPException(
+            status_code=422,
+            detail="display_ancestors must be a boolean.",
+        )
 
     with state.analysis_lock:
         try:
             summary = run_analysis(
-                config.discoveries,
-                comparison_paths,
+                discovery_paths,
                 output_dir=analysis_runs_dir(config),
-                primary_label=str(primary_label),
-                comparison_labels=[str(label) for label in comparison_labels],
+                labels=[str(label) for label in raw_labels],
+                colors=colors,
                 config_file=config_file,
+                display_ancestors=display_ancestors,
             )
         except Exception as exc:
             LOGGER.exception("Analysis run failed")

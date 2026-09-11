@@ -174,6 +174,18 @@ class ExperimentPipeline(Leaf):
             callbacks=callbacks,
             save_frequency=config["experiment"]["config"]["save_frequency"],
         )
+        configure_explorer = getattr(
+            self._explorer,
+            "configure_experiment_runtime",
+            None,
+        )
+        if callable(configure_explorer):
+            reconfigured = configure_explorer(config=config, system=self._system)
+            if reconfigured:
+                self._log(
+                    "info",
+                    "[CHECKPOINT] Restored explorer configuration from the active config",
+                )
 
     def run(self, n_exploration_runs: int):
         if n_exploration_runs < 0:

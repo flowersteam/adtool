@@ -305,7 +305,7 @@ For a concrete reference, see:
 The `Analysis` page can launch:
 
 - a random baseline generation run,
-- an offline analysis run against one or more comparison discovery folders.
+- an offline analysis run across one or more explicitly entered discovery or checkpoint paths.
 
 The viewer does not implement analysis logic itself. It forwards the request to the same offline analysis runner described in [Analysis Modules](./ANALYSIS_MODULES.md).
 

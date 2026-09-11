@@ -240,6 +240,17 @@ class IMGEPExplorerInstance(Leaf):
         """Run optimization step for online learning of the `Explorer` policy."""
         pass
 
+    def configure_experiment_runtime(self, *, config: Dict, system: System) -> bool:
+        """Optionally reconfigure restored components from the active config.
+
+        The pipeline calls this hook after loading a checkpoint and rebinding
+        runtime state, but before continuing the experiment. The default keeps
+        every checkpoint-restored component unchanged. Subclasses may replace
+        or update submodules and return ``True`` when they do so.
+        """
+        _ = config, system
+        return False
+
     def _vector_search_for_goal(
         self, goal: np.ndarray, history_lookback_length: int
     ) -> Dict:

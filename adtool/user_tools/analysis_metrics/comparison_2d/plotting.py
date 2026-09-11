@@ -1,9 +1,35 @@
 import matplotlib
+import numpy as np
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.colors import to_rgba
+from matplotlib.lines import Line2D
 
-from ..shared import series_colors
+from ..shared import series_color_map
+
+
+def aggregate_coordinate_opacities(x_values, y_values, min_opacity, max_opacity):
+    """Aggregate exact coordinates and scale opacity within one dataset."""
+    if len(x_values) == 0:
+        return np.array([]), np.array([]), np.array([])
+    coordinates, counts = np.unique(
+        np.column_stack((x_values, y_values)),
+        axis=0,
+        return_counts=True,
+    )
+    minimum_count = int(np.min(counts))
+    maximum_count = int(np.max(counts))
+    if minimum_count == maximum_count:
+        opacities = np.full(len(counts), float(min_opacity))
+        return coordinates[:, 0], coordinates[:, 1], opacities
+    relative_counts = (counts.astype(float) - minimum_count) / (
+        maximum_count - minimum_count
+    )
+    opacities = float(min_opacity) + (
+        float(max_opacity) - float(min_opacity)
+    ) * relative_counts
+    return coordinates[:, 0], coordinates[:, 1], opacities
 
 
 def plot_dimension_pair_scatter(
@@ -14,22 +40,58 @@ def plot_dimension_pair_scatter(
     plot_config,
 ):
     fig, ax = plt.subplots(figsize=plot_config.figsize)
-    colors = series_colors(len(series), [plot_config.color_a, plot_config.color_b])
-    for index, (x_values, y_values, label) in enumerate(series):
-        ax.scatter(
+    color_keys = [
+        ("branch", branch_id) if branch_id is not None else ("series", index)
+        for index, (_, _, _, branch_id, _) in enumerate(series)
+    ]
+    colors = series_color_map(color_keys)
+    legend_handles = []
+    for index, (x_values, y_values, label, branch_id, selected_color) in enumerate(series):
+        x_coordinates, y_coordinates, opacities = aggregate_coordinate_opacities(
             x_values,
             y_values,
-            color=colors[index],
-            alpha=plot_config.alpha,
-            label=label,
-            edgecolors="none",
+            plot_config.min_opacity,
+            plot_config.max_opacity,
+        )
+        color = selected_color or colors[color_keys[index]]
+        rgba = np.tile(to_rgba(color), (len(opacities), 1))
+        rgba[:, 3] = opacities
+        if plot_config.edges:
+            ax.scatter(
+                x_coordinates,
+                y_coordinates,
+                facecolors="none",
+                edgecolors=rgba,
+            )
+        else:
+            ax.scatter(
+                x_coordinates,
+                y_coordinates,
+                color=rgba,
+                edgecolors="none",
+            )
+        legend_handles.append(
+            Line2D(
+                [],
+                [],
+                marker="o",
+                linestyle="none",
+                color=color,
+                alpha=plot_config.max_opacity,
+                label=label,
+            )
         )
 
     ax.set_title(f"X = {x_label} | Y = {y_label}")
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
-    ax.legend()
+    legend = ax.legend(
+        handles=legend_handles,
+        loc="upper left",
+        bbox_to_anchor=(1.02, 1.0),
+        borderaxespad=0.0,
+    )
 
     fig.tight_layout()
-    fig.savefig(out_path, dpi=140)
+    fig.savefig(out_path, dpi=140, bbox_inches="tight", bbox_extra_artists=(legend,))
     plt.close(fig)
