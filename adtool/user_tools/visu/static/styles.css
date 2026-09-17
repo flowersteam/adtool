@@ -977,6 +977,10 @@ code {
     grid-template-rows: auto;
     align-content: end;
 }
+.filterDocks:has(#checkpointTreeSection[hidden]):has(.highlightDock.collapsed) {
+    grid-template-rows: auto;
+    align-content: end;
+}
 
 .highlightDock {
     display: grid;
